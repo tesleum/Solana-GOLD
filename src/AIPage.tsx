@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, TextField, IconButton, Typography, CircularProgress, Chip, Stack, alpha } from '@mui/material';
-import { Send, Bot, User as UserIcon } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { Paper, Tooltip, Zoom } from '@mui/material';
 
 interface AIPageProps {
   effectiveAddress: string | null;
@@ -140,6 +141,19 @@ const getUiText = (lang: string, key: string) => {
   return uiTranslations[lang]?.[key] || uiTranslations['EN'][key];
 };
 
+const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'error' = 'light') => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    switch (type) {
+      case 'light': navigator.vibrate(10); break;
+      case 'medium': navigator.vibrate(15); break;
+      case 'heavy': navigator.vibrate(20); break;
+      case 'success': navigator.vibrate([10, 50, 20]); break;
+      case 'error': navigator.vibrate([20, 50, 20, 50, 20]); break;
+      default: navigator.vibrate(10);
+    }
+  }
+};
+
 export function AIPage({ effectiveAddress, allUsersData, transactions, language }: AIPageProps) {
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant' | 'system', content: string }[]>([]);
   const [input, setInput] = useState('');
@@ -220,6 +234,15 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
     }
   }, [messages]);
 
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const handleCopy = (text: string, id: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+    triggerHaptic('light');
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -295,7 +318,7 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)', pt: 2, pb: 2, px: { xs: 1, sm: 2 } }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)', pt: 2, pb: 2, px: { xs: 1, sm: 2 }, position: 'relative' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, px: 1 }}>
         <Typography variant="body2" sx={{ color: alpha('#ffffff', 0.5) }}>
           {getUiText(language, 'subtitle')}
@@ -312,31 +335,80 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
           />
         )}
       </Box>
-      <Box sx={{ flex: 1, overflowY: 'auto', mb: 2, pr: 1, pb: 20 }} ref={scrollRef}>
-        <Stack spacing={2}>
+      <Box sx={{ flex: 1, overflowY: 'auto', mb: 2, pr: 1, pb: 25 }} ref={scrollRef}>
+        <Stack spacing={3}>
           {messages.filter(m => m.role !== 'system').map((msg, i) => (
-            <Box key={i} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 1.5 }}>
-              {msg.role === 'assistant' && (
-                <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: alpha('#D4AF37', 0.2), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Bot size={20} color="#D4AF37" />
+            <Box key={i} sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              gap: 0.5 
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, px: 1 }}>
+                {msg.role === 'assistant' ? (
+                  <>
+                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: alpha('#D4AF37', 0.2), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Bot size={14} color="#D4AF37" />
+                    </Box>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 600 }}>Assistant</Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 600 }}>You</Typography>
+                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: alpha('#ffffff', 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <UserIcon size={14} color="#fff" />
+                    </Box>
+                  </>
+                )}
+              </Box>
+
+              <Paper 
+                elevation={2}
+                sx={{ 
+                  bgcolor: msg.role === 'user' ? alpha('#D4AF37', 0.2) : alpha('#1a1b1f', 0.6),
+                  backgroundImage: 'none',
+                  p: 2, 
+                  borderRadius: msg.role === 'user' ? '20px 4px 20px 20px' : '4px 20px 20px 20px',
+                  maxWidth: '90%',
+                  color: '#fff',
+                  position: 'relative',
+                  border: `1px solid ${msg.role === 'user' ? alpha('#D4AF37', 0.3) : alpha('#ffffff', 0.1)}`,
+                  transition: 'transform 0.2s',
+                  '&:hover .copy-button': { opacity: 1 }
+                }}
+              >
+                <Box className="copy-button" sx={{ 
+                  position: 'absolute', 
+                  top: 4, 
+                  right: msg.role === 'user' ? 'auto' : 4,
+                  left: msg.role === 'user' ? 4 : 'auto',
+                  opacity: { xs: 1, sm: 0 },
+                  transition: 'opacity 0.2s',
+                  zIndex: 1
+                }}>
+                  <Tooltip title="Copy" placement="top" TransitionComponent={Zoom}>
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleCopy(msg.content, i)}
+                      sx={{ color: alpha('#fff', 0.4), '&:hover': { color: '#D4AF37', bgcolor: alpha('#D4AF37', 0.1) } }}
+                    >
+                      {copiedId === i ? <Check size={14} /> : <Copy size={14} />}
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-              )}
-              <Box sx={{ 
-                bgcolor: msg.role === 'user' ? alpha('#D4AF37', 0.15) : 'transparent',
-                p: msg.role === 'user' ? 2 : 1, 
-                borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '8px',
-                maxWidth: '85%',
-                color: '#fff',
-              }}>
+
                 {msg.role === 'user' ? (
-                  <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5 }}>{msg.content}</Typography>
+                  <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.5, fontSize: '0.95rem' }}>{msg.content}</Typography>
                 ) : (
                   <Box className="markdown-body" sx={{ 
+                    fontSize: '0.95rem',
                     '& p': { m: 0, mb: 1, '&:last-child': { mb: 0 }, lineHeight: 1.6 },
-                    '& strong': { color: '#D4AF37' },
+                    '& strong': { color: '#D4AF37', fontWeight: 700 },
                     '& a': { color: '#F3E5AB' },
                     '& ul, & ol': { mt: 0, mb: 1, pl: 3 },
                     '& li': { mb: 0.5 },
+                    '& code': { bgcolor: alpha('#000', 0.3), px: 0.5, borderRadius: 1, fontFamily: 'monospace' },
+                    '& pre': { bgcolor: alpha('#000', 0.3), p: 1, borderRadius: 1, overflowX: 'auto', my: 1 }
                   }}>
                     <Box sx={{ position: 'relative' }}>
                       <ReactMarkdown>{msg.content || (isLoading && i === messages.length - 1 ? '' : '...')}</ReactMarkdown>
@@ -354,17 +426,34 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
                     </Box>
                   </Box>
                 )}
-              </Box>
+              </Paper>
             </Box>
           ))}
           {isLoading && messages[messages.length - 1]?.role === 'user' && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1.5, alignItems: 'flex-end' }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: alpha('#D4AF37', 0.2), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Bot size={20} color="#D4AF37" />
-              </Box>
-              <Box sx={{ p: 1 }}>
-                <Typography sx={{ color: alpha('#ffffff', 0.5), fontSize: '1.2rem', animation: 'pulse 1.5s infinite' }}>•••</Typography>
-              </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
+               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, px: 1 }}>
+                  <Box sx={{ width: 24, height: 24, borderRadius: '50%', bgcolor: alpha('#D4AF37', 0.2), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Bot size={14} color="#D4AF37" />
+                  </Box>
+                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 600 }}>Assistant</Typography>
+               </Box>
+              <Paper 
+                elevation={2}
+                sx={{ 
+                  bgcolor: alpha('#1a1b1f', 0.6),
+                  backgroundImage: 'none',
+                  p: 1.5, 
+                  px: 2,
+                  borderRadius: '4px 20px 20px 20px',
+                  border: `1px solid ${alpha('#ffffff', 0.1)}`,
+                }}
+              >
+                <Typography sx={{ color: alpha('#ffffff', 0.5), fontSize: '1.2rem', animation: 'pulse 1.5s infinite', display: 'flex', gap: 0.5 }}>
+                  <Box component="span" sx={{ animation: 'bounce 1s infinite' }}>•</Box>
+                  <Box component="span" sx={{ animation: 'bounce 1s infinite', animationDelay: '0.2s' }}>•</Box>
+                  <Box component="span" sx={{ animation: 'bounce 1s infinite', animationDelay: '0.4s' }}>•</Box>
+                </Typography>
+              </Paper>
             </Box>
           )}
         </Stack>
