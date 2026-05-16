@@ -312,7 +312,7 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
           />
         )}
       </Box>
-      <Box sx={{ flex: 1, overflowY: 'auto', mb: 2, pr: 1 }} ref={scrollRef}>
+      <Box sx={{ flex: 1, overflowY: 'auto', mb: 2, pr: 1, pb: 20 }} ref={scrollRef}>
         <Stack spacing={2}>
           {messages.filter(m => m.role !== 'system').map((msg, i) => (
             <Box key={i} sx={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: 1.5 }}>
@@ -370,7 +370,20 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
         </Stack>
       </Box>
 
-      <Box sx={{ mt: 'auto', position: 'relative' }}>
+      <Box sx={{ 
+        position: 'fixed', 
+        bottom: { xs: 92, sm: 110 }, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        width: '100%', 
+        maxWidth: 600, 
+        px: { xs: 2, sm: 3 },
+        bgcolor: alpha('#000', 0.9),
+        backdropFilter: 'blur(10px)',
+        zIndex: 1000,
+        pb: 1,
+        pt: 1
+      }}>
         {messages.length <= 2 && (
           <Box sx={{ 
             display: 'flex', 
