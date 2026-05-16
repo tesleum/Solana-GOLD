@@ -5,7 +5,7 @@ import OpenAI from "openai";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let apiKey = process.env.OPENAI_API_KEY || "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";
+let apiKey = process.env.OPENAI_API_KEY || "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";
 if (apiKey.startsWith('OPENAI_API_KEY=')) {
   apiKey = apiKey.replace('OPENAI_API_KEY=', '');
 }
