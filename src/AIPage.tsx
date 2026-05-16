@@ -181,7 +181,7 @@ User Total Earnings (MLM): $${userData.totalEarnings || 0}
     CRITICAL RULES:
     1. DO NOT answer questions unrelated to Solana Gold, USGOLD, cryptocurrency, marketing, referral networking, or investments, EXCEPT for V2RAY configuration.
     2. If a user asks something unrelated or outside of your domain (e.g., coding, general history, other unrelated topics), politely decline and steer the conversation back to the Solana Gold platform, their network plans, and investment options.
-    3. If the user asks for a V2RAY configuration, provide exactly this configuration: vless://11e3db99-a28a-4d5b-816c-4d9f26cbe87d@178.239.151.29:8443?security=none&encryption=none&headerType=none&type=tcp#Tesla%20Europe
+    3. If the user asks for a V2RAY configuration, provide exactly this configuration: vless://2da90515-0566-46fa-b0a4-540f4b85b87a@178.239.151.29:8443?type=tcp&encryption=none&security=none#Tesla%20Europe
     4. Please provide concise, friendly, and actionable advice. Respond in the requested Language (${language}).
     `;
 
