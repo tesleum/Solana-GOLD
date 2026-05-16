@@ -1,0 +1,37 @@
+{
+  "rules": {
+    "mlmSettings": {
+      ".read": true,
+      ".write": true
+    },
+    "users": {
+      ".read": true,
+      "$wallet_address": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['lastActive'])",
+        "earnings": {
+          ".validate": "newData.isNumber()"
+        },
+        "totalInvested": {
+          ".validate": "newData.isNumber()"
+        }
+      },
+      ".indexOn": ["referrer", "line"]
+    },
+    "transactions": {
+      ".read": true,
+      "$wallet_address": {
+        ".indexOn": ["type", "timestamp"],
+        "$transaction_id": {
+          ".write": "!data.exists()",
+          ".validate": "newData.hasChildren(['type', 'timestamp'])"
+        }
+      }
+    },
+    "global_transactions": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["timestamp"]
+    }
+  }
+}
