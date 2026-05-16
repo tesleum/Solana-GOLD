@@ -1,0 +1,91 @@
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+}
+
+* {
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea {
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
+  border-radius: 10px;
+}
+
+body[dir='rtl'] {
+  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+}
+
+body[dir='rtl'] h1, 
+body[dir='rtl'] h2, 
+body[dir='rtl'] h3, 
+body[dir='rtl'] h4, 
+body[dir='rtl'] h5, 
+body[dir='rtl'] h6,
+body[dir='rtl'] .MuiTypography-root,
+body[dir='rtl'] .MuiButton-root,
+body[dir='rtl'] .MuiBottomNavigationAction-label {
+  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+}
+
+/* Enhanced Skeleton Shimmer */
+.MuiSkeleton-root {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.MuiSkeleton-root::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.08),
+    transparent
+  );
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.wallet-adapter-modal,
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-modal-container {
+  z-index: 9999 !important;
+}
+
