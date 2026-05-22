@@ -61,7 +61,18 @@ export default defineConfig(({mode}) => {
       }
     },
     build: {
-      target: 'esnext'
+      target: 'esnext',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+            solana: ['@solana/web3.js', '@solana/wallet-adapter-base', '@solana/wallet-adapter-react', '@solana/wallet-adapter-react-ui', '@solana/wallet-adapter-wallets', '@solana/spl-token'],
+            firebase: ['firebase/app', 'firebase/database'],
+            reown: ['@reown/appkit', '@reown/appkit-adapter-solana']
+          }
+        }
+      }
     }
   };
 });

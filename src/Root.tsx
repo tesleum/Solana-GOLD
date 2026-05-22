@@ -1,9 +1,10 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
-import App from "./App";
-import AdminPanel from "./AdminPanel";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { ThemeProvider, createTheme, CssBaseline, alpha } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, alpha, Box, CircularProgress } from '@mui/material';
+
+const App = lazy(() => import('./App'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
 
 const darkTheme = createTheme({
   palette: {
@@ -143,10 +144,16 @@ export default function Root() {
       <CssBaseline />
       <ErrorBoundary>
         <HashRouter>
-          <Routes>
-            <Route path="/" element={<App />} />
-            <Route path="/admin/*" element={<AdminPanel />} />
-          </Routes>
+          <Suspense fallback={
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
+              <CircularProgress sx={{ color: '#D4AF37' }} />
+            </Box>
+          }>
+            <Routes>
+              <Route path="/" element={<App />} />
+              <Route path="/admin/*" element={<AdminPanel />} />
+            </Routes>
+          </Suspense>
         </HashRouter>
       </ErrorBoundary>
     </ThemeProvider>
