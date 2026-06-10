@@ -139,10 +139,10 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
       <Stack spacing={3}>
         {/* Header */}
         <Box>
-          <Typography variant="h5" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', color: 'primary.main', mb: 1 }}>
+          <Typography variant="h5" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', color: 'primary.main', mb: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             {t('roiCalculator', language) || 'ROI ANALYZER'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
             Estimate your future wealth based on personal yield and network expansion goals.
           </Typography>
         </Box>
@@ -151,11 +151,11 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           {/* Controls */}
           <Grid item xs={12} md={5}>
             <Card sx={{ bgcolor: alpha('#121214', 0.6), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                 <Stack spacing={4}>
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Target size={16} /> Initial Investment ($)
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
+                      <Target size={14} /> Initial Investment ($)
                     </Typography>
                     <TextField
                       fullWidth
@@ -163,7 +163,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       value={calcAmount}
                       onChange={(e) => setCalcAmount(Number(e.target.value))}
                       variant="standard"
-                      InputProps={{ sx: { fontSize: '1.5rem', fontWeight: 800, color: '#fff' } }}
+                      InputProps={{ sx: { fontSize: { xs: '1.2rem', sm: '1.5rem' }, fontWeight: 800, color: '#fff' } }}
                     />
                     <Slider 
                       value={calcAmount} 
@@ -171,13 +171,13 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       max={10000} 
                       step={10}
                       onChange={(_, v) => setCalcAmount(v as number)}
-                      sx={{ mt: 2 }}
+                      sx={{ mt: 1 }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Users size={16} /> Targeted Direct Referrals
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
+                      <Users size={14} /> Targeted Direct Referrals
                     </Typography>
                     <TextField
                       fullWidth
@@ -185,20 +185,20 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       value={calcReferrals}
                       onChange={(e) => setCalcReferrals(Number(e.target.value))}
                       variant="standard"
-                      InputProps={{ sx: { fontSize: '1.5rem', fontWeight: 800, color: '#fff' } }}
+                      InputProps={{ sx: { fontSize: { xs: '1.2rem', sm: '1.5rem' }, fontWeight: 800, color: '#fff' } }}
                     />
                     <Slider 
                       value={calcReferrals} 
                       min={0} 
                       max={50} 
                       onChange={(_, v) => setCalcReferrals(v as number)}
-                      sx={{ mt: 2 }}
+                      sx={{ mt: 1 }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TrendingUp size={16} /> Time Horizon (Years)
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
+                      <TrendingUp size={14} /> Time Horizon (Years)
                     </Typography>
                     <TextField
                       fullWidth
@@ -206,7 +206,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       value={calcYears}
                       onChange={(e) => setCalcYears(Number(e.target.value))}
                       variant="standard"
-                      InputProps={{ sx: { fontSize: '1.5rem', fontWeight: 800, color: '#fff' } }}
+                      InputProps={{ sx: { fontSize: { xs: '1.2rem', sm: '1.5rem' }, fontWeight: 800, color: '#fff' } }}
                     />
                     <Slider 
                       value={calcYears} 
@@ -214,7 +214,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       max={10} 
                       step={0.5}
                       onChange={(_, v) => setCalcYears(v as number)}
-                      sx={{ mt: 2 }}
+                      sx={{ mt: 1 }}
                     />
                   </Box>
                 </Stack>
@@ -226,51 +226,51 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           <Grid item xs={12} md={7}>
             <Stack spacing={3}>
               <Card sx={{ bgcolor: alpha('#D4AF37', 0.05), borderRadius: 4, border: '1px solid rgba(212, 175, 55, 0.2)' }}>
-                <CardContent sx={{ p: 4 }}>
+                <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary" fontWeight="800">ESTIMATED TOTAL EARNINGS</Typography>
-                      <Typography variant="h3" fontWeight="900" color="primary.main">
+                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>ESTIMATED TOTAL EARNINGS</Typography>
+                      <Typography variant="h3" fontWeight="900" color="primary.main" sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}>
                         ${calculations.totalEstimate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary" fontWeight="800">TOTAL FUTURE VALUE</Typography>
-                      <Typography variant="h4" fontWeight="800" sx={{ mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>TOTAL FUTURE VALUE</Typography>
+                      <Typography variant="h4" fontWeight="800" sx={{ mt: 1, fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                         ${(calcAmount + calculations.totalEstimate).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </Typography>
                     </Grid>
                   </Grid>
 
-                  <Divider sx={{ my: 3, borderColor: 'rgba(212, 175, 55, 0.1)' }} />
+                  <Divider sx={{ my: { xs: 2, sm: 3 }, borderColor: 'rgba(212, 175, 55, 0.1)' }} />
 
                   <Stack direction="row" justifyContent="space-between">
                     <Box>
-                      <Typography variant="caption" color="text.secondary">Personal Yield ({apyYield}%)</Typography>
-                      <Typography variant="subtitle1" fontWeight="700">+${calculations.personalYield.toFixed(2)}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Personal Yield ({apyYield}%)</Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>+${calculations.personalYield.toFixed(2)}</Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="caption" color="text.secondary">Network Royalty Est.</Typography>
-                      <Typography variant="subtitle1" fontWeight="700">+${calculations.networkCommissions.toFixed(2)}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Network Royalty Est.</Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>+${calculations.networkCommissions.toFixed(2)}</Typography>
                     </Box>
                   </Stack>
                 </CardContent>
               </Card>
 
               {/* Chart */}
-              <Box sx={{ height: 220, width: '100%', mt: 2 }}>
+              <Box sx={{ height: { xs: 180, sm: 220 }, width: '100%', mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={alpha('#fff', 0.05)} />
-                    <XAxis dataKey="time" stroke={theme.palette.text.secondary} fontSize={12} />
-                    <YAxis stroke={theme.palette.text.secondary} fontSize={12} tickFormatter={v => `$${v}`} />
+                    <XAxis dataKey="time" stroke={theme.palette.text.secondary} fontSize={10} />
+                    <YAxis stroke={theme.palette.text.secondary} fontSize={10} tickFormatter={v => `$${v}`} />
                     <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#121214', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
+                      contentStyle={{ backgroundColor: '#121214', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '0.75rem' }}
                       itemStyle={{ fontWeight: 'bold' }}
                     />
-                    <Line type="monotone" dataKey="Personal" stroke="#4caf50" strokeWidth={3} dot={false} />
-                    <Line type="monotone" dataKey="Network" stroke="#2196f3" strokeWidth={3} dot={false} />
-                    <Line type="monotone" dataKey="Total" stroke="#D4AF37" strokeWidth={4} dot={{ r: 4, fill: '#D4AF37' }} />
+                    <Line type="monotone" dataKey="Personal" stroke="#4caf50" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Network" stroke="#2196f3" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Total" stroke="#D4AF37" strokeWidth={3} dot={{ r: 3, fill: '#D4AF37' }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -280,19 +280,19 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
 
         {/* User Position Graph */}
         <Card sx={{ bgcolor: alpha('#121214', 0.4), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-              <BarChart3 size={20} color={theme.palette.primary.main} />
-              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif' }}>
+              <BarChart3 size={18} color={theme.palette.primary.main} />
+              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 Your Standing
               </Typography>
             </Stack>
             
             <Box sx={{ height: 120, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={userPositionData} layout="vertical">
+                <BarChart data={userPositionData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={11} width={80} />
+                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={10} width={60} />
                   <RechartsTooltip cursor={{fill: 'transparent'}} />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                     {userPositionData.map((entry, index) => (
@@ -307,13 +307,14 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center', fontSize: '0.7rem' }}>
               {totalMembers < 5 ? 
                 "Build your first line to move from Beginner to Active!" : 
                 `You've recruited ${totalMembers} members. Keep going to reach the next milestone!`}
             </Typography>
           </CardContent>
         </Card>
+
 
         {/* User Tips */}
         <Box>

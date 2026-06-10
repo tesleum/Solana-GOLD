@@ -1945,13 +1945,6 @@ function Dashboard() {
 
         {activeTab === 'network' && (
           <Stack spacing={4} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <ROIAnalyzer 
-              apyYield={apyYield}
-              totalMembers={totalMembers}
-              userTotalInvested={userTotalInvested}
-              language={language}
-            />
-            
             {/* Elegant Header */}
             <Card sx={{ 
               textAlign: 'center', 
@@ -1960,12 +1953,13 @@ function Dashboard() {
               border: `1px solid ${alpha('#D4AF37', 0.2)}`,
               mb: 1
             }}>
-              <CardContent sx={{ py: 2.5, '&:last-child': { pb: 2.5 } }}>
+              <CardContent sx={{ py: { xs: 2.5, sm: 3 }, '&:last-child': { pb: { xs: 2.5, sm: 3 } } }}>
                 <Typography 
                   variant="h4" 
                   fontWeight="900" 
                   sx={{ 
                     mb: 1, 
+                    fontSize: { xs: '1.75rem', sm: '2.125rem' },
                     fontFamily: '"Cinzel", serif', 
                     color: 'primary.main',
                     textShadow: `0 2px 8px ${alpha('#D4AF37', 0.3)}`
@@ -1973,7 +1967,7 @@ function Dashboard() {
                 >
                   {t('myGoldenNetwork', language)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '85%', mx: 'auto', fontStyle: 'italic', fontWeight: 500, opacity: 0.8 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '95%', mx: 'auto', fontStyle: 'italic', fontWeight: 500, opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                   {t('networkDescription', language)}
                 </Typography>
               </CardContent>
@@ -2001,25 +1995,25 @@ function Dashboard() {
                 zIndex: 0
               }} />
               
-              <CardContent sx={{ p: { xs: 3, sm: 4 }, position: 'relative', zIndex: 1 }}>
+              <CardContent sx={{ p: { xs: 2.5, sm: 4 }, position: 'relative', zIndex: 1 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={4}>
-                  <Box>
-                    <Typography variant="caption" color="primary.main" fontWeight="800" sx={{ letterSpacing: 2.5, textTransform: 'uppercase', mb: 1, display: 'block' }}>{t('yourOfficialId', language)}</Typography>
-                    <Typography variant="h2" fontWeight="900" sx={{ color: '#fff', fontSize: { xs: '1.2rem', sm: '1.8rem' }, fontFamily: 'monospace' }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" color="primary.main" fontWeight="800" sx={{ letterSpacing: 2, textTransform: 'uppercase', mb: 1, display: 'block', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>{t('yourOfficialId', language)}</Typography>
+                    <Typography variant="h2" fontWeight="900" sx={{ color: '#fff', fontSize: { xs: '0.95rem', sm: '1.8rem' }, fontFamily: 'monospace', wordBreak: 'break-all' }}>
                       {effectiveAddress ? `${effectiveAddress.substring(0, 12)}...${effectiveAddress.slice(-4)}` : t('walletNotLinked', language)}
                     </Typography>
-                    <Stack direction="row" alignItems="baseline" spacing={1} mt={1}>
-                      <Typography variant="h4" fontWeight="800" sx={{ color: alpha('#fff', 0.9) }}>
+                    <Stack direction="row" alignItems="baseline" spacing={1} mt={1.5}>
+                      <Typography variant="h4" fontWeight="800" sx={{ color: alpha('#fff', 0.9), fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
                         {totalMembers}
                       </Typography>
                       <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, letterSpacing: 1 }}>
-                        {t('membersRecruited', language)}
+                        {t('membersRecruited', language).toUpperCase()}
                       </Typography>
                     </Stack>
                   </Box>
                   <Box sx={{ 
-                    width: 64, 
-                    height: 64, 
+                    width: { xs: 48, sm: 64 }, 
+                    height: { xs: 48, sm: 64 }, 
                     bgcolor: alpha('#D4AF37', 0.15), 
                     borderRadius: '50%',
                     display: 'flex',
@@ -2027,7 +2021,8 @@ function Dashboard() {
                     justifyContent: 'center',
                     border: `2px solid ${alpha('#D4AF37', 0.6)}`,
                     boxShadow: `0 0 25px ${alpha('#D4AF37', 0.4)}`,
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    ml: { xs: 1, sm: 2 }
                   }}>
                     {effectiveAddress ? (
                       <Jazzicon diameter={64} seed={jsNumberForAddress(effectiveAddress)} />
@@ -2037,10 +2032,10 @@ function Dashboard() {
                   </Box>
                 </Stack>
                 
-                <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: { xs: 2.5, sm: 3 }, mb: 4, flexWrap: 'wrap' }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>{t('earnings', language).toUpperCase()}</Typography>
-                    <Typography variant="h5" fontWeight="900" sx={{ mt: 0.5 }}>{userEarnings.toFixed(4)} SOL</Typography>
+                    <Typography variant="h5" fontWeight="900" sx={{ mt: 0.5, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>{userEarnings.toFixed(4)} SOL</Typography>
                   </Box>
                 </Box>
                 
@@ -2128,11 +2123,11 @@ function Dashboard() {
                         </Grid>
                       </Box>
                       
-                      <Box px={3} py={2.5} sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha('#D4AF37', 0.05), display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', letterSpacing: 1 }}>{t('downlineGenesis', language)}</Typography>
+                      <Box px={3} py={2.5} sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha('#D4AF37', 0.05), display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}>
+                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', letterSpacing: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>{t('downlineGenesis', language)}</Typography>
                         <Chip size="small" label="10-Tier Structure" icon={<Activity size={14} />} sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37', border: `1px solid ${alpha('#D4AF37', 0.2)}` }} />
                       </Box>
-                      <Box sx={{ p: 2, bgcolor: alpha('#000', 0.15) }}>
+                      <Box sx={{ p: { xs: 0.5, sm: 2 }, bgcolor: alpha('#000', 0.15) }}>
                         <NetworkTree address={effectiveAddress || undefined} />
                       </Box>
                     </CardContent>
@@ -2256,6 +2251,13 @@ function Dashboard() {
                 </CardContent>
               </Card>
             )}
+
+            <ROIAnalyzer 
+              apyYield={apyYield}
+              totalMembers={totalMembers}
+              userTotalInvested={userTotalInvested}
+              language={language}
+            />
           </Stack>
         )}
 
