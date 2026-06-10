@@ -1310,7 +1310,7 @@ function Dashboard() {
                 <MenuItem 
                   onClick={() => {
                     handleLangClose();
-                    navigate('/admin');
+                    navigate('/admin/');
                   }} 
                   sx={{ 
                     color: 'primary.main', 
