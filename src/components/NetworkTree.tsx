@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Collapse, alpha, useTheme, Tabs, Tab, Chip, ToggleButton, ToggleButtonGroup, TextField, InputAdornment, Tooltip, Stack, Card, CardContent, CardActionArea, Avatar, LinearProgress, Grid } from '@mui/material';
-import { User, ChevronDown, ChevronRight, Users, Star, Filter } from 'lucide-react';
+import { User, ChevronDown, ChevronRight, Users, Star, Filter, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { database } from '../firebase';
@@ -263,6 +264,22 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
     });
   }, [hasFilters, allNodes, filterLevel, filterMembers, filterVolume, activeId]);
 
+  const analyticsData = useMemo(() => {
+    if (!treeData) return [];
+    const lines = ['A', 'B', 'C', 'D'];
+    return lines.map(lineStr => {
+      const lineNode = treeData.children?.find(c => c.id === `line-${lineStr}`);
+      return {
+        name: `Line ${lineStr}`,
+        volume: lineNode ? lineNode.teamVolume : 0,
+      };
+    });
+  }, [treeData]);
+
+  const totalNetworkVolume = useMemo(() => {
+    return analyticsData.reduce((sum, item) => sum + item.volume, 0);
+  }, [analyticsData]);
+
   useEffect(() => {
     if (!activeId) {
       setTreeData(null);
@@ -416,6 +433,125 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
 
   return (
     <Box sx={{ width: '100%' }}>
+      {/* Network Analytics Section */}
+      <Card
+        id="network-analytics-section"
+        sx={{
+          mb: 3,
+          bgcolor: alpha('#121214', 0.6),
+          backgroundImage: 'none',
+          border: '1px solid rgba(212, 175, 55, 0.25)',
+          borderRadius: 4,
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+            <Box sx={{ p: 1, bgcolor: alpha('#D4AF37', 0.1), borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(212, 175, 55, 0.3)' }}>
+              <BarChart3 size={20} color="#D4AF37" />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight="800" sx={{ color: 'text.primary', fontFamily: '"Cinzel", serif', letterSpacing: '0.05rem' }}>
+                Network Analytics
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Total volumes and line performance analysis
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Grid container spacing={3} alignItems="center">
+            {/* Summary Metrics */}
+            <Grid item xs={12} md={5}>
+              <Stack spacing={2}>
+                <Box sx={{ p: 2, bgcolor: alpha('#fff', 0.02), border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Total Network Volume
+                  </Typography>
+                  <Typography variant="h4" fontWeight="800" color="primary.main" sx={{ mt: 0.5, fontFamily: '"Montserrat", sans-serif' }}>
+                    ${totalNetworkVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                </Box>
+
+                <Grid container spacing={1.5}>
+                  <Grid item xs={6}>
+                    <Box sx={{ p: 1.5, bgcolor: alpha('#10b981', 0.05), border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 2 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Active Lines
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#10b981' }}>
+                        {analyticsData.filter(d => d.volume > 0).length} / 4
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box sx={{ p: 1.5, bgcolor: alpha('#3b82f6', 0.05), border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: 2 }}>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Highest Line
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#3b82f6' }}>
+                        {analyticsData.length > 0 ? (
+                          [...analyticsData].sort((a,b) => b.volume - a.volume)[0].volume > 0 ? (
+                            `Line ${[...analyticsData].sort((a,b) => b.volume - a.volume)[0].name.split(' ')[1]}`
+                          ) : 'None'
+                        ) : 'None'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Stack>
+            </Grid>
+
+            {/* Small Bar Chart */}
+            <Grid item xs={12} md={7}>
+              <Box sx={{ height: 160, width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={analyticsData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: '#121214',
+                        borderColor: 'rgba(212, 175, 55, 0.4)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontFamily: '"Inter", sans-serif',
+                      }}
+                      formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Volume']}
+                    />
+                    <Bar
+                      dataKey="volume"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {analyticsData.map((entry, index) => {
+                        const colors = ['#D4AF37', '#0288d1', '#9c27b0', '#e65100'];
+                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
       <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <TextField
           size="small"

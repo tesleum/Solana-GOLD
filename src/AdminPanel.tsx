@@ -47,6 +47,8 @@ import {
   FormControl,
   InputLabel,
   TablePagination,
+  BottomNavigation,
+  BottomNavigationAction,
 } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { NetworkTree } from "./components/NetworkTree";
@@ -75,6 +77,7 @@ export default function AdminPanel() {
 
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [loadingDB, setLoadingDB] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -85,6 +88,14 @@ export default function AdminPanel() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoadingAuth(false);
+      if (currentUser) {
+        const checkRef = ref(database, "mlmSettings");
+        onValue(checkRef, () => {
+          setLoadingDB(false);
+        }, { onlyOnce: true });
+      } else {
+        setLoadingDB(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -128,10 +139,13 @@ export default function AdminPanel() {
     }
   };
 
-  if (loadingAuth) {
+  if (loadingAuth || (user && loadingDB)) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
+      <Box sx={{ display: 'flex', flexDirection: "column", gap: 2, justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
         <CircularProgress sx={{ color: '#D4AF37' }} />
+        <Typography variant="body2" sx={{ color: 'rgba(212, 175, 55, 0.7)', fontWeight: 600, letterSpacing: '0.1rem', fontFamily: '"Cinzel", serif' }}>
+          FETCHING SYSTEM DATA...
+        </Typography>
       </Box>
     );
   }
@@ -324,6 +338,7 @@ export default function AdminPanel() {
       <Drawer
         variant="permanent"
         sx={{
+          display: { xs: "none", md: "block" },
           width: drawerWidth,
           flexShrink: 0,
           [`& .MuiDrawer-paper`]: {
@@ -369,9 +384,9 @@ export default function AdminPanel() {
           </List>
         </Box>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, pb: { xs: '96px', md: 3 } }}>
         <Toolbar />
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 2 } }}>
           <Routes>
             <Route path="/" element={<AdminDashboard />} />
             <Route path="users" element={<UsersManagement />} />
@@ -381,6 +396,76 @@ export default function AdminPanel() {
           </Routes>
         </Container>
       </Box>
+
+      {/* Material 3 Styled Bottom Navigation Bar for Mobile */}
+      <Paper 
+        elevation={10} 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          display: { xs: 'block', md: 'none' }, 
+          zIndex: 1100,
+          borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+          bgcolor: '#121214',
+          backgroundImage: 'none',
+        }}
+      >
+        <BottomNavigation
+          value={
+            (() => {
+              const idx = menuItems.findIndex(item => 
+                location.pathname === item.path || 
+                (location.pathname === "/admin/" && item.path === "/admin")
+              );
+              return idx === -1 ? 0 : idx;
+            })()
+          }
+          onChange={(_, newValue) => {
+            if (newValue >= 0 && newValue < menuItems.length) {
+              navigate(menuItems[newValue].path);
+            }
+          }}
+          showLabels
+          sx={{
+            height: 72,
+            bgcolor: 'transparent',
+            '& .MuiBottomNavigationAction-root': {
+              color: 'rgba(255, 255, 255, 0.5)',
+              minWidth: 'auto',
+              py: 1,
+              '&.Mui-selected': {
+                color: '#D4AF37',
+              },
+            },
+            '& .MuiSvgIcon-root, & svg': {
+              fontSize: '22px',
+              transition: 'transform 0.2s',
+            },
+            '& .Mui-selected svg': {
+              transform: 'scale(1.15)',
+            },
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.75rem',
+              mt: 0.5,
+              fontWeight: 500,
+              '&.Mui-selected': {
+                fontSize: '0.8rem',
+                fontWeight: 700,
+              },
+            }
+          }}
+        >
+          {menuItems.map((item) => (
+            <BottomNavigationAction
+              key={item.text}
+              label={item.text}
+              icon={item.icon}
+            />
+          ))}
+        </BottomNavigation>
+      </Paper>
     </Box>
   );
 }
