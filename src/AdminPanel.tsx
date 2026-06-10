@@ -47,6 +47,10 @@ import {
   FormControl,
   InputLabel,
   TablePagination,
+  BottomNavigation,
+  BottomNavigationAction,
+  Stack,
+  alpha,
 } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { NetworkTree } from "./components/NetworkTree";
@@ -75,6 +79,7 @@ export default function AdminPanel() {
 
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [loadingDB, setLoadingDB] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -85,6 +90,14 @@ export default function AdminPanel() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoadingAuth(false);
+      if (currentUser) {
+        const checkRef = ref(database, "mlmSettings");
+        onValue(checkRef, () => {
+          setLoadingDB(false);
+        }, { onlyOnce: true });
+      } else {
+        setLoadingDB(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -128,10 +141,53 @@ export default function AdminPanel() {
     }
   };
 
-  if (loadingAuth) {
+  if (loadingAuth || (user && loadingDB)) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
-        <CircularProgress sx={{ color: '#D4AF37' }} />
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: "column", 
+        gap: 3, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh', 
+        background: "radial-gradient(circle at center, #16161a 0%, #000000 100%)" 
+      }}>
+        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress 
+            size={80} 
+            thickness={2} 
+            sx={{ color: alpha('#D4AF37', 0.2) }} 
+          />
+          <CircularProgress 
+            size={80} 
+            thickness={2} 
+            sx={{ 
+              color: '#D4AF37', 
+              position: 'absolute',
+              animationDuration: '1.5s',
+              '& .MuiCircularProgress-circle': {
+                strokeLinecap: 'round',
+              }
+            }} 
+          />
+          <Box sx={{ position: 'absolute', animation: 'pulse 2s infinite' }}>
+            <Settings size={32} color="#D4AF37" />
+          </Box>
+        </Box>
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="body2" sx={{ 
+            color: '#D4AF37', 
+            fontWeight: 800, 
+            letterSpacing: '0.2rem', 
+            fontFamily: '"Cinzel", serif',
+            textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
+          }}>
+            SOLANA GOLD
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1rem' }}>
+            {loadingAuth ? 'ESTABLISHING SECURE CONNECTION...' : 'SYNCHRONIZING SYSTEM LEDGER...'}
+          </Typography>
+        </Stack>
       </Box>
     );
   }
@@ -324,6 +380,7 @@ export default function AdminPanel() {
       <Drawer
         variant="permanent"
         sx={{
+          display: { xs: "none", md: "block" },
           width: drawerWidth,
           flexShrink: 0,
           [`& .MuiDrawer-paper`]: {
@@ -369,9 +426,9 @@ export default function AdminPanel() {
           </List>
         </Box>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, pb: { xs: '96px', md: 3 } }}>
         <Toolbar />
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 2 } }}>
           <Routes>
             <Route path="/" element={<AdminDashboard />} />
             <Route path="users" element={<UsersManagement />} />
@@ -381,6 +438,106 @@ export default function AdminPanel() {
           </Routes>
         </Container>
       </Box>
+
+      {/* Material 3 Styled Bottom Navigation Bar for Mobile */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          display: { xs: 'block', md: 'none' }, 
+          zIndex: 1100,
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          bgcolor: '#121214',
+          backgroundImage: 'none',
+          pb: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        <BottomNavigation
+          value={
+            (() => {
+              const idx = menuItems.findIndex(item => 
+                location.pathname === item.path || 
+                (location.pathname === "/admin/" && item.path === "/admin")
+              );
+              return idx === -1 ? 0 : idx;
+            })()
+          }
+          onChange={(_, newValue) => {
+            if (newValue >= 0 && newValue < menuItems.length) {
+              navigate(menuItems[newValue].path);
+            }
+          }}
+          showLabels
+          sx={{
+            height: 80,
+            bgcolor: 'transparent',
+            '& .MuiBottomNavigationAction-root': {
+              color: 'rgba(255, 255, 255, 0.6)',
+              minWidth: 'auto',
+              py: 2,
+              '&.Mui-selected': {
+                color: '#fff',
+                '& .pill-indicator': {
+                  opacity: 1,
+                  transform: 'scaleX(1)',
+                },
+                '& svg': {
+                  color: '#121214',
+                }
+              },
+            },
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              mt: 1,
+              transition: 'all 0.2s',
+              '&.Mui-selected': {
+                fontSize: '0.75rem',
+                fontWeight: 800,
+              },
+            }
+          }}
+        >
+          {menuItems.map((item) => (
+            <BottomNavigationAction
+              key={item.text}
+              label={item.text}
+              icon={
+                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Box 
+                    className="pill-indicator" 
+                    sx={{ 
+                      position: 'absolute', 
+                      width: '64px', 
+                      height: '32px', 
+                      bgcolor: '#D4AF37', 
+                      borderRadius: '16px', 
+                      opacity: 0, 
+                      transform: 'scaleX(0.5)', 
+                      transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                      zIndex: 0 
+                    }} 
+                  />
+                  <Box sx={{ position: 'relative', zIndex: 1, display: 'flex' }}>
+                    {item.icon}
+                  </Box>
+                </Box>
+              }
+            />
+          ))}
+        </BottomNavigation>
+      </Paper>
+
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </Box>
   );
 }
