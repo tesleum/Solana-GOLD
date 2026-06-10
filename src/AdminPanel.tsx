@@ -503,11 +503,12 @@ function UsersManagement() {
 
               Object.keys(userTxsMap).forEach((txId) => {
                 const tx = userTxsMap[txId];
+                const numericalAmount = parseFloat(tx.amount) || 0;
                 userHistory.push({
                   id: txId,
                   date: tx.time,
                   type: tx.type === "buy" ? "Investment" : "Commission",
-                  amount: tx.amount,
+                  amount: `$${numericalAmount.toFixed(2)}`,
                   status: "Completed",
                   timestamp: tx.timestamp || 0,
                 });
@@ -808,16 +809,18 @@ function Transactions() {
         Object.keys(data).forEach((userAddr) => {
           const userTxs = data[userAddr];
           Object.keys(userTxs).forEach((txId) => {
-            allTxs.push({
-              id: txId,
-              user: userAddr,
-              type: userTxs[txId].type,
-              amount: userTxs[txId].amount,
-              date: userTxs[txId].time,
-              txId: userTxs[txId].txId,
-              timestamp: userTxs[txId].timestamp || 0,
-              status: "Completed",
-            });
+              const tx = userTxs[txId];
+              const numericalAmount = parseFloat(tx.amount) || 0;
+              allTxs.push({
+                id: txId,
+                user: userAddr,
+                type: tx.type,
+                amount: `$${numericalAmount.toFixed(2)}`,
+                date: tx.time,
+                txId: tx.txId,
+                timestamp: tx.timestamp || 0,
+                status: "Completed",
+              });
           });
         });
         setTxs(allTxs);
@@ -990,12 +993,13 @@ function AdminSettings() {
     onValue(mlmRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        let totalSol = 0;
+        let totalUsd = 0;
         const txs: any[] = [];
         Object.keys(data).forEach((k) => {
           const tx = data[k];
           if (tx.type === "buy") {
-            totalSol += tx.solAmount || 0;
+            // Note: tx.amount is actually the USD value
+            totalUsd += tx.amount || 0;
             txs.push({ ...tx, id: k });
           }
         });
@@ -1003,12 +1007,12 @@ function AdminSettings() {
         setGlobalTxs(txs);
         // Compute shares
         setAdminVolumes({
-          w1: totalSol * 0.2,
-          w2: totalSol * 0.08,
-          w3: totalSol * 0.06,
-          w4: totalSol * 0.04,
-          w5: totalSol * 0.02,
-          total: totalSol,
+          w1: totalUsd * 0.2,
+          w2: totalUsd * 0.08,
+          w3: totalUsd * 0.06,
+          w4: totalUsd * 0.04,
+          w5: totalUsd * 0.02,
+          total: totalUsd,
         });
       }
     });
@@ -1101,7 +1105,7 @@ function AdminSettings() {
         variant="caption"
         sx={{ display: "block", mt: 1, ml: 1, color: "text.secondary" }}
       >
-        TVL (Historic): {tvl.toFixed(3)} SOL
+        TVL (Historic): ${tvl.toFixed(2)}
       </Typography>
 
       <Dialog
@@ -1113,7 +1117,7 @@ function AdminSettings() {
         <DialogTitle>{title} - Transactions</DialogTitle>
         <DialogContent dividers>
           <Typography variant="subtitle2" sx={{ mb: 2 }}>
-            TVL (Historic): {tvl.toFixed(3)} SOL
+            TVL (Historic): ${tvl.toFixed(2)}
           </Typography>
           <List>
             {globalTxs.length === 0 && (
@@ -1124,7 +1128,7 @@ function AdminSettings() {
             {globalTxs.map((tx) => (
               <ListItem key={tx.id} divider>
                 <ListItemText
-                  primary={`${(tx.solAmount * percent).toFixed(4)} SOL`}
+                  primary={`$${(tx.amount * percent).toFixed(2)}`}
                   secondary={
                     <>
                       {new Date(tx.timestamp).toLocaleString()} •{" "}

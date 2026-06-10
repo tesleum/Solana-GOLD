@@ -588,9 +588,37 @@ function Dashboard() {
       }
 
       // Calculate Team Volumes for Pool Qualifications
+      // We must include the CURRENT investment so that pool qualifications are recalculated correctly per line for this transaction.
+      const simulatedUsersData = { ...usersData };
+      const myId = currentPublicKey.toString();
+      const myDirectRef = upline.length > 0 ? upline[0] : null;
+      
+      if (!simulatedUsersData[myId]) {
+        let storedLine = localStorage.getItem('line') || 'A';
+        simulatedUsersData[myId] = {
+           id: myId,
+           referrer: myDirectRef,
+           line: storedLine.toUpperCase(),
+           totalInvested: investAmount
+        };
+      } else {
+        simulatedUsersData[myId] = {
+           ...simulatedUsersData[myId],
+           totalInvested: (simulatedUsersData[myId].totalInvested || 0) + investAmount
+        };
+        // Ensure referrer and line are present if somehow missing
+        if (!simulatedUsersData[myId].referrer && myDirectRef) {
+          simulatedUsersData[myId].referrer = myDirectRef;
+        }
+        if (!simulatedUsersData[myId].line) {
+          let storedLine = localStorage.getItem('line') || 'A';
+          simulatedUsersData[myId].line = storedLine.toUpperCase();
+        }
+      }
+
       const childrenMap: Record<string, string[]> = {};
-      Object.keys(usersData).forEach(id => {
-        const refD = usersData[id].referrer;
+      Object.keys(simulatedUsersData).forEach(id => {
+        const refD = simulatedUsersData[id].referrer;
         if (refD) {
           if (!childrenMap[refD]) childrenMap[refD] = [];
           childrenMap[refD].push(id);
@@ -600,13 +628,13 @@ function Dashboard() {
       const checkAllLinesToVol = (userId: string, targetVol: number) => {
          const lines = ['A', 'B', 'C', 'D'];
          for (const line of lines) {
-            const lineUsers = Object.keys(usersData).filter(id => usersData[id].referrer === userId && (usersData[id].line === line || (!usersData[id].line && line === 'A')));
+            const lineUsers = Object.keys(simulatedUsersData).filter(id => simulatedUsersData[id].referrer === userId && (simulatedUsersData[id].line === line || (!simulatedUsersData[id].line && line === 'A')));
             let vol = 0;
             lineUsers.forEach(uId => {
                const queue = [uId];
                while (queue.length > 0) {
                   const curr = queue.shift()!;
-                  vol += (usersData[curr]?.totalInvested || 0);
+                  vol += (simulatedUsersData[curr]?.totalInvested || 0);
                   const children = childrenMap[curr];
                   if (children) queue.push(...children);
                }
