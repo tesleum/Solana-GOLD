@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import { database } from "./firebase";
+import { database, auth } from "./firebase";
 import { ref, onValue, set } from "firebase/database";
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User 
+} from "firebase/auth";
 import {
   Box,
   Drawer,
   AppBar,
   Toolbar,
+  CircularProgress,
   Typography,
   List,
   ListItem,
@@ -65,6 +73,192 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [user, setUser] = useState<User | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authButtonLoading, setAuthButtonLoading] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setAuthButtonLoading(true);
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err: any) {
+      console.error(err);
+      let errMsg = err.message || "Failed to authenticate.";
+      if (err.code === "auth/user-not-found") {
+        errMsg = "Admin user not found. Toggle 'Sign Up' if you need to create an account.";
+      } else if (err.code === "auth/wrong-password") {
+        errMsg = "Incorrect password.";
+      } else if (err.code === "auth/invalid-email") {
+        errMsg = "Please enter a valid email address.";
+      } else if (err.code === "auth/weak-password") {
+        errMsg = "Password must be at least 6 characters.";
+      } else if (err.code === "auth/email-already-in-use") {
+        errMsg = "An account with this email already exists.";
+      }
+      setAuthError(errMsg);
+    } finally {
+      setAuthButtonLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch (err) {
+      console.error("Logout error", err);
+    }
+  };
+
+  if (loadingAuth) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
+        <CircularProgress sx={{ color: '#D4AF37' }} />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Box sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        background: "radial-gradient(circle at center, #16161a 0%, #000000 100%)",
+        padding: 3,
+      }}>
+        <Container maxWidth="xs" id="admin-login-container">
+          <Paper elevation={24} sx={{
+            p: 4,
+            borderRadius: 4,
+            border: "1px solid rgba(212, 175, 55, 0.2)",
+            backgroundColor: "#121214",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}>
+            <Box sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              bgcolor: "rgba(212, 175, 55, 0.1)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              mb: 2,
+              border: "1px solid #D4AF37"
+            }}>
+              <Settings size={28} color="#D4AF37" />
+            </Box>
+            
+            <Typography variant="h5" align="center" sx={{ fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 700, mb: 1, color: "#fff" }}>
+              Solana Gold
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+              {isSignUp ? "Create Admin Credentials" : "Admin Panel Sign In"}
+            </Typography>
+
+            {authError && (
+              <Alert severity="error" sx={{ width: "100%", mb: 2, borderRadius: 2 }}>
+                {authError}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleAuth} sx={{ width: "100%" }}>
+              <TextField
+                label="Admin Email"
+                fullWidth
+                margin="normal"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                InputProps={{
+                  sx: { borderRadius: 3 }
+                }}
+              />
+              <TextField
+                label="Password"
+                fullWidth
+                margin="normal"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                InputProps={{
+                  sx: { borderRadius: 3 }
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                disabled={authButtonLoading}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  borderRadius: 3,
+                  fontWeight: "bold",
+                  textTransform: "none",
+                  backgroundColor: "#D4AF37",
+                  color: "#121214",
+                  "&:hover": {
+                    backgroundColor: "#F3E5AB"
+                  }
+                }}
+              >
+                {authButtonLoading ? (
+                  <CircularProgress size={24} sx={{ color: "#121214" }} />
+                ) : (
+                  isSignUp ? "Sign Up as Admin" : "Sign In"
+                )}
+              </Button>
+            </Box>
+
+            <Button
+              fullWidth
+              variant="text"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError("");
+              }}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                color: "#D4AF37",
+                "&:hover": {
+                  backgroundColor: "rgba(212, 175, 55, 0.05)"
+                }
+              }}
+            >
+              {isSignUp ? "Already have an account? Sign In" : "Don't have an admin account? Sign Up"}
+            </Button>
+          </Paper>
+        </Container>
+      </Box>
+    );
+  }
+
   const menuItems = [
     { text: "Dashboard", icon: <LayoutDashboard />, path: "/admin" },
     { text: "Users", icon: <Users />, path: "/admin/users" },
@@ -102,10 +296,29 @@ export default function AdminPanel() {
             variant="h6"
             noWrap
             component="div"
-            sx={{ fontFamily: '"Cinzel", serif', fontWeight: "bold" }}
+            sx={{ fontFamily: '"Cinzel", serif', fontWeight: "bold", flexGrow: 1 }}
           >
             Solana Gold Admin Panel
           </Typography>
+          <Button 
+            color="inherit" 
+            onClick={handleLogout}
+            sx={{ 
+              borderRadius: 2, 
+              border: "1px solid rgba(212, 175, 55, 0.3)",
+              color: "#D4AF37",
+              px: 3,
+              minHeight: "36px",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: "rgba(212, 175, 55, 0.1)",
+                borderColor: "#D4AF37"
+              }
+            }}
+          >
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
       <Drawer
@@ -1088,8 +1301,8 @@ function AdminSettings() {
           label={title}
           fullWidth
           value={value}
-          onChange={(e) => setter(e.target.value)}
-          placeholder="Enter Solana Address"
+          placeholder="Solana Address"
+          InputProps={{ readOnly: true }}
           error={!!error}
           helperText={error}
         />

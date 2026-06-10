@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeProvider, createTheme, CssBaseline, alpha, Box, CircularProgress } from '@mui/material';
 
@@ -143,7 +143,7 @@ export default function Root() {
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <ErrorBoundary>
-        <HashRouter>
+        <BrowserRouter>
           <Suspense fallback={
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
               <CircularProgress sx={{ color: '#D4AF37' }} />
@@ -154,7 +154,7 @@ export default function Root() {
               <Route path="/admin/*" element={<AdminPanel />} />
             </Routes>
           </Suspense>
-        </HashRouter>
+        </BrowserRouter>
       </ErrorBoundary>
     </ThemeProvider>
   );
