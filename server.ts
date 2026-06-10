@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
 
@@ -18,6 +19,8 @@ const openai = new OpenAI({
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("dist exists:", fs.existsSync(path.join(process.cwd(), "dist")));
 
   app.use(express.json());
 
@@ -90,7 +93,9 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
+  
+  if (!isProduction) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
