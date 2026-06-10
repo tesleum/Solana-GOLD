@@ -11,7 +11,6 @@ import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstru
 import { Home, Users, User, Activity, BarChart3, Coins, Copy, CopyCheck, ArrowUpRight, ArrowDownRight, QrCode, Filter, Download, Search, Info, ChevronDown, Globe, Wallet, Bot } from 'lucide-react';
 import { AppWalletProvider } from './components/WalletProvider';
 import { NetworkTree } from './components/NetworkTree';
-import { ROIAnalyzer } from './components/ROIAnalyzer';
 import { OnboardingModal } from './components/OnboardingModal';
 import { AIPage } from './AIPage';
 import { t } from './translations';
@@ -1944,14 +1943,7 @@ function Dashboard() {
         )}
 
         {activeTab === 'network' && (
-          <Stack spacing={4} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
-            <ROIAnalyzer 
-              apyYield={apyYield}
-              totalMembers={totalMembers}
-              userTotalInvested={userTotalInvested}
-              language={language}
-            />
-            
+          <Stack spacing={3} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
             {/* Elegant Header */}
             <Card sx={{ 
               textAlign: 'center', 
