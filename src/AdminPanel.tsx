@@ -49,6 +49,8 @@ import {
   TablePagination,
   BottomNavigation,
   BottomNavigationAction,
+  Stack,
+  alpha,
 } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { NetworkTree } from "./components/NetworkTree";
@@ -141,11 +143,51 @@ export default function AdminPanel() {
 
   if (loadingAuth || (user && loadingDB)) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: "column", gap: 2, justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
-        <CircularProgress sx={{ color: '#D4AF37' }} />
-        <Typography variant="body2" sx={{ color: 'rgba(212, 175, 55, 0.7)', fontWeight: 600, letterSpacing: '0.1rem', fontFamily: '"Cinzel", serif' }}>
-          FETCHING SYSTEM DATA...
-        </Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: "column", 
+        gap: 3, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh', 
+        background: "radial-gradient(circle at center, #16161a 0%, #000000 100%)" 
+      }}>
+        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress 
+            size={80} 
+            thickness={2} 
+            sx={{ color: alpha('#D4AF37', 0.2) }} 
+          />
+          <CircularProgress 
+            size={80} 
+            thickness={2} 
+            sx={{ 
+              color: '#D4AF37', 
+              position: 'absolute',
+              animationDuration: '1.5s',
+              '& .MuiCircularProgress-circle': {
+                strokeLinecap: 'round',
+              }
+            }} 
+          />
+          <Box sx={{ position: 'absolute', animation: 'pulse 2s infinite' }}>
+            <Settings size={32} color="#D4AF37" />
+          </Box>
+        </Box>
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="body2" sx={{ 
+            color: '#D4AF37', 
+            fontWeight: 800, 
+            letterSpacing: '0.2rem', 
+            fontFamily: '"Cinzel", serif',
+            textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
+          }}>
+            SOLANA GOLD
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1rem' }}>
+            {loadingAuth ? 'ESTABLISHING SECURE CONNECTION...' : 'SYNCHRONIZING SYSTEM LEDGER...'}
+          </Typography>
+        </Stack>
       </Box>
     );
   }
@@ -399,7 +441,7 @@ export default function AdminPanel() {
 
       {/* Material 3 Styled Bottom Navigation Bar for Mobile */}
       <Paper 
-        elevation={10} 
+        elevation={0} 
         sx={{ 
           position: 'fixed', 
           bottom: 0, 
@@ -407,9 +449,10 @@ export default function AdminPanel() {
           right: 0, 
           display: { xs: 'block', md: 'none' }, 
           zIndex: 1100,
-          borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
           bgcolor: '#121214',
           backgroundImage: 'none',
+          pb: 'env(safe-area-inset-bottom)',
         }}
       >
         <BottomNavigation
@@ -429,30 +472,31 @@ export default function AdminPanel() {
           }}
           showLabels
           sx={{
-            height: 72,
+            height: 80,
             bgcolor: 'transparent',
             '& .MuiBottomNavigationAction-root': {
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: 'rgba(255, 255, 255, 0.6)',
               minWidth: 'auto',
-              py: 1,
+              py: 2,
               '&.Mui-selected': {
-                color: '#D4AF37',
+                color: '#fff',
+                '& .pill-indicator': {
+                  opacity: 1,
+                  transform: 'scaleX(1)',
+                },
+                '& svg': {
+                  color: '#121214',
+                }
               },
-            },
-            '& .MuiSvgIcon-root, & svg': {
-              fontSize: '22px',
-              transition: 'transform 0.2s',
-            },
-            '& .Mui-selected svg': {
-              transform: 'scale(1.15)',
             },
             '& .MuiBottomNavigationAction-label': {
               fontSize: '0.75rem',
-              mt: 0.5,
               fontWeight: 500,
+              mt: 1,
+              transition: 'all 0.2s',
               '&.Mui-selected': {
-                fontSize: '0.8rem',
-                fontWeight: 700,
+                fontSize: '0.75rem',
+                fontWeight: 800,
               },
             }
           }}
@@ -461,11 +505,39 @@ export default function AdminPanel() {
             <BottomNavigationAction
               key={item.text}
               label={item.text}
-              icon={item.icon}
+              icon={
+                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Box 
+                    className="pill-indicator" 
+                    sx={{ 
+                      position: 'absolute', 
+                      width: '64px', 
+                      height: '32px', 
+                      bgcolor: '#D4AF37', 
+                      borderRadius: '16px', 
+                      opacity: 0, 
+                      transform: 'scaleX(0.5)', 
+                      transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                      zIndex: 0 
+                    }} 
+                  />
+                  <Box sx={{ position: 'relative', zIndex: 1, display: 'flex' }}>
+                    {item.icon}
+                  </Box>
+                </Box>
+              }
             />
           ))}
         </BottomNavigation>
       </Paper>
+
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </Box>
   );
 }
