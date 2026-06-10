@@ -51,6 +51,8 @@ import {
   BottomNavigationAction,
   Stack,
   alpha,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { NetworkTree } from "./components/NetworkTree";
@@ -653,36 +655,59 @@ function AdminDashboard() {
 function UserRow({ row }: { row: any }) {
   const [open, setOpen] = useState(false);
   const [openTree, setOpenTree] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <React.Fragment>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-        <TableCell>
+      <TableRow 
+        hover
+        sx={{ 
+          "& > *": { borderBottom: "unset" },
+          bgcolor: open ? alpha(theme.palette.primary.main, 0.02) : 'transparent',
+          transition: 'background-color 0.2s'
+        }}
+      >
+        <TableCell sx={{ width: 48, p: 1 }}>
           <IconButton
             aria-label="expand row"
             size="small"
             onClick={() => setOpen(!open)}
+            sx={{ color: open ? 'primary.main' : 'inherit' }}
           >
-            {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </IconButton>
         </TableCell>
-        <TableCell>{row.address}</TableCell>
-        <TableCell>Level {row.refLvl}</TableCell>
-        <TableCell>{row.joinedDate}</TableCell>
+        <TableCell sx={{ py: 1.5, fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+            {row.address}
+          </Typography>
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Lvl {row.refLvl}</TableCell>
+        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontSize: '0.75rem', color: 'text.secondary' }}>{row.joinedDate}</TableCell>
         <TableCell>
           <Chip
-            label={row.status}
+            label={isMobile ? row.status.charAt(0).toUpperCase() : row.status}
             color={row.status === "active" ? "success" : "default"}
             size="small"
+            variant={row.status === "active" ? "filled" : "outlined"}
+            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' }}
           />
         </TableCell>
-        <TableCell align="right">
+        <TableCell align="right" sx={{ py: 1 }}>
           <Button
             size="small"
-            variant="outlined"
+            variant="text"
             onClick={() => setOpenTree(true)}
+            sx={{ 
+              fontSize: '0.7rem', 
+              fontWeight: 800, 
+              minWidth: 0,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              px: { xs: 1, sm: 2 }
+            }}
           >
-            View Tree
+            {isMobile ? <Network size={16} /> : "View Tree"}
           </Button>
         </TableCell>
       </TableRow>
@@ -692,130 +717,90 @@ function UserRow({ row }: { row: any }) {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Network Tree for {row.id}</DialogTitle>
-        <DialogContent dividers>
+        <DialogTitle sx={{ fontFamily: '"Cinzel", serif', fontSize: '1.1rem', fontWeight: 800 }}>Network Tree: {row.id.substring(0, 8)}...</DialogTitle>
+        <DialogContent dividers sx={{ p: { xs: 1, sm: 2 } }}>
           <NetworkTree address={row.id} language="EN" />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenTree(false)}>Close</Button>
+          <Button onClick={() => setOpenTree(false)} sx={{ fontWeight: 600 }}>Close</Button>
         </DialogActions>
       </Dialog>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0, borderBottom: open ? `1px solid ${theme.palette.divider}` : 'none' }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 2 }}>
-              <Typography variant="h6" gutterBottom component="div">
-                Additional Details
+            <Box sx={{ margin: { xs: 1, sm: 2 } }}>
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'primary.main', mb: 2, display: 'block' }}>
+                Performance Metrics
               </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
-                  <Card
-                    sx={{
-                      bgcolor: "background.default",
-                      backgroundImage: "none",
-                    }}
-                  >
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        Total Investment
-                      </Typography>
-                      <Typography variant="h5" color="primary.main">
-                        {row.totalInvestment}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+              <Grid container spacing={2}>
+                <Grid item xs={6} sm={4}>
+                  <Box sx={{ p: 1.5, bgcolor: alpha('#fff', 0.02), borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">Investment</Typography>
+                    <Typography variant="subtitle2" fontWeight="700" color="primary.main">{row.totalInvestment}</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <Box sx={{ p: 1.5, bgcolor: alpha('#fff', 0.02), borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">Commission</Typography>
+                    <Typography variant="subtitle2" fontWeight="700" color="success.main">{row.commissionEarned.split(' ')[0]}</Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Card
-                    sx={{
-                      bgcolor: "background.default",
-                      backgroundImage: "none",
-                    }}
-                  >
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        Commission Earned
-                      </Typography>
-                      <Typography variant="h5" color="primary.main">
-                        {row.commissionEarned}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Card
-                    sx={{
-                      bgcolor: "background.default",
-                      backgroundImage: "none",
-                    }}
-                  >
-                    <CardContent>
-                      <Typography color="text.secondary" gutterBottom>
-                        Direct Referrals
-                      </Typography>
-                      <Typography variant="h5" color="text.primary">
-                        {row.directs}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <Box sx={{ p: 1.5, bgcolor: alpha('#fff', 0.02), borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">Direct Referrals</Typography>
+                    <Typography variant="subtitle2" fontWeight="700">{row.directs} Members</Typography>
+                  </Box>
                 </Grid>
               </Grid>
 
-              <Typography
-                variant="h6"
-                gutterBottom
-                component="div"
-                sx={{ mt: 4, mb: 2 }}
-              >
-                Transaction History
+              <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.secondary', mt: 3, mb: 1, display: 'block' }}>
+                Recent Activities
               </Typography>
               {row.history && row.history.length > 0 ? (
                 <TableContainer
                   component={Paper}
                   sx={{
-                    bgcolor: "background.default",
+                    bgcolor: "transparent",
                     backgroundImage: "none",
                     boxShadow: "none",
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    borderRadius: 2,
+                    mb: 2
                   }}
                 >
                   <Table size="small">
-                    <TableHead>
+                    <TableHead sx={{ bgcolor: alpha('#fff', 0.03) }}>
                       <TableRow>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Amount</TableCell>
-                        <TableCell>Status</TableCell>
+                        <TableCell sx={{ fontSize: '0.65rem', fontWeight: 800 }}>DATE</TableCell>
+                        <TableCell sx={{ fontSize: '0.65rem', fontWeight: 800 }}>TYPE</TableCell>
+                        <TableCell sx={{ fontSize: '0.65rem', fontWeight: 800 }}>AMOUNT</TableCell>
+                        {!isMobile && <TableCell sx={{ fontSize: '0.65rem', fontWeight: 800 }}>STATUS</TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {row.history.map((tx: any) => (
-                        <TableRow key={tx.id}>
-                          <TableCell>{tx.date}</TableCell>
-                          <TableCell>{tx.type}</TableCell>
-                          <TableCell>{tx.amount}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={tx.status}
-                              color={
-                                tx.status === "Completed"
-                                  ? "success"
-                                  : tx.status === "Pending"
-                                    ? "warning"
-                                    : "error"
-                              }
-                              size="small"
-                              variant="outlined"
-                            />
-                          </TableCell>
+                        <TableRow key={tx.id} hover>
+                          <TableCell sx={{ fontSize: '0.7rem', py: 1 }}>{tx.date.split(' ')[0]}</TableCell>
+                          <TableCell sx={{ fontSize: '0.7rem', py: 1, textTransform: 'capitalize' }}>{tx.type}</TableCell>
+                          <TableCell sx={{ fontSize: '0.7rem', py: 1, fontWeight: 700 }}>{tx.amount}</TableCell>
+                          {!isMobile && (
+                            <TableCell sx={{ py: 0.5 }}>
+                              <Chip
+                                label={tx.status}
+                                color={tx.status === "Completed" ? "success" : "warning"}
+                                size="small"
+                                sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }}
+                              />
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </TableContainer>
               ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No transactions found for this user.
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', py: 1 }}>
+                  No recent activities recorded.
                 </Typography>
               )}
             </Box>
@@ -930,19 +915,37 @@ function UsersManagement() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 4 }}>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+          mb: 4, 
+          fontFamily: '"Cinzel", serif', 
+          fontWeight: 800,
+          fontSize: { xs: '1.5rem', sm: '2.125rem' } 
+        }}
+      >
         Users Management
       </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
+      <TableContainer 
+        component={Paper}
+        sx={{ 
+          bgcolor: alpha('#121214', 0.4), 
+          backdropFilter: 'blur(10px)',
+          backgroundImage: 'none',
+          borderRadius: 3,
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          overflowX: 'auto'
+        }}
+      >
+        <Table size="small">
+          <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
             <TableRow>
               <TableCell width={50} />
-              <TableCell>Wallet Address</TableCell>
-              <TableCell>MLM Level</TableCell>
-              <TableCell>Joined Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Wallet</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', display: { xs: 'none', sm: 'table-cell' } }}>Level</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', display: { xs: 'none', md: 'table-cell' } }}>Joined</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Status</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1168,6 +1171,8 @@ function Transactions() {
   const [txs, setTxs] = useState<any[]>([]);
   const [filterType, setFilterType] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     const txRef = ref(database, "transactions");
@@ -1211,17 +1216,26 @@ function Transactions() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 4 }}>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+          mb: 4, 
+          fontFamily: '"Cinzel", serif', 
+          fontWeight: 800,
+          fontSize: { xs: '1.5rem', sm: '2.125rem' } 
+        }}
+      >
         Transactions
       </Typography>
 
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }} size="small">
+      <Box sx={{ display: "flex", gap: { xs: 1.5, sm: 2 }, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
           <InputLabel>Filter by Type</InputLabel>
           <Select
             value={filterType}
             label="Filter by Type"
             onChange={(e) => setFilterType(e.target.value)}
+            sx={{ borderRadius: 2 }}
           >
             <MenuItem value="all">All Types</MenuItem>
             <MenuItem value="buy">Buy</MenuItem>
@@ -1230,12 +1244,13 @@ function Transactions() {
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 200 }} size="small">
+        <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
           <InputLabel>Sort by Date</InputLabel>
           <Select
             value={sortOrder}
             label="Sort by Date"
             onChange={(e) => setSortOrder(e.target.value)}
+            sx={{ borderRadius: 2 }}
           >
             <MenuItem value="desc">Newest First</MenuItem>
             <MenuItem value="asc">Oldest First</MenuItem>
@@ -1243,40 +1258,82 @@ function Transactions() {
         </FormControl>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
+      <TableContainer 
+        component={Paper} 
+        sx={{ 
+          bgcolor: alpha('#121214', 0.4), 
+          backdropFilter: 'blur(10px)',
+          backgroundImage: 'none',
+          borderRadius: 3,
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          overflowX: 'auto'
+        }}
+      >
+        <Table size={isMobile ? "small" : "medium"}>
+          <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
             <TableRow>
-              <TableCell>Type</TableCell>
-              <TableCell>User</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>TX Hash</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Type</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>User</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Amount</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', display: { xs: 'none', md: 'table-cell' } }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', display: { xs: 'none', lg: 'table-cell' } }}>TX Hash</TableCell>
+              <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Status</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredAndSortedTxs.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.type}</TableCell>
-                <TableCell>{row.user}</TableCell>
-                <TableCell>{row.amount}</TableCell>
-                <TableCell>{row.date}</TableCell>
-                <TableCell>
+              <TableRow key={row.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                <TableCell sx={{ py: 1.5 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box sx={{ 
+                      width: 8, 
+                      height: 8, 
+                      borderRadius: '50%', 
+                      bgcolor: row.type === 'buy' ? 'info.main' : row.type === 'referral' ? 'success.main' : 'warning.main' 
+                    }} />
+                    <Typography variant="body2" fontWeight="700" sx={{ textTransform: 'capitalize', fontSize: '0.85rem' }}>
+                      {row.type}
+                    </Typography>
+                  </Stack>
+                </TableCell>
+                <TableCell sx={{ py: 1.5 }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontSize: '0.75rem' }}>
+                    {isMobile ? `${row.user.substring(0, 4)}...${row.user.substring(row.user.length - 4)}` : row.user}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ py: 1.5 }}>
+                  <Typography variant="body2" fontWeight="800" sx={{ color: '#fff' }}>
+                    {row.amount}
+                  </Typography>
+                </TableCell>
+                <TableCell sx={{ py: 1.5, display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', fontSize: '0.75rem' }}>
+                  {row.date}
+                </TableCell>
+                <TableCell sx={{ py: 1.5, display: { xs: 'none', lg: 'table-cell' } }}>
                   {row.txId ? (
-                    <a
+                    <Button
                       href={`https://solscan.io/tx/${row.txId}`}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ color: "#D4AF37" }}
+                      component="a"
+                      size="small"
+                      variant="text"
+                      sx={{ 
+                        color: "#D4AF37", 
+                        fontFamily: 'monospace', 
+                        fontSize: '0.7rem',
+                        minWidth: 0,
+                        p: 0,
+                        textTransform: 'none'
+                      }}
                     >
                       {row.txId.substring(0, 8)}...
-                    </a>
+                    </Button>
                   ) : (
-                    "N/A"
+                    <Typography variant="caption" color="text.disabled">N/A</Typography>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ py: 1.5 }}>
                   <Chip
                     label={row.status}
                     color={
@@ -1287,6 +1344,8 @@ function Transactions() {
                           : "error"
                     }
                     size="small"
+                    variant="outlined"
+                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
                   />
                 </TableCell>
               </TableRow>
