@@ -2128,7 +2128,7 @@ function Dashboard() {
                         <Chip size="small" label="10-Tier Structure" icon={<Activity size={14} />} sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37', border: `1px solid ${alpha('#D4AF37', 0.2)}` }} />
                       </Box>
                       <Box sx={{ p: { xs: 0.5, sm: 2 }, bgcolor: alpha('#000', 0.15) }}>
-                        <NetworkTree address={effectiveAddress || undefined} />
+                        <NetworkTree address={effectiveAddress || undefined} language={language} />
                       </Box>
                     </CardContent>
                   </Card>

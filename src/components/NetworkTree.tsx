@@ -6,6 +6,7 @@ import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { database } from '../firebase';
 import { ref, onValue } from 'firebase/database';
+import { t } from '../translations';
 
 export interface NetworkNode {
   id: string;
@@ -60,7 +61,7 @@ const UserAvatar: React.FC<{ name: string; size?: number }> = ({ name, size = 40
   );
 };
 
-const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isLast }) => {
+const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean; language: string }> = ({ node, isLast, language }) => {
   const [expanded, setExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const theme = useTheme();
@@ -79,28 +80,27 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
           overflow: 'hidden'
         }}
       >
-        <CardActionArea onClick={() => setExpanded(!expanded)} sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.2), color: 'primary.main', width: 48, height: 48, fontWeight: 'bold' }}>
+        <CardActionArea onClick={() => setExpanded(!expanded)} sx={{ p: 1.5 }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1.5, sm: 2 }}>
+            <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.2), color: 'primary.main', width: { xs: 40, sm: 48 }, height: { xs: 40, sm: 48 }, fontWeight: 'bold' }}>
               {node.name.replace('Line ', '')}
             </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="h6" fontWeight="800" color="primary.main">
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                <Typography variant="subtitle1" fontWeight="800" color="primary.main" noWrap>
                   {node.name}
                 </Typography>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  ${node.teamVolume.toFixed(2)} Vol
+                <Typography variant="subtitle2" fontWeight="bold">
+                  ${node.teamVolume.toFixed(2)}
                 </Typography>
               </Stack>
               
               <Box sx={{ width: '100%', mb: 1 }}>
-                 {/* Visual progress relative to max pool goal (30k) */}
                  <LinearProgress 
                    variant="determinate" 
                    value={Math.min(node.teamVolume / 30000 * 100, 100)} 
                    sx={{ 
-                     height: 8, 
+                     height: 6, 
                      borderRadius: 4, 
                      bgcolor: alpha(theme.palette.divider, 0.1),
                      '& .MuiLinearProgress-bar': {
@@ -111,29 +111,27 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
                  />
               </Box>
 
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                <Chip size="small" icon={<Star size={12}/>} label={`8% (3k): ${Math.min(node.teamVolume, 3000).toFixed(0)}`} color={node.teamVolume >= 3000 ? "success" : "default"} variant={node.teamVolume >= 3000 ? "filled" : "outlined"} sx={{height: 24, fontSize: '0.7rem', fontWeight: 600}} />
-                <Chip size="small" icon={<Star size={12}/>} label={`6% (5k): ${Math.min(node.teamVolume, 5000).toFixed(0)}`} color={node.teamVolume >= 5000 ? "info" : "default"} variant={node.teamVolume >= 5000 ? "filled" : "outlined"} sx={{height: 24, fontSize: '0.7rem', fontWeight: 600}} />
-                <Chip size="small" icon={<Star size={12}/>} label={`4% (10k): ${Math.min(node.teamVolume, 10000).toFixed(0)}`} color={node.teamVolume >= 10000 ? "secondary" : "default"} variant={node.teamVolume >= 10000 ? "filled" : "outlined"} sx={{height: 24, fontSize: '0.7rem', fontWeight: 600}} />
-                <Chip size="small" icon={<Star size={12}/>} label={`2% (30k): ${Math.min(node.teamVolume, 30000).toFixed(0)}`} color={node.teamVolume >= 30000 ? "warning" : "default"} variant={node.teamVolume >= 30000 ? "filled" : "outlined"} sx={{height: 24, fontSize: '0.7rem', fontWeight: 600}} />
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                <Chip size="small" icon={<Star size={10}/>} label={`8%: ${Math.min(node.teamVolume, 3000).toFixed(0)}`} color={node.teamVolume >= 3000 ? "success" : "default"} variant={node.teamVolume >= 3000 ? "filled" : "outlined"} sx={{height: 20, fontSize: '0.6rem', fontWeight: 600}} />
+                <Chip size="small" icon={<Star size={10}/>} label={`6%: ${Math.min(node.teamVolume, 5000).toFixed(0)}`} color={node.teamVolume >= 5000 ? "info" : "default"} variant={node.teamVolume >= 5000 ? "filled" : "outlined"} sx={{height: 20, fontSize: '0.6rem', fontWeight: 600}} />
               </Stack>
             </Box>
             <Box sx={{ color: 'text.secondary' }}>
-              {expanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+              {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             </Box>
           </Stack>
         </CardActionArea>
         <Collapse in={expanded} unmountOnExit>
-          <Box sx={{ p: 2, pt: 0, bgcolor: alpha('#000', 0.1) }}>
+          <Box sx={{ p: { xs: 1, sm: 2 }, pt: 0, bgcolor: alpha('#000', 0.1) }}>
              {hasChildren ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {node.children!.map((child, index) => (
-                  <TreeNode key={child.id} node={child} isLast={index === node.children!.length - 1} />
+                  <TreeNode key={child.id} node={child} isLast={index === node.children!.length - 1} language={language} />
                 ))}
               </Box>
              ) : (
-               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                 No members in this line yet.
+               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2, fontSize: '0.8rem' }}>
+                 {t('noMembersInLine', language)}
                </Typography>
              )}
           </Box>
@@ -143,57 +141,45 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
   }
 
   return (
-    <Box sx={{ position: 'relative', pl: node.level <= 1 ? 0 : 4, mt: 1 }}>
+    <Box sx={{ position: 'relative', pl: node.level <= 1 ? 0 : { xs: 2, sm: 4 }, mt: 1 }}>
       {/* Tree Line Connector */}
       {node.level > 2 && (
-        <Box sx={{ position: 'absolute', left: 16, top: 24, width: 16, height: '1px', bgcolor: alpha(theme.palette.divider, 0.5) }} />
+        <Box sx={{ position: 'absolute', left: { xs: 8, sm: 16 }, top: 20, width: { xs: 8, sm: 16 }, height: '1px', bgcolor: alpha(theme.palette.divider, 0.5) }} />
       )}
       {/* Vertical Line from Parent */}
       {node.level > 2 && !isLast && (
-        <Box sx={{ position: 'absolute', left: 16, top: 24, bottom: -8, width: '1px', bgcolor: alpha(theme.palette.divider, 0.5) }} />
+        <Box sx={{ position: 'absolute', left: { xs: 8, sm: 16 }, top: 20, bottom: -8, width: '1px', bgcolor: alpha(theme.palette.divider, 0.5) }} />
       )}
       
       {/* Node Content */}
       <Card 
         sx={{ 
-          bgcolor: node.level === 0 ? alpha(theme.palette.primary.main, 0.05) : alpha('#fff', 0.03),
+          bgcolor: node.level === 0 ? alpha(theme.palette.primary.main, 0.05) : alpha('#fff', 0.025),
           border: `1px solid ${node.level === 0 ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.divider, 0.05)}`,
           borderRadius: 2,
-          mb: 1
+          mb: 0.5
         }}
       >
-        <CardActionArea onClick={() => setExpanded(!expanded)} sx={{ p: 1.5 }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <UserAvatar name={node.name} />
+        <CardActionArea onClick={() => setExpanded(!expanded)} sx={{ p: { xs: 1.25, sm: 1.5 } }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1.5, sm: 2 }}>
+            <UserAvatar name={node.name} size={node.level === 0 ? 40 : 32} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-               <Typography variant="body1" fontWeight="bold" noWrap sx={{ color: node.level === 0 ? 'primary.main' : 'text.primary' }}>
-                 {node.level === 0 ? 'My Empire' : `ID: ${node.name}`}
+               <Typography variant="body2" fontWeight="bold" noWrap sx={{ color: node.level === 0 ? 'primary.main' : 'text.primary', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                 {node.level === 0 ? t('vault', language) + ' Registry' : `ID: ${node.name}`}
                </Typography>
-               <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                 <Typography variant="caption" color="text.secondary" sx={{ bgcolor: alpha('#fff', 0.1), px: 1, py: 0.25, borderRadius: 1 }}>
-                   Level {node.level}
+               <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
+                 <Typography variant="caption" color="text.secondary" sx={{ bgcolor: alpha('#fff', 0.1), px: 0.75, py: 0.15, borderRadius: 0.5, fontSize: '0.65rem' }}>
+                   Lvl {node.level}
                  </Typography>
-                 <Typography variant="caption" fontWeight="bold" sx={{ color: 'success.main' }}>
-                   Vol: ${node.teamVolume.toFixed(2)}
+                 <Typography variant="caption" fontWeight="bold" sx={{ color: 'success.main', fontSize: '0.65rem' }}>
+                   ${node.teamVolume.toFixed(2)}
                  </Typography>
-                 {hasChildren && (
-                   <Typography variant="caption" color="text.secondary">
-                     • {node.children!.length} Direct Refs
-                   </Typography>
-                 )}
                </Stack>
             </Box>
             
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-               {node.level > 1 && node.teamVolume >= 30000 && <Star size={14} color="#ff9800" />}
-               {node.level > 1 && node.teamVolume >= 10000 && node.teamVolume < 30000 && <Star size={14} color="#9c27b0" />}
-               {node.level > 1 && node.teamVolume >= 5000 && node.teamVolume < 10000 && <Star size={14} color="#0288d1" />}
-               {node.level > 1 && node.teamVolume >= 3000 && node.teamVolume < 5000 && <Star size={14} color="#2e7d32" />}
-            </Box>
-
             {hasChildren && (
               <Box sx={{ color: 'text.secondary' }}>
-                {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
               </Box>
             )}
           </Stack>
@@ -206,22 +192,23 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
           <Box sx={{ position: 'relative' }}>
              {/* Vertical line connecting children to this node */}
              {node.level >= 2 && (
-               <Box sx={{ position: 'absolute', left: 24, top: 0, bottom: 16, width: '1px', bgcolor: alpha(theme.palette.divider, 0.2) }} />
+               <Box sx={{ position: 'absolute', left: { xs: 16, sm: 24 }, top: 0, bottom: 16, width: '1px', bgcolor: alpha(theme.palette.divider, 0.2) }} />
              )}
             {node.level <= 100 ? (
-              <Box sx={{ mt: 1 }}>
+              <Box sx={{ mt: 0.5 }}>
                 {node.children!.map((child, index) => (
                   <TreeNode 
                     key={child.id} 
                     node={child} 
                     isLast={index === node.children!.length - 1} 
+                    language={language}
                   />
                 ))}
               </Box>
             ) : (
               <Box sx={{ py: 1, pl: 6 }}>
-                 <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                   Maximum display depth reached.
+                 <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.75rem' }}>
+                   {t('maxDepthReached', language)}
                  </Typography>
               </Box>
             )}
@@ -232,7 +219,7 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
   );
 };
 
-export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
+export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ address, language }) => {
   const { publicKey } = useWallet();
   const theme = useTheme();
   const [treeData, setTreeData] = useState<NetworkNode | null>(null);
@@ -412,11 +399,11 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
   }, [activeId]);
 
   if (!activeId) {
-     return <Typography color="text.secondary" p={2}>Connect wallet or enter address to view network tree.</Typography>;
+     return <Typography color="text.secondary" p={2}>{t('connectWalletViewNet', language)}</Typography>;
   }
 
   if (!treeData) {
-     return <Typography color="text.secondary" p={2}>Loading network...</Typography>;
+     return <Typography color="text.secondary" p={2}>{t('loadingNetwork', language)}</Typography>;
   }
 
   const isQualifier = (node: NetworkNode, minVol: number) => {
@@ -452,24 +439,24 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
               <BarChart3 size={20} color="#D4AF37" />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight="800" sx={{ color: 'text.primary', fontFamily: '"Cinzel", serif', letterSpacing: '0.05rem' }}>
-                Network Analytics
+              <Typography variant="h6" fontWeight="800" sx={{ color: 'text.primary', fontFamily: '"Cinzel", serif', letterSpacing: '0.05rem', fontSize: { xs: '1rem', sm: '1.250rem' } }}>
+                {t('networkAnalytics', language)}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total volumes and line performance analysis
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                {t('netAnalyticDesc', language)}
               </Typography>
             </Box>
           </Stack>
 
-          <Grid container spacing={3} alignItems="center">
+          <Grid container spacing={{ xs: 2, md: 3 }} alignItems="center">
             {/* Summary Metrics */}
             <Grid item xs={12} md={5}>
               <Stack spacing={2}>
                 <Box sx={{ p: 2, bgcolor: alpha('#fff', 0.02), border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    Total Network Volume
+                    {t('totalNetVolume', language)}
                   </Typography>
-                  <Typography variant="h4" fontWeight="800" color="primary.main" sx={{ mt: 0.5, fontFamily: '"Montserrat", sans-serif' }}>
+                  <Typography variant="h4" fontWeight="800" color="primary.main" sx={{ mt: 0.5, fontFamily: '"Montserrat", sans-serif', fontSize: { xs: '1.5rem', sm: '2rem' } }}>
                     ${totalNetworkVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
                 </Box>
@@ -477,23 +464,23 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
                 <Grid container spacing={1.5}>
                   <Grid item xs={6}>
                     <Box sx={{ p: 1.5, bgcolor: alpha('#10b981', 0.05), border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 2 }}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Active Lines
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+                        {t('activeLines', language)}
                       </Typography>
-                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#10b981' }}>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#10b981', fontSize: '1rem' }}>
                         {analyticsData.filter(d => d.volume > 0).length} / 4
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
                     <Box sx={{ p: 1.5, bgcolor: alpha('#3b82f6', 0.05), border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: 2 }}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Highest Line
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
+                        {t('highestLine', language)}
                       </Typography>
-                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#3b82f6' }}>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ color: '#3b82f6', fontSize: '1rem' }}>
                         {analyticsData.length > 0 ? (
                           [...analyticsData].sort((a,b) => b.volume - a.volume)[0].volume > 0 ? (
-                            `Line ${[...analyticsData].sort((a,b) => b.volume - a.volume)[0].name.split(' ')[1]}`
+                            `${[...analyticsData].sort((a,b) => b.volume - a.volume)[0].name.split(' ')[1]}`
                           ) : 'None'
                         ) : 'None'}
                       </Typography>
@@ -505,7 +492,7 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
 
             {/* Small Bar Chart */}
             <Grid item xs={12} md={7}>
-              <Box sx={{ height: 160, width: '100%' }}>
+              <Box sx={{ height: { xs: 120, sm: 160 }, width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={analyticsData}
@@ -552,42 +539,45 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
         </CardContent>
       </Card>
 
-      <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
         <TextField
           size="small"
-          label="Max Level"
+          label={t('maxLevel', language)}
           type="number"
           value={filterLevel}
           onChange={(e) => setFilterLevel(e.target.value)}
           placeholder="e.g. 5"
           InputProps={{
              startAdornment: <InputAdornment position="start"><Filter size={14} /></InputAdornment>,
+             sx: { fontSize: '0.8rem' }
           }}
-          sx={{ flex: 1, minWidth: 120 }}
+          sx={{ flex: { xs: '1 1 100%', sm: 1 }, minWidth: 100 }}
         />
         <TextField
           size="small"
-          label="Min Members"
+          label={t('minMembers', language)}
           type="number"
           value={filterMembers}
           onChange={(e) => setFilterMembers(e.target.value)}
           placeholder="e.g. 10"
           InputProps={{
              startAdornment: <InputAdornment position="start"><Users size={14} /></InputAdornment>,
+             sx: { fontSize: '0.8rem' }
           }}
-          sx={{ flex: 1, minWidth: 120 }}
+          sx={{ flex: { xs: '1 1 45%', sm: 1 }, minWidth: 100 }}
         />
         <TextField
           size="small"
-          label="Min Vol ($)"
+          label={t('minVol', language)}
           type="number"
           value={filterVolume}
           onChange={(e) => setFilterVolume(e.target.value)}
           placeholder="e.g. 1000"
           InputProps={{
              startAdornment: <InputAdornment position="start">$</InputAdornment>,
+             sx: { fontSize: '0.8rem' }
           }}
-          sx={{ flex: 1, minWidth: 120 }}
+          sx={{ flex: { xs: '1 1 45%', sm: 1 }, minWidth: 100 }}
         />
       </Box>
 
@@ -604,7 +594,8 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
               color: 'text.secondary',
               textTransform: 'none',
               fontWeight: 600,
-              py: 1,
+              py: 0.75,
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
               '&.Mui-selected': {
                 bgcolor: alpha(theme.palette.primary.main, 0.1),
                 color: 'primary.main',
@@ -616,53 +607,53 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
           }}
         >
           <ToggleButton value={0}>
-            <Users size={16} /> Full
+             {t('full', language)}
           </ToggleButton>
           <ToggleButton value={1}>
-            <Star size={16} /> 8% ({qualifiers8.length})
+             8% ({qualifiers8.length})
           </ToggleButton>
           <ToggleButton value={2}>
-            <Star size={16} /> 6% ({qualifiers6.length})
+             6% ({qualifiers6.length})
           </ToggleButton>
           <ToggleButton value={3}>
-            <Star size={16} /> 4% ({qualifiers4.length})
+             4% ({qualifiers4.length})
           </ToggleButton>
           <ToggleButton value={4}>
-            <Star size={16} /> 2% ({qualifiers2.length})
+             2% ({qualifiers2.length})
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
       
       {hasFilters ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>Filter Results ({filteredNodes.length})</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary', fontSize: '0.8rem' }}>Filter Results ({filteredNodes.length})</Typography>
           {filteredNodes.length > 0 ? (
-            filteredNodes.map(node => <TreeNode key={node.id} node={node} isLast={true} />)
+            filteredNodes.map(node => <TreeNode key={node.id} node={node} isLast={true} language={language} />)
           ) : (
-            <Typography color="text.secondary">No nodes match the selected filters.</Typography>
+            <Typography color="text.secondary" variant="body2">{t('noFilterMatch', language)}</Typography>
           )}
         </Box>
       ) : (
         <Box>
           {tabIndex === 0 && (
             <Box>
-              <TreeNode node={treeData} isLast={true} />
+              <TreeNode node={treeData} isLast={true} language={language} />
             </Box>
           )}
 
           {tabIndex > 0 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-               {tabIndex === 1 && qualifiers8.map(q => <TreeNode key={q.id} node={q} isLast={true} />)}
-               {tabIndex === 1 && qualifiers8.length === 0 && <Typography color="text.secondary">No qualifiers in the 8% pool yet.</Typography>}
+               {tabIndex === 1 && qualifiers8.map(q => <TreeNode key={q.id} node={q} isLast={true} language={language} />)}
+               {tabIndex === 1 && qualifiers8.length === 0 && <Typography color="text.secondary" variant="body2">{t('noQualifiers', language).replace('{pool}', '8')}</Typography>}
                
-               {tabIndex === 2 && qualifiers6.map(q => <TreeNode key={q.id} node={q} isLast={true} />)}
-               {tabIndex === 2 && qualifiers6.length === 0 && <Typography color="text.secondary">No qualifiers in the 6% pool yet.</Typography>}
+               {tabIndex === 2 && qualifiers6.map(q => <TreeNode key={q.id} node={q} isLast={true} language={language} />)}
+               {tabIndex === 2 && qualifiers6.length === 0 && <Typography color="text.secondary" variant="body2">{t('noQualifiers', language).replace('{pool}', '6')}</Typography>}
                
-               {tabIndex === 3 && qualifiers4.map(q => <TreeNode key={q.id} node={q} isLast={true} />)}
-               {tabIndex === 3 && qualifiers4.length === 0 && <Typography color="text.secondary">No qualifiers in the 4% pool yet.</Typography>}
+               {tabIndex === 3 && qualifiers4.map(q => <TreeNode key={q.id} node={q} isLast={true} language={language} />)}
+               {tabIndex === 3 && qualifiers4.length === 0 && <Typography color="text.secondary" variant="body2">{t('noQualifiers', language).replace('{pool}', '4')}</Typography>}
 
-               {tabIndex === 4 && qualifiers2.map(q => <TreeNode key={q.id} node={q} isLast={true} />)}
-               {tabIndex === 4 && qualifiers2.length === 0 && <Typography color="text.secondary">No qualifiers in the 2% pool yet.</Typography>}
+               {tabIndex === 4 && qualifiers2.map(q => <TreeNode key={q.id} node={q} isLast={true} language={language} />)}
+               {tabIndex === 4 && qualifiers2.length === 0 && <Typography color="text.secondary" variant="body2">{t('noQualifiers', language).replace('{pool}', '2')}</Typography>}
             </Box>
           )}
         </Box>

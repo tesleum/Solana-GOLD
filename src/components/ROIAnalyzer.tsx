@@ -140,10 +140,10 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
         {/* Header */}
         <Box>
           <Typography variant="h5" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', color: 'primary.main', mb: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-            {t('roiCalculator', language) || 'ROI ANALYZER'}
+            {t('roiCalculator', language)}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-            Estimate your future wealth based on personal yield and network expansion goals.
+            {t('estimateWealth', language)}
           </Typography>
         </Box>
 
@@ -151,11 +151,11 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           {/* Controls */}
           <Grid item xs={12} md={5}>
             <Card sx={{ bgcolor: alpha('#121214', 0.6), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
                 <Stack spacing={4}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
-                      <Target size={14} /> Initial Investment ($)
+                      <Target size={14} /> {t('initialInvestment', language)}
                     </Typography>
                     <TextField
                       fullWidth
@@ -171,13 +171,13 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       max={10000} 
                       step={10}
                       onChange={(_, v) => setCalcAmount(v as number)}
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1.5, '& .MuiSlider-thumb': { width: 16, height: 16 } }}
                     />
                   </Box>
 
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
-                      <Users size={14} /> Targeted Direct Referrals
+                      <Users size={14} /> {t('targetedReferrals', language)}
                     </Typography>
                     <TextField
                       fullWidth
@@ -192,13 +192,13 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       min={0} 
                       max={50} 
                       onChange={(_, v) => setCalcReferrals(v as number)}
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1.5, '& .MuiSlider-thumb': { width: 16, height: 16 } }}
                     />
                   </Box>
 
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
-                      <TrendingUp size={14} /> Time Horizon (Years)
+                      <TrendingUp size={14} /> {t('timeHorizonYears', language)}
                     </Typography>
                     <TextField
                       fullWidth
@@ -214,7 +214,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                       max={10} 
                       step={0.5}
                       onChange={(_, v) => setCalcYears(v as number)}
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1.5, '& .MuiSlider-thumb': { width: 16, height: 16 } }}
                     />
                   </Box>
                 </Stack>
@@ -229,14 +229,14 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                 <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>ESTIMATED TOTAL EARNINGS</Typography>
-                      <Typography variant="h3" fontWeight="900" color="primary.main" sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>{t('estimatedEarnings', language)}</Typography>
+                      <Typography variant="h3" fontWeight="900" color="primary.main" sx={{ fontSize: { xs: '1.75rem', sm: '3rem' } }}>
                         ${calculations.totalEstimate.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>TOTAL FUTURE VALUE</Typography>
-                      <Typography variant="h4" fontWeight="800" sx={{ mt: 1, fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
+                      <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '0.65rem' }}>{t('totalFutureValue', language)}</Typography>
+                      <Typography variant="h4" fontWeight="800" sx={{ mt: 0.5, fontSize: { xs: '1.25rem', sm: '2.125rem' } }}>
                         ${(calcAmount + calculations.totalEstimate).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </Typography>
                     </Grid>
@@ -246,31 +246,31 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
 
                   <Stack direction="row" justifyContent="space-between">
                     <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Personal Yield ({apyYield}%)</Typography>
-                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>+${calculations.personalYield.toFixed(2)}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>{t('personalYieldRate', language).replace('{rate}', apyYield)}</Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>+${calculations.personalYield.toFixed(2)}</Typography>
                     </Box>
                     <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Network Royalty Est.</Typography>
-                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>+${calculations.networkCommissions.toFixed(2)}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>{t('networkRoyaltyEst', language)}</Typography>
+                      <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>+${calculations.networkCommissions.toFixed(2)}</Typography>
                     </Box>
                   </Stack>
                 </CardContent>
               </Card>
 
               {/* Chart */}
-              <Box sx={{ height: { xs: 180, sm: 220 }, width: '100%', mt: 2 }}>
+              <Box sx={{ height: { xs: 200, sm: 220 }, width: '100%', mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={alpha('#fff', 0.05)} />
-                    <XAxis dataKey="time" stroke={theme.palette.text.secondary} fontSize={10} />
-                    <YAxis stroke={theme.palette.text.secondary} fontSize={10} tickFormatter={v => `$${v}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={alpha('#fff', 0.05)} vertical={false} />
+                    <XAxis dataKey="time" stroke={theme.palette.text.secondary} fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis stroke={theme.palette.text.secondary} fontSize={10} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
                     <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#121214', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '0.75rem' }}
-                      itemStyle={{ fontWeight: 'bold' }}
+                      contentStyle={{ backgroundColor: '#121214', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '10px' }}
+                      itemStyle={{ fontWeight: 'bold', padding: '2px 0' }}
                     />
-                    <Line type="monotone" dataKey="Personal" stroke="#4caf50" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="Network" stroke="#2196f3" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="Total" stroke="#D4AF37" strokeWidth={3} dot={{ r: 3, fill: '#D4AF37' }} />
+                    <Line type="monotone" dataKey="Personal" stroke="#4caf50" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="Network" stroke="#2196f3" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="Total" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
@@ -280,37 +280,37 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
 
         {/* User Position Graph */}
         <Card sx={{ bgcolor: alpha('#121214', 0.4), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
               <BarChart3 size={18} color={theme.palette.primary.main} />
               <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-                Your Standing
+                {t('yourStanding', language)}
               </Typography>
             </Stack>
             
-            <Box sx={{ height: 120, width: '100%' }}>
+            <Box sx={{ height: 140, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={userPositionData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={10} width={60} />
-                  <RechartsTooltip cursor={{fill: 'transparent'}} />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={10} width={65} axisLine={false} tickLine={false} />
+                  <RechartsTooltip cursor={{fill: alpha('#fff', 0.05)}} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={12}>
                     {userPositionData.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={entry.isUser ? theme.palette.primary.main : alpha(entry.color, 0.3)}
+                        fill={entry.isUser ? theme.palette.primary.main : alpha(entry.color, 0.2)}
                         stroke={entry.isUser ? '#fff' : 'none'}
-                        strokeWidth={entry.isUser ? 2 : 0}
+                        strokeWidth={entry.isUser ? 1 : 0}
                       />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center', fontSize: '0.7rem' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center', fontSize: '0.7rem', px: 2 }}>
               {totalMembers < 5 ? 
-                "Build your first line to move from Beginner to Active!" : 
-                `You've recruited ${totalMembers} members. Keep going to reach the next milestone!`}
+                t('beginnerTip', language) : 
+                t('activeTip', language).replace('{count}', totalMembers.toString())}
             </Typography>
           </CardContent>
         </Card>
@@ -320,36 +320,36 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} mb={2}>
             <Lightbulb size={20} color="#FFD700" />
-            <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif' }}>
-              Empire Builder Tips
+            <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+              {t('empireBuilderTips', language)}
             </Typography>
           </Stack>
           <Grid container spacing={2}>
             {[
               { 
-                title: 'Go Deep, Not Just Wide', 
-                desc: 'Focus on help your direct referrals build their own lines. Multi-tier commissions accumulate massively.',
+                title: t('tipGoDeepTitle', language), 
+                desc: t('tipGoDeepDesc', language),
                 icon: <ArrowRight size={16} /> 
               },
               { 
-                title: 'Quality over Quantity', 
-                desc: 'One active Grand Duke in your downline can generate more volume than 10 inactive beginners.',
+                title: t('tipQualityTitle', language), 
+                desc: t('tipQualityDesc', language),
                 icon: <ArrowRight size={16} /> 
               },
               { 
-                title: 'Reinvest Yield', 
-                desc: 'Compound interest is the 8th wonder of the world. Reinvesting SOL into GOLD yields exponential returns.',
+                title: t('tipReinvestTitle', language), 
+                desc: t('tipReinvestDesc', language),
                 icon: <ArrowRight size={16} /> 
               }
             ].map((tip, i) => (
               <Grid item xs={12} sm={4} key={i}>
                 <Card sx={{ height: '100%', bgcolor: alpha('#fff', 0.02), border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>
-                  <CardContent sx={{ p: 2 }}>
+                  <CardContent sx={{ p: 2.5 }}>
                     <Stack direction="row" spacing={1} mb={1} alignItems="center">
-                      <Box sx={{ color: 'primary.main' }}>{tip.icon}</Box>
-                      <Typography variant="subtitle2" fontWeight="800">{tip.title}</Typography>
+                      <Box sx={{ color: 'primary.main', display: 'flex' }}>{tip.icon}</Box>
+                      <Typography variant="subtitle2" fontWeight="800" sx={{ fontSize: '0.85rem' }}>{tip.title}</Typography>
                     </Stack>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem', lineHeight: 1.5 }}>
                       {tip.desc}
                     </Typography>
                   </CardContent>
