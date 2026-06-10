@@ -14,6 +14,10 @@ export interface NetworkNode {
   teamVolume: number;
   totalMembers?: number;
   children?: NetworkNode[];
+  qualifies8?: boolean;
+  qualifies6?: boolean;
+  qualifies4?: boolean;
+  qualifies2?: boolean;
 }
 
 const UserAvatar: React.FC<{ name: string; size?: number }> = ({ name, size = 40 }) => {
@@ -203,7 +207,7 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean }> = ({ node, isL
              {node.level >= 2 && (
                <Box sx={{ position: 'absolute', left: 24, top: 0, bottom: 16, width: '1px', bgcolor: alpha(theme.palette.divider, 0.2) }} />
              )}
-            {node.level <= 11 ? (
+            {node.level <= 100 ? (
               <Box sx={{ mt: 1 }}>
                 {node.children!.map((child, index) => (
                   <TreeNode 
@@ -285,14 +289,58 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
 
       const flatNodes: NetworkNode[] = [];
 
+      // Pre-build childrenMap for fast synchronous volume checks
+      const childrenMap: Record<string, string[]> = {};
+      Object.keys(data).forEach(id => {
+        const refId = data[id].referrer;
+        if (refId) {
+          if (!childrenMap[refId]) childrenMap[refId] = [];
+          childrenMap[refId].push(id);
+        }
+      });
+
+      const checkQualifies = (userId: string, minVol: number): boolean => {
+         const lines = ['A', 'B', 'C', 'D'];
+         for (const line of lines) {
+            const lineUsers = Object.keys(data).filter(id => data[id].referrer === userId && (data[id].line === line || (!data[id].line && line === 'A')));
+            let vol = 0;
+            const visitedSet = new Set<string>();
+            lineUsers.forEach(uId => {
+               const queue = [uId];
+               while (queue.length > 0) {
+                  const curr = queue.shift()!;
+                  if (visitedSet.has(curr)) continue;
+                  visitedSet.add(curr);
+                  vol += Number(data[curr]?.totalInvested || 0);
+                  const children = childrenMap[curr];
+                  if (children) queue.push(...children);
+               }
+            });
+            if (vol < minVol) return false;
+         }
+         return true;
+      };
+
       // Build tree
+      const visited = new Set<string>();
       const buildNode = (userId: string, level: number): NetworkNode => {
+         if (visited.has(userId)) {
+           return {
+             id: userId,
+             name: userId,
+             level: level,
+             teamVolume: 0,
+             totalMembers: 0,
+             children: []
+           };
+         }
+         visited.add(userId);
          let children: NetworkNode[] = [];
          
          if (level !== 0) {
            Object.keys(data).forEach(id => {
-              if (data[id].referrer === userId && level < 10) { // Limit to 10 levels
-                  children.push(buildNode(id, level + 1));
+              if (data[id].referrer === userId && level < 100) { // Limit to 100 levels to support all generations
+                   children.push(buildNode(id, level + 1));
               }
            });
          } else {
@@ -327,7 +375,11 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
             level: level,
             teamVolume: teamVolume,
             totalMembers: totalMembers,
-            children: children.length > 0 ? children : undefined
+            children: children.length > 0 ? children : undefined,
+            qualifies8: checkQualifies(userId, 3000),
+            qualifies6: checkQualifies(userId, 5000),
+            qualifies4: checkQualifies(userId, 10000),
+            qualifies2: checkQualifies(userId, 30000)
          };
          if (level !== 1) {
             flatNodes.push(node);
@@ -357,10 +409,10 @@ export const NetworkTree: React.FC<{ address?: string }> = ({ address }) => {
      return top4.every(c => c.teamVolume >= minVol);
   };
 
-  const qualifiers8 = allNodes.filter(n => isQualifier(n, 3000));
-  const qualifiers6 = allNodes.filter(n => isQualifier(n, 5000));
-  const qualifiers4 = allNodes.filter(n => isQualifier(n, 10000));
-  const qualifiers2 = allNodes.filter(n => isQualifier(n, 30000));
+  const qualifiers8 = allNodes.filter(n => n.qualifies8);
+  const qualifiers6 = allNodes.filter(n => n.qualifies6);
+  const qualifiers4 = allNodes.filter(n => n.qualifies4);
+  const qualifiers2 = allNodes.filter(n => n.qualifies2);
 
   return (
     <Box sx={{ width: '100%' }}>

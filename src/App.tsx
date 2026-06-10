@@ -632,8 +632,11 @@ function Dashboard() {
             let vol = 0;
             lineUsers.forEach(uId => {
                const queue = [uId];
+               const visitedSet = new Set<string>();
                while (queue.length > 0) {
                   const curr = queue.shift()!;
+                  if (visitedSet.has(curr)) continue;
+                  visitedSet.add(curr);
                   vol += (simulatedUsersData[curr]?.totalInvested || 0);
                   const children = childrenMap[curr];
                   if (children) queue.push(...children);
