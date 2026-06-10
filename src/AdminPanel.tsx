@@ -812,6 +812,7 @@ function UserRow({ row }: { row: any }) {
 }
 
 function UsersManagement() {
+  const theme = useTheme();
   const [users, setUsers] = useState<any[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

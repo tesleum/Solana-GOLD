@@ -1304,6 +1304,23 @@ function Dashboard() {
                 <MenuItem onClick={() => handleLangClose('JA')} sx={{ color: language === 'JA' ? 'primary.main' : 'text.primary', borderRadius: '12px', mx: 1 }}>日本語</MenuItem>
                 <MenuItem onClick={() => handleLangClose('KO')} sx={{ color: language === 'KO' ? 'primary.main' : 'text.primary', borderRadius: '12px', mx: 1 }}>한국어</MenuItem>
                 <MenuItem onClick={() => handleLangClose('ID')} sx={{ color: language === 'ID' ? 'primary.main' : 'text.primary', borderRadius: '12px', mx: 1 }}>Bahasa Indonesia</MenuItem>
+                <Divider sx={{ my: 1, opacity: 0.1 }} />
+                <MenuItem 
+                  onClick={() => {
+                    handleLangClose();
+                    window.location.href = '/admin';
+                  }} 
+                  sx={{ 
+                    color: 'primary.main', 
+                    borderRadius: '12px', 
+                    mx: 1,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    opacity: 0.8
+                  }}
+                >
+                  ADMIN ACCESS
+                </MenuItem>
               </Menu>
             </Box>
 
