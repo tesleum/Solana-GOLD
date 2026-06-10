@@ -99,8 +99,15 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    
+    // Serve static files
+    app.use(express.static(distPath, {
+      index: false // Disable default index.html serving to handle it manually
+    }));
+    
+    // SPA fallback
     app.get("*", (req, res) => {
+      console.log('Serving index.html for request:', req.path);
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
