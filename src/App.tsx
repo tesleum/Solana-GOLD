@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton, useWalletModal } from '@solana/wallet-adapter-react-ui';
@@ -85,6 +86,7 @@ const geckoApiGet = (url: string) => {
 };
 
 function Dashboard() {
+  const navigate = useNavigate();
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected, disconnect, wallet, wallets, select } = useWallet();
   const { setVisible } = useWalletModal();
@@ -1308,7 +1310,7 @@ function Dashboard() {
                 <MenuItem 
                   onClick={() => {
                     handleLangClose();
-                    window.location.href = '/admin';
+                    navigate('/admin');
                   }} 
                   sx={{ 
                     color: 'primary.main', 
