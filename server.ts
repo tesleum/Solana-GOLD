@@ -101,13 +101,10 @@ async function startServer() {
     const distPath = path.join(process.cwd(), "dist");
     
     // Serve static files
-    app.use(express.static(distPath, {
-      index: false // Disable default index.html serving to handle it manually
-    }));
+    app.use(express.static(distPath));
     
     // SPA fallback
     app.get("*", (req, res) => {
-      console.log('Serving index.html for request:', req.path);
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
