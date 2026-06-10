@@ -73,11 +73,13 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean; language: string
       <Card 
         sx={{ 
           mb: 2, 
-          bgcolor: alpha('#000', 0.2), 
+          bgcolor: alpha('#121214', 0.6), 
+          backdropFilter: 'blur(12px)',
           backgroundImage: 'none',
           border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          borderRadius: 3,
-          overflow: 'hidden'
+          borderRadius: 2,
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
         }}
       >
         <CardActionArea onClick={() => setExpanded(!expanded)} sx={{ p: 1.5 }}>
@@ -154,9 +156,10 @@ const TreeNode: React.FC<{ node: NetworkNode; isLast?: boolean; language: string
       {/* Node Content */}
       <Card 
         sx={{ 
-          bgcolor: node.level === 0 ? alpha(theme.palette.primary.main, 0.05) : alpha('#fff', 0.025),
-          border: `1px solid ${node.level === 0 ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.divider, 0.05)}`,
-          borderRadius: 2,
+          bgcolor: node.level === 0 ? alpha(theme.palette.primary.main, 0.05) : alpha('#121214', 0.4),
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${node.level === 0 ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.divider, 0.08)}`,
+          borderRadius: 1.5,
           mb: 0.5
         }}
       >
@@ -426,9 +429,10 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
         sx={{
           mb: 3,
           bgcolor: alpha('#121214', 0.6),
+          backdropFilter: 'blur(12px)',
           backgroundImage: 'none',
           border: '1px solid rgba(212, 175, 55, 0.25)',
-          borderRadius: 4,
+          borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
         }}

@@ -150,7 +150,13 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
         <Grid container spacing={3}>
           {/* Controls */}
           <Grid item xs={12} md={5}>
-            <Card sx={{ bgcolor: alpha('#121214', 0.6), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <Card sx={{ 
+              bgcolor: alpha('#121214', 0.6), 
+              borderRadius: 2, 
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+            }}>
               <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
                 <Stack spacing={4}>
                   <Box>
@@ -225,7 +231,12 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           {/* Results & Chart */}
           <Grid item xs={12} md={7}>
             <Stack spacing={3}>
-              <Card sx={{ bgcolor: alpha('#D4AF37', 0.05), borderRadius: 4, border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+              <Card sx={{ 
+                bgcolor: alpha('#D4AF37', 0.05), 
+                borderRadius: 2, 
+                border: '1px solid rgba(212, 175, 55, 0.2)',
+                backdropFilter: 'blur(12px)'
+              }}>
                 <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
@@ -242,9 +253,9 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
                     </Grid>
                   </Grid>
 
-                  <Divider sx={{ my: { xs: 2, sm: 3 }, borderColor: 'rgba(212, 175, 55, 0.1)' }} />
+                  <Divider sx={{ my: { xs: 2.5, sm: 3 }, borderColor: 'rgba(212, 175, 55, 0.1)' }} />
 
-                  <Stack direction="row" justifyContent="space-between">
+                  <Stack direction="row" justifyContent="space-between" spacing={1}>
                     <Box>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>{t('personalYieldRate', language).replace('{rate}', apyYield)}</Typography>
                       <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>+${calculations.personalYield.toFixed(2)}</Typography>
@@ -258,7 +269,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
               </Card>
 
               {/* Chart */}
-              <Box sx={{ height: { xs: 200, sm: 220 }, width: '100%', mt: 2 }}>
+              <Box sx={{ height: { xs: 220, sm: 220 }, width: '100%', mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={alpha('#fff', 0.05)} vertical={false} />
@@ -279,7 +290,12 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
         </Grid>
 
         {/* User Position Graph */}
-        <Card sx={{ bgcolor: alpha('#121214', 0.4), borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
+        <Card sx={{ 
+          bgcolor: alpha('#121214', 0.4), 
+          borderRadius: 2, 
+          border: '1px solid rgba(255,255,255,0.05)',
+          backdropFilter: 'blur(8px)'
+        }}>
           <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
               <BarChart3 size={18} color={theme.palette.primary.main} />
@@ -343,7 +359,13 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
               }
             ].map((tip, i) => (
               <Grid item xs={12} sm={4} key={i}>
-                <Card sx={{ height: '100%', bgcolor: alpha('#fff', 0.02), border: '1px solid rgba(255,255,255,0.05)', borderRadius: 3 }}>
+                <Card sx={{ 
+                  height: '100%', 
+                  bgcolor: alpha('#fff', 0.02), 
+                  border: '1px solid rgba(255,255,255,0.05)', 
+                  borderRadius: 2,
+                  backdropFilter: 'blur(4px)'
+                }}>
                   <CardContent sx={{ p: 2.5 }}>
                     <Stack direction="row" spacing={1} mb={1} alignItems="center">
                       <Box sx={{ color: 'primary.main', display: 'flex' }}>{tip.icon}</Box>

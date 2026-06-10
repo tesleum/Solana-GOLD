@@ -694,7 +694,7 @@ function UserRow({ row }: { row: any }) {
       >
         <DialogTitle>Network Tree for {row.id}</DialogTitle>
         <DialogContent dividers>
-          <NetworkTree address={row.id} />
+          <NetworkTree address={row.id} language="EN" />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenTree(false)}>Close</Button>
