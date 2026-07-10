@@ -5,7 +5,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton, useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { WalletReadyState } from '@solana/wallet-adapter-base';
 import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
-import './lib/reown'; // Initialize Reown AppKit
+import { projectId } from './lib/reown'; // Initialize Reown AppKit
 import { Buffer } from 'buffer';
 import { LAMPORTS_PER_SOL, Transaction, SystemProgram, PublicKey, VersionedTransaction, TransactionInstruction, TransactionMessage, AddressLookupTableAccount, Connection } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -991,6 +991,16 @@ function Dashboard() {
 
     // Use native WalletConnect (Reown AppKit) modal
     try {
+      // Check if we are on production using a sample projectId
+      const isSampleId = projectId === '1de4bfbf68bf6d5b0606dcf1f618a8b1';
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      if (isSampleId && !isLocal) {
+        alert(
+          '⚠️ Configuration Required:\n\n' +
+          'You are using the default/sample WalletConnect Project ID on a custom domain.\n\n' +
+          'WalletConnect/AppKit connections will fail unless you register a free Project ID at https://cloud.reown.com and set the VITE_WALLETCONNECT_PROJECT_ID environment variable in Railway.'
+        );
+      }
       await open();
     } catch (e) {
       console.error('AppKit open failed:', e);

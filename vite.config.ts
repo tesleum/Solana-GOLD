@@ -45,8 +45,14 @@ export default defineConfig(({mode}) => {
       })
     ],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'import.meta.env.VITE_WALLETCONNECT_PROJECT_ID': JSON.stringify(env.WALLETCONNECT_PROJECT_ID),
+      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || ''),
+      'import.meta.env.VITE_WALLETCONNECT_PROJECT_ID': JSON.stringify(
+        process.env.VITE_WALLETCONNECT_PROJECT_ID ||
+        process.env.WALLETCONNECT_PROJECT_ID ||
+        env.VITE_WALLETCONNECT_PROJECT_ID ||
+        env.WALLETCONNECT_PROJECT_ID ||
+        ''
+      ),
     },
     resolve: {
       alias: {
