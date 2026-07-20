@@ -86,6 +86,7 @@ const geckoApiGet = (url: string) => {
 };
 
 function Dashboard() {
+  const showAIMenu = false;
   const navigate = useNavigate();
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected, disconnect, wallet, wallets, select } = useWallet();
@@ -1737,7 +1738,7 @@ function Dashboard() {
                 <Stack direction="row" spacing={4} sx={{ overflowX: 'auto' }}>
                   <Box sx={{ minWidth: 100 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
-                      <img src="https://usgold.us/wp-content/uploads/2025/08/usgold.svg" alt="$usGOLD" style={{ width: 16, height: 16 }} />
+                      <img src="/public/icon.svg" alt="$usGOLD" style={{ width: 16, height: 16 }} />
                       <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{t('usGoldPrice', language)}</Typography>
                     </Box>
                     <Typography variant="body1" fontWeight="bold">
@@ -2483,7 +2484,7 @@ function Dashboard() {
           </Stack>
         )}
 
-        {activeTab === 'ai' && (
+        {showAIMenu && activeTab === 'ai' && (
           <Box sx={{ animation: 'fadeIn 0.4s ease-out' }}>
             <AIPage 
               effectiveAddress={effectiveAddress} 
@@ -2564,16 +2565,18 @@ function Dashboard() {
               </Box>
             } 
           />
-          <BottomNavigationAction 
-            label="AI" 
-            value="ai" 
-            icon={
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
-                <Bot size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
-              </Box>
-            } 
-          />
+          {showAIMenu && (
+            <BottomNavigationAction 
+              label="AI" 
+              value="ai" 
+              icon={
+                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
+                  <Bot size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
+                </Box>
+              } 
+            />
+          )}
         </BottomNavigation>
       </Box>
 

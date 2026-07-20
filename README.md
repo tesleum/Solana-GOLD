@@ -1,6 +1,6 @@
 <div align="center">
-<img alt="usGOLD" src="https://usgold.us/wp-content/uploads/2025/08/usgold.svg" />
+<img alt="usGOLD" src="/public/icon.svg" />
 </div>
 
 
-https://xminer.space
+https://solanagold.pro
