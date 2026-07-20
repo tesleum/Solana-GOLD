@@ -99,6 +99,7 @@ function Dashboard() {
   const [totalMembers, setTotalMembers] = useState(0);
   const [apyYield, setApyYield] = useState('8');
   const [activeTab, setActiveTab] = useState('vault');
+  const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity'>('structure');
   const [isInvesting, setIsInvesting] = useState(false);
   const [investAmount, setInvestAmount] = useState<number>(10);
   const [qrOpen, setQrOpen] = useState(false);
@@ -2003,6 +2004,76 @@ function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* Elegant Sub-Tab Selection */}
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              bgcolor: alpha('#121214', 0.6), 
+              borderRadius: '24px', 
+              p: 0.75, 
+              border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+              boxShadow: `0 4px 20px ${alpha('#000', 0.5)}`,
+              mb: 1
+            }}>
+              <Button
+                fullWidth
+                onClick={() => setNetworkSubTab('structure')}
+                sx={{
+                  borderRadius: '18px',
+                  py: 1.5,
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  letterSpacing: 1,
+                  fontFamily: '"Cinzel", serif',
+                  background: networkSubTab === 'structure' 
+                    ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                    : 'transparent',
+                  color: networkSubTab === 'structure' ? '#000' : alpha('#fff', 0.7),
+                  border: 'none',
+                  boxShadow: networkSubTab === 'structure' ? `0 0 15px ${alpha('#D4AF37', 0.4)}` : 'none',
+                  '&:hover': {
+                    background: networkSubTab === 'structure' 
+                      ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                      : alpha('#D4AF37', 0.08),
+                    color: networkSubTab === 'structure' ? '#000' : '#fff'
+                  }
+                }}
+              >
+                <Users size={18} style={{ marginRight: 8 }} />
+                {t('myGoldenNetwork', language)}
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => setNetworkSubTab('activity')}
+                sx={{
+                  borderRadius: '18px',
+                  py: 1.5,
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  letterSpacing: 1,
+                  fontFamily: '"Cinzel", serif',
+                  background: networkSubTab === 'activity' 
+                    ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                    : 'transparent',
+                  color: networkSubTab === 'activity' ? '#000' : alpha('#fff', 0.7),
+                  border: 'none',
+                  boxShadow: networkSubTab === 'activity' ? `0 0 15px ${alpha('#D4AF37', 0.4)}` : 'none',
+                  '&:hover': {
+                    background: networkSubTab === 'activity' 
+                      ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                      : alpha('#D4AF37', 0.08),
+                    color: networkSubTab === 'activity' ? '#000' : '#fff'
+                  }
+                }}
+              >
+                <Activity size={18} style={{ marginRight: 8 }} />
+                {t('recentActivity', language)}
+              </Button>
+            </Box>
+
+            {networkSubTab === 'structure' ? (
+              <>
+
             {/* Premium Stats Card */}
             <Card sx={{ 
               background: `linear-gradient(135deg, ${alpha('#1a1b1f', 1)} 0%, ${alpha('#2a2b2f', 0.8)} 100%)`,
@@ -2288,199 +2359,199 @@ function Dashboard() {
               userTotalInvested={userTotalInvested}
               language={language}
             />
-          </Stack>
-        )}
-
-        {activeTab === 'markets' && (
-          <Stack spacing={4} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
-            {/* Game-like Header for Activity */}
-            <Box sx={{ textAlign: 'center', mb: 2 }}>
-              <Typography variant="h3" fontWeight="900" sx={{ 
-                fontFamily: '"Cinzel", serif', 
-                background: 'linear-gradient(to bottom, #FFDF73, #D4AF37)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent',
-                textShadow: `0 4px 20px ${alpha('#D4AF37', 0.4)}`
-              }}>
-                {t('recentActivity', language)}
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                {t('ledgerPersonalDesc', language)}
-              </Typography>
-            </Box>
-
-            {/* Overall Stats in Game-like UI */}
-            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-              <Box sx={{
-                flex: 1, 
-                bgcolor: alpha('#121214', 0.8),
-                borderRadius: '20px',
-                border: `1px solid ${alpha('#D4AF37', 0.3)}`,
-                p: 2,
-                boxShadow: `inset 0 2px 10px ${alpha('#D4AF37', 0.1)}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2
-              }}>
-                <Box sx={{ p: 1.5, background: 'linear-gradient(45deg, #2a2a2d, #1a1a1f)', borderRadius: '12px', border: `1px solid ${alpha('#fff', 0.1)}` }}>
-                   <Coins size={24} color="#D4AF37" />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>{t('totalInvested', language) || 'Total Invested'}</Typography>
-                  <Typography variant="h6" fontWeight="900" color="#fff">{userTotalInvested.toFixed(2)} oz</Typography>
-                </Box>
-              </Box>
-              <Box sx={{
-                flex: 1, 
-                bgcolor: alpha('#121214', 0.8),
-                borderRadius: '20px',
-                border: `1px solid ${alpha('#4caf50', 0.3)}`,
-                p: 2,
-                boxShadow: `inset 0 2px 10px ${alpha('#4caf50', 0.1)}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2
-              }}>
-                <Box sx={{ p: 1.5, background: 'linear-gradient(45deg, #1b3a1e, #0e1e10)', borderRadius: '12px', border: `1px solid ${alpha('#4caf50', 0.2)}` }}>
-                   <ArrowDownRight size={24} color="#4caf50" />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1} sx={{ color: '#4caf50' }}>{t('totalOps', language) || 'Operations'}</Typography>
-                  <Typography variant="h6" fontWeight="900" color="#fff">{transactions.length}</Typography>
-                </Box>
-              </Box>
-            </Stack>
-
-            {/* The Vault View (Game-like Transaction List) */}
-            <Box>
-              <Typography variant="overline" color="text.secondary" sx={{ ml: 2, fontWeight: 800, letterSpacing: 2 }}>{t('ledgerEntriesTitle', language)}</Typography>
-              <Stack spacing={3} sx={{ mt: 2 }}>
-                {transactions.length > 0 ? transactions.map((tx: any, i: number) => {
-                  const isBuy = tx.type === 'buy';
-                  const amount = parseFloat(tx.amount.replace(/ \$usGOLD| SOL|/g, ''));
-                  return (
-                  <Card 
-                    key={tx.id || i}
-                    onClick={() => tx.txId ? window.open(`https://solscan.io/tx/${tx.txId}`, '_blank') : alert(`Transaction Details:\nID: ${tx.id || 'N/A'}\nType: ${tx.type}\nStatus: Confirmed`)}
-                    sx={{
-                      cursor: 'pointer',
-                      background: `linear-gradient(90deg, ${isBuy ? alpha('#D4AF37', 0.05) : alpha('#4caf50', 0.05)} 0%, ${alpha('#121214', 0.9)} 100%)`,
-                      border: `1px solid ${isBuy ? alpha('#D4AF37', 0.2) : alpha('#4caf50', 0.2)}`,
-                      borderRadius: '24px',
-                      overflow: 'visible',
-                      position: 'relative',
-                      transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                      '&:hover': {
-                        transform: 'scale(1.02) translateX(10px)',
-                        boxShadow: `0 10px 30px ${isBuy ? alpha('#D4AF37', 0.15) : alpha('#4caf50', 0.15)}`,
-                        borderColor: isBuy ? alpha('#D4AF37', 0.5) : alpha('#4caf50', 0.5),
-                        '& .gold-bar': {
-                           transform: 'rotateX(20deg) rotateY(-15deg) scale(1.1)',
-                        }
-                      }
+              </>
+            ) : (
+              <>
+                {/* Game-like Header for Activity */}
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                  <Typography variant="h3" fontWeight="900" sx={{ 
+                    fontFamily: '"Cinzel", serif', 
+                    background: 'linear-gradient(to bottom, #FFDF73, #D4AF37)', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: `0 4px 20px ${alpha('#D4AF37', 0.4)}`
                   }}>
-                    <CardContent sx={{ p: '24px !important', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      {/* Game-like 3D Gold Bar Representation for each transaction */}
-                      <Box sx={{ width: 80, height: 60, perspective: 500, WebkitPerspective: 500, flexShrink: 0 }}>
-                        <Box className="gold-bar" sx={{
-                          width: '100%',
-                          height: '100%',
-                          background: isBuy 
-                            ? `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)` 
-                            : `linear-gradient(to right, #2e7d32, #66bb6a, #43a047, #66bb6a, #2e7d32)`,
-                          borderRadius: '8px',
-                          boxShadow: `
-                            0 8px 15px rgba(0,0,0,0.5),
-                            inset 0 2px 5px rgba(255,255,255,0.4),
-                            inset 0 -2px 5px rgba(0,0,0,0.3)
-                          `,
-                          transform: 'rotateX(20deg) rotateY(15deg)',
-                          transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <Typography sx={{ 
-                            fontSize: '0.9rem', 
-                            fontWeight: 900, 
-                            color: isBuy ? 'rgba(120, 80, 20, 0.8)' : 'rgba(20, 80, 20, 0.8)',
-                            textShadow: '1px 1px 0px rgba(255,255,255,0.3)'
-                          }}>
-                            {amount} oz
-                          </Typography>
-                        </Box>
-                      </Box>
-                      
-                      <Box sx={{ flex: 1 }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
-                          <Typography variant="h6" fontWeight="800" color="#fff">
-                            {isBuy ? 'Minted GOLD' : 'Yield Harvest'}
-                          </Typography>
-                          <Typography variant="h6" fontWeight="900" sx={{ color: isBuy ? '#D4AF37' : '#4caf50' }}>
-                            +{amount}
-                          </Typography>
-                        </Stack>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Activity size={14} color={alpha('#fff', 0.5)} />
-                            <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>
-                              {tx.time}
-                            </Typography>
-                          </Box>
-                          <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 500 }}>
-                            {tx.price.includes('$') ? `Valued at ${tx.price}` : tx.price}
-                          </Typography>
-                        </Stack>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                )}) : (
-                  <Box sx={{ 
-                    p: 6, 
-                    textAlign: 'center', 
-                    borderRadius: '24px', 
-                    border: `1px dashed ${alpha('#D4AF37', 0.3)}`,
-                    bgcolor: alpha('#000', 0.4)
+                    {t('recentActivity', language)}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                    {t('ledgerPersonalDesc', language)}
+                  </Typography>
+                </Box>
+
+                {/* Overall Stats in Game-like UI */}
+                <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+                  <Box sx={{
+                    flex: 1, 
+                    bgcolor: alpha('#121214', 0.8),
+                    borderRadius: '20px',
+                    border: `1px solid ${alpha('#D4AF37', 0.3)}`,
+                    p: 2,
+                    boxShadow: `inset 0 2px 10px ${alpha('#D4AF37', 0.1)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
                   }}>
-                    <Box sx={{ mb: 2, opacity: 0.3 }}>
-                      <BarChart3 size={64} style={{ margin: '0 auto', color: '#D4AF37' }} />
+                    <Box sx={{ p: 1.5, background: 'linear-gradient(45deg, #2a2a2d, #1a1a1f)', borderRadius: '12px', border: `1px solid ${alpha('#fff', 0.1)}` }}>
+                       <Coins size={24} color="#D4AF37" />
                     </Box>
-                    <Typography variant="h6" color="text.secondary" fontWeight="700" gutterBottom>{t('emptyLedger', language)}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('unlockLedgerDesc', language)}
-                    </Typography>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>{t('totalInvested', language) || 'Total Invested'}</Typography>
+                      <Typography variant="h6" fontWeight="900" color="#fff">{userTotalInvested.toFixed(2)} oz</Typography>
+                    </Box>
                   </Box>
-                )}
-              </Stack>
-            </Box>
-
-            {/* Ledger Info Footer Game-like */}
-            <Card sx={{ 
-              bgcolor: alpha(theme.palette.primary.main, 0.03), 
-              borderRadius: '20px', 
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
-              mb: 6
-            }}>
-              <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
-                <Stack direction="row" spacing={3} alignItems="center">
-                   <Box sx={{ 
-                     p: 1.5, 
-                     bgcolor: alpha(theme.palette.primary.main, 0.1), 
-                     borderRadius: '12px', 
-                     color: theme.palette.primary.main,
-                     border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
-                   }}>
-                      <Info size={24} />
-                   </Box>
-                   <Box>
-                      <Typography variant="subtitle1" fontWeight="800" sx={{ color: '#fff' }}>{t('ledgerInformation', language)}</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
-                        {t('ledgerDescription', language)}
-                      </Typography>
-                   </Box>
+                  <Box sx={{
+                    flex: 1, 
+                    bgcolor: alpha('#121214', 0.8),
+                    borderRadius: '20px',
+                    border: `1px solid ${alpha('#4caf50', 0.3)}`,
+                    p: 2,
+                    boxShadow: `inset 0 2px 10px ${alpha('#4caf50', 0.1)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <Box sx={{ p: 1.5, background: 'linear-gradient(45deg, #1b3a1e, #0e1e10)', borderRadius: '12px', border: `1px solid ${alpha('#4caf50', 0.2)}` }}>
+                       <ArrowDownRight size={24} color="#4caf50" />
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1} sx={{ color: '#4caf50' }}>{t('totalOps', language) || 'Operations'}</Typography>
+                      <Typography variant="h6" fontWeight="900" color="#fff">{transactions.length}</Typography>
+                    </Box>
+                  </Box>
                 </Stack>
-              </CardContent>
-            </Card>
+
+                {/* The Vault View (Game-like Transaction List) */}
+                <Box>
+                  <Typography variant="overline" color="text.secondary" sx={{ ml: 2, fontWeight: 800, letterSpacing: 2 }}>{t('ledgerEntriesTitle', language)}</Typography>
+                  <Stack spacing={3} sx={{ mt: 2 }}>
+                    {transactions.length > 0 ? transactions.map((tx: any, i: number) => {
+                      const isBuy = tx.type === 'buy';
+                      const amount = parseFloat(tx.amount.replace(/ \$usGOLD| SOL|/g, ''));
+                      return (
+                      <Card 
+                        key={tx.id || i}
+                        onClick={() => tx.txId ? window.open(`https://solscan.io/tx/${tx.txId}`, '_blank') : alert(`Transaction Details:\nID: ${tx.id || 'N/A'}\nType: ${tx.type}\nStatus: Confirmed`)}
+                        sx={{
+                          cursor: 'pointer',
+                          background: `linear-gradient(90deg, ${isBuy ? alpha('#D4AF37', 0.05) : alpha('#4caf50', 0.05)} 0%, ${alpha('#121214', 0.9)} 100%)`,
+                          border: `1px solid ${isBuy ? alpha('#D4AF37', 0.2) : alpha('#4caf50', 0.2)}`,
+                          borderRadius: '24px',
+                          overflow: 'visible',
+                          position: 'relative',
+                          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                          '&:hover': {
+                            transform: 'scale(1.02) translateX(10px)',
+                            boxShadow: `0 10px 30px ${isBuy ? alpha('#D4AF37', 0.15) : alpha('#4caf50', 0.15)}`,
+                            borderColor: isBuy ? alpha('#D4AF37', 0.5) : alpha('#4caf50', 0.5),
+                            '& .gold-bar': {
+                               transform: 'rotateX(20deg) rotateY(-15deg) scale(1.1)',
+                            }
+                          }
+                      }}>
+                        <CardContent sx={{ p: '24px !important', display: 'flex', alignItems: 'center', gap: 3 }}>
+                          {/* Game-like 3D Gold Bar Representation for each transaction */}
+                          <Box sx={{ width: 80, height: 60, perspective: 500, WebkitPerspective: 500, flexShrink: 0 }}>
+                            <Box className="gold-bar" sx={{
+                              width: '100%',
+                              height: '100%',
+                              background: isBuy 
+                                ? `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)` 
+                                : `linear-gradient(to right, #2e7d32, #66bb6a, #43a047, #66bb6a, #2e7d32)`,
+                              borderRadius: '8px',
+                              boxShadow: `
+                                0 8px 15px rgba(0,0,0,0.5),
+                                inset 0 2px 5px rgba(255,255,255,0.4),
+                                inset 0 -2px 5px rgba(0,0,0,0.3)
+                              `,
+                              transform: 'rotateX(20deg) rotateY(15deg)',
+                              transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              <Typography sx={{ 
+                                fontSize: '0.9rem', 
+                                fontWeight: 900, 
+                                color: isBuy ? 'rgba(120, 80, 20, 0.8)' : 'rgba(20, 80, 20, 0.8)',
+                                textShadow: '1px 1px 0px rgba(255,255,255,0.3)'
+                              }}>
+                                {amount} oz
+                              </Typography>
+                            </Box>
+                          </Box>
+                          
+                          <Box sx={{ flex: 1 }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                              <Typography variant="h6" fontWeight="800" color="#fff">
+                                {isBuy ? 'Minted GOLD' : 'Yield Harvest'}
+                              </Typography>
+                              <Typography variant="h6" fontWeight="900" sx={{ color: isBuy ? '#D4AF37' : '#4caf50' }}>
+                                +{amount}
+                              </Typography>
+                            </Stack>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Activity size={14} color={alpha('#fff', 0.5)} />
+                                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>
+                                  {tx.time}
+                                </Typography>
+                              </Box>
+                              <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 500 }}>
+                                {tx.price.includes('$') ? `Valued at ${tx.price}` : tx.price}
+                              </Typography>
+                            </Stack>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    )}) : (
+                      <Box sx={{ 
+                        p: 6, 
+                        textAlign: 'center', 
+                        borderRadius: '24px', 
+                        border: `1px dashed ${alpha('#D4AF37', 0.3)}`,
+                        bgcolor: alpha('#000', 0.4)
+                      }}>
+                        <Box sx={{ mb: 2, opacity: 0.3 }}>
+                          <BarChart3 size={64} style={{ margin: '0 auto', color: '#D4AF37' }} />
+                        </Box>
+                        <Typography variant="h6" color="text.secondary" fontWeight="700" gutterBottom>{t('emptyLedger', language)}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('unlockLedgerDesc', language)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
+
+                {/* Ledger Info Footer Game-like */}
+                <Card sx={{ 
+                  bgcolor: alpha(theme.palette.primary.main, 0.03), 
+                  borderRadius: '20px', 
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                  mb: 6
+                }}>
+                  <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+                    <Stack direction="row" spacing={3} alignItems="center">
+                       <Box sx={{ 
+                         p: 1.5, 
+                         bgcolor: alpha(theme.palette.primary.main, 0.1), 
+                         borderRadius: '12px', 
+                         color: theme.palette.primary.main,
+                         border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                       }}>
+                          <Info size={24} />
+                       </Box>
+                       <Box>
+                          <Typography variant="subtitle1" fontWeight="800" sx={{ color: '#fff' }}>{t('ledgerInformation', language)}</Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+                            {t('ledgerDescription', language)}
+                          </Typography>
+                       </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </Stack>
         )}
 
@@ -2555,16 +2626,7 @@ function Dashboard() {
               </Box>
             } 
           />
-          <BottomNavigationAction 
-            label={t('recentActivity', language)} 
-            value="markets" 
-            icon={
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
-                <BarChart3 size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
-              </Box>
-            } 
-          />
+
           {showAIMenu && (
             <BottomNavigationAction 
               label="AI" 
