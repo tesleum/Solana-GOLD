@@ -294,3 +294,5 @@ async function startServer() {
   });
 }
 
+startServer();
+
