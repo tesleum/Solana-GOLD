@@ -9,6 +9,7 @@ import {
   onAuthStateChanged,
   User 
 } from "firebase/auth";
+import axios from "axios";
 import {
   Box,
   Drawer,
@@ -71,6 +72,12 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  TrendingUp,
+  Plus,
+  Trash2,
+  Coins,
+  Search,
+  RefreshCw,
 } from "lucide-react";
 
 const drawerWidth = 240;
@@ -326,6 +333,7 @@ export default function AdminPanel() {
       icon: <ArrowRightLeft />,
       path: "/admin/transactions",
     },
+    { text: "Futures", icon: <TrendingUp />, path: "/admin/futures" },
     { text: "Settings", icon: <Settings />, path: "/admin/settings" },
   ];
 
@@ -436,6 +444,7 @@ export default function AdminPanel() {
             <Route path="users" element={<UsersManagement />} />
             <Route path="mlm" element={<UnilevelMLM />} />
             <Route path="transactions" element={<Transactions />} />
+            <Route path="futures" element={<FuturesManagement />} />
             <Route path="settings" element={<AdminSettings />} />
           </Routes>
         </Container>
@@ -1689,6 +1698,646 @@ function AdminSettings() {
           </Box>
         </CardContent>
       </Card>
+    </Box>
+  );
+}
+
+function FuturesManagement() {
+  const theme = useTheme();
+  const [activeTab, setActiveTab] = useState<"active" | "discover" | "manual">("active");
+  const [futuresTokensStr, setFuturesTokensStr] = useState("");
+  const [tokensList, setTokensList] = useState<string[]>([]);
+  const [allContracts, setAllContracts] = useState<any[]>([]);
+  const [loadingContracts, setLoadingContracts] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [quoteFilter, setQuoteFilter] = useState("all");
+  
+  // Manual adding state
+  const [manualSymbol, setManualSymbol] = useState("");
+  const [manualError, setManualError] = useState("");
+
+  // Confirmation dialog state
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [pendingSymbol, setPendingSymbol] = useState("");
+
+  // Alert/Snackbar simulation state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastSeverity, setToastSeverity] = useState<"success" | "error" | "info">("success");
+
+  // Load configured tokens from Firebase general settings
+  useEffect(() => {
+    const settingsRef = ref(database, "mlmSettings/general");
+    const unsub = onValue(settingsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const tokensStr = data.futuresTokens || "XBTUSDTM,ETHUSDTM,SOLUSDTM,XRPUSDTM,ADAUSDTM";
+        setFuturesTokensStr(tokensStr);
+        setTokensList(tokensStr.split(",").map((s: string) => s.trim()).filter(Boolean));
+      } else {
+        const defaultStr = "XBTUSDTM,ETHUSDTM,SOLUSDTM,XRPUSDTM,ADAUSDTM";
+        setFuturesTokensStr(defaultStr);
+        setTokensList(defaultStr.split(",").map((s: string) => s.trim()).filter(Boolean));
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch active contracts from KuCoin Futures API proxy
+  const fetchKuCoinContracts = async () => {
+    setLoadingContracts(true);
+    try {
+      const res = await axios.get("/api/kucoin/contracts/active");
+      if (res.data && Array.isArray(res.data.data)) {
+        setAllContracts(res.data.data);
+      } else if (res.data && Array.isArray(res.data)) {
+        setAllContracts(res.data);
+      } else {
+        console.warn("Unexpected Kucoin Active Contracts response structure:", res.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch KuCoin active contracts:", err);
+      showToast("Could not fetch real-time market data from KuCoin. Showing offline/cached list.", "error");
+    } finally {
+      setLoadingContracts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKuCoinContracts();
+  }, []);
+
+  const showToast = (msg: string, severity: "success" | "error" | "info" = "success") => {
+    setToastMessage(msg);
+    setToastSeverity(severity);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 5000);
+  };
+
+  // Save the complete array back to Firebase as comma-separated string
+  const saveTokensToFirebase = async (updatedList: string[]) => {
+    setSaving(true);
+    const newStr = updatedList.join(",");
+    try {
+      await set(ref(database, "mlmSettings/general/futuresTokens"), newStr);
+      showToast("Futures terminal tokens updated successfully!", "success");
+    } catch (err: any) {
+      console.error("Failed to save futures tokens:", err);
+      showToast(err.message || "Failed to update futures tokens in Firebase.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Enable a token
+  const handleEnableToken = async (symbol: string) => {
+    const sym = symbol.toUpperCase().trim();
+    if (!sym) return;
+    if (tokensList.includes(sym)) {
+      showToast(`${sym} is already enabled.`, "info");
+      return;
+    }
+    const updated = [...tokensList, sym];
+    await saveTokensToFirebase(updated);
+  };
+
+  // Disable a token
+  const handleDisableToken = async (symbol: string) => {
+    const sym = symbol.toUpperCase().trim();
+    const updated = tokensList.filter((s) => s !== sym);
+    await saveTokensToFirebase(updated);
+  };
+
+  // Manual submit
+  const handleManualAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setManualError("");
+    const sym = manualSymbol.toUpperCase().trim();
+    if (!sym) {
+      setManualError("Please enter a valid contract symbol.");
+      return;
+    }
+    if (tokensList.includes(sym)) {
+      setManualError("This token is already enabled.");
+      return;
+    }
+    
+    // Warn if it is not found in active contracts from KuCoin, but still allow it (override)
+    const existsInKuCoin = allContracts.some(c => c.symbol === sym);
+    if (allContracts.length > 0 && !existsInKuCoin) {
+      setPendingSymbol(sym);
+      setOpenConfirmDialog(true);
+      return;
+    }
+
+    const updated = [...tokensList, sym];
+    await saveTokensToFirebase(updated);
+    setManualSymbol("");
+    setActiveTab("active");
+  };
+
+  // Match configured tokens with KuCoin metadata
+  const configuredTokensMetadata = tokensList.map((symbol) => {
+    const match = allContracts.find((c) => c.symbol === symbol);
+    return {
+      symbol,
+      isActive: !!match,
+      baseCurrency: match?.baseCurrency || symbol.replace(/USDTM|USD|M$/, ""),
+      quoteCurrency: match?.quoteCurrency || "USDT",
+      multiplier: match?.multiplier || "-",
+      makerFeeRate: match?.makerFeeRate ? `${(parseFloat(match.makerFeeRate) * 100).toFixed(4)}%` : "-",
+      takerFeeRate: match?.takerFeeRate ? `${(parseFloat(match.takerFeeRate) * 100).toFixed(4)}%` : "-",
+      maxLeverage: match?.maxLeverage || "100",
+      volume24h: match?.volume24h ? parseFloat(match.volume24h).toLocaleString() : "-",
+    };
+  });
+
+  // Filter discoverable contracts from KuCoin
+  const discoverableContracts = allContracts.filter((c) => {
+    const matchesSearch = c.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (c.baseCurrency && c.baseCurrency.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesQuote = quoteFilter === "all" || c.quoteCurrency === quoteFilter;
+    const notAlreadyEnabled = !tokensList.includes(c.symbol);
+
+    return matchesSearch && matchesQuote && notAlreadyEnabled;
+  });
+
+  return (
+    <Box sx={{ pb: 6 }}>
+      {/* Page Title & Back link */}
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
+        <Box sx={{
+          width: 56,
+          height: 56,
+          borderRadius: "16px",
+          bgcolor: "rgba(212, 175, 55, 0.1)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          border: "1px solid rgba(212, 175, 55, 0.3)"
+        }}>
+          <TrendingUp size={28} color="#D4AF37" />
+        </Box>
+        <Box>
+          <Typography variant="h4" sx={{ fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 800, color: "#fff" }}>
+            Futures Market Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Configure the active derivative contracts available in the trading terminal.
+          </Typography>
+        </Box>
+      </Stack>
+
+      {/* Inline Feedback Alerts */}
+      {toastMessage && (
+        <Alert 
+          severity={toastSeverity} 
+          sx={{ 
+            mb: 3, 
+            borderRadius: "16px", 
+            border: `1px solid ${toastSeverity === "success" ? "rgba(46, 125, 50, 0.3)" : "rgba(211, 47, 47, 0.3)"}`,
+            bgcolor: "#121214"
+          }}
+        >
+          {toastMessage}
+        </Alert>
+      )}
+
+      {/* Aesthetic Custom Tab Navigation */}
+      <Stack direction="row" spacing={1} sx={{ mb: 4, bgcolor: "rgba(255,255,255,0.02)", p: 0.75, borderRadius: "20px", width: "fit-content", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <Button
+          onClick={() => setActiveTab("active")}
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: "16px",
+            textTransform: "none",
+            fontWeight: activeTab === "active" ? 800 : 500,
+            bgcolor: activeTab === "active" ? "rgba(212, 175, 55, 0.15)" : "transparent",
+            color: activeTab === "active" ? "#D4AF37" : "rgba(255,255,255,0.6)",
+            border: activeTab === "active" ? "1px solid rgba(212, 175, 55, 0.3)" : "1px solid transparent",
+            "&:hover": { bgcolor: "rgba(212, 175, 55, 0.08)" }
+          }}
+        >
+          Active Terminals ({tokensList.length})
+        </Button>
+        <Button
+          onClick={() => setActiveTab("discover")}
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: "16px",
+            textTransform: "none",
+            fontWeight: activeTab === "discover" ? 800 : 500,
+            bgcolor: activeTab === "discover" ? "rgba(212, 175, 55, 0.15)" : "transparent",
+            color: activeTab === "discover" ? "#D4AF37" : "rgba(255,255,255,0.6)",
+            border: activeTab === "discover" ? "1px solid rgba(212, 175, 55, 0.3)" : "1px solid transparent",
+            "&:hover": { bgcolor: "rgba(212, 175, 55, 0.08)" }
+          }}
+        >
+          Discover Markets
+        </Button>
+        <Button
+          onClick={() => setActiveTab("manual")}
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: "16px",
+            textTransform: "none",
+            fontWeight: activeTab === "manual" ? 800 : 500,
+            bgcolor: activeTab === "manual" ? "rgba(212, 175, 55, 0.15)" : "transparent",
+            color: activeTab === "manual" ? "#D4AF37" : "rgba(255,255,255,0.6)",
+            border: activeTab === "manual" ? "1px solid rgba(212, 175, 55, 0.3)" : "1px solid transparent",
+            "&:hover": { bgcolor: "rgba(212, 175, 55, 0.08)" }
+          }}
+        >
+          Manual Override
+        </Button>
+      </Stack>
+
+      {/* Tab 1: Configured Tokens */}
+      {activeTab === "active" && (
+        <Card sx={{
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.05)",
+          bgcolor: "#121214",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+        }}>
+          <CardContent sx={{ p: 4 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 700, color: "#fff" }}>
+                Active Futures Contracts
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={fetchKuCoinContracts}
+                disabled={loadingContracts}
+                startIcon={<RefreshCw size={14} className={loadingContracts ? "animate-spin" : ""} />}
+                sx={{
+                  borderRadius: "12px",
+                  borderColor: "rgba(212,175,55,0.3)",
+                  color: "#D4AF37",
+                  textTransform: "none",
+                  "&:hover": { borderColor: "#D4AF37", bgcolor: "rgba(212,175,55,0.05)" }
+                }}
+              >
+                Sync Market Data
+              </Button>
+            </Stack>
+
+            <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", overflow: "hidden" }}>
+              <Table>
+                <TableHead sx={{ bgcolor: "rgba(255,255,255,0.02)" }}>
+                  <TableRow>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Symbol</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Base Coin</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Multiplier</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Max Leverage</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Maker Fee</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Taker Fee</TableCell>
+                    <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Status</TableCell>
+                    <TableCell align="right" sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {configuredTokensMetadata.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 6, color: "rgba(255,255,255,0.3)" }}>
+                        No active contracts configured. Switch to Discovery or Manual mode to enable contracts.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    configuredTokensMetadata.map((row) => (
+                      <TableRow key={row.symbol} sx={{ "&:hover": { bgcolor: "rgba(255,255,255,0.01)" } }}>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box sx={{
+                              p: 1,
+                              bgcolor: "rgba(212,175,55,0.05)",
+                              borderRadius: "10px",
+                              border: "1px solid rgba(212,175,55,0.15)",
+                              display: "flex",
+                              alignItems: "center"
+                            }}>
+                              <Coins size={16} color="#D4AF37" />
+                            </Box>
+                            <Typography sx={{ color: "#fff", fontWeight: 700 }}>
+                              {row.symbol}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                          {row.baseCurrency}
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                          {row.multiplier}
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                          {row.maxLeverage}x
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.6)" }}>
+                          {row.makerFeeRate}
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.6)" }}>
+                          {row.takerFeeRate}
+                        </TableCell>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                          {row.isActive ? (
+                            <Chip
+                              label="Online"
+                              size="small"
+                              sx={{
+                                bgcolor: "rgba(46, 125, 50, 0.1)",
+                                color: "#4caf50",
+                                border: "1px solid rgba(46, 125, 50, 0.2)",
+                                fontWeight: 600,
+                                borderRadius: "8px"
+                              }}
+                            />
+                          ) : (
+                            <Chip
+                              label="Offline/Custom"
+                              size="small"
+                              sx={{
+                                bgcolor: "rgba(237, 108, 2, 0.1)",
+                                color: "#ff9800",
+                                border: "1px solid rgba(237, 108, 2, 0.2)",
+                                fontWeight: 600,
+                                borderRadius: "8px"
+                              }}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleDisableToken(row.symbol)}
+                            disabled={saving}
+                            startIcon={<Trash2 size={12} />}
+                            sx={{
+                              borderRadius: "10px",
+                              textTransform: "none",
+                              border: "1px solid rgba(211,47,47,0.2)",
+                              "&:hover": { border: "1px solid #d32f2f", bgcolor: "rgba(211,47,47,0.05)" }
+                            }}
+                          >
+                            Disable
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab 2: Discover Markets from KuCoin */}
+      {activeTab === "discover" && (
+        <Card sx={{
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.05)",
+          bgcolor: "#121214",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+        }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h6" sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 700, color: "#fff", mb: 1 }}>
+              KuCoin Futures Discovery
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Browse real derivative products active on KuCoin Exchange and enable them for your users in one click.
+            </Typography>
+
+            {/* Filters Row */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Search symbol or currency (e.g. BTC, ETH, PEPE)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  InputProps={{
+                    startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.5 }} />,
+                    sx: {
+                      borderRadius: "16px",
+                      bgcolor: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      "& fieldset": { border: "none" }
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <Select
+                    value={quoteFilter}
+                    onChange={(e) => setQuoteFilter(e.target.value)}
+                    sx={{
+                      borderRadius: "16px",
+                      bgcolor: "rgba(255,255,255,0.02)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      color: "#fff",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" }
+                    }}
+                  >
+                    <MenuItem value="all">All Quote Currencies</MenuItem>
+                    <MenuItem value="USDT">USDT Margined</MenuItem>
+                    <MenuItem value="USD">USD Margined</MenuItem>
+                    <MenuItem value="BTC">BTC Margined</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {loadingContracts ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress sx={{ color: "#D4AF37" }} />
+              </Box>
+            ) : (
+              <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", maxHeight: "500px", overflow: "auto" }}>
+                <Table stickyHeader>
+                  <TableHead sx={{ "& th": { bgcolor: "#121214 !important", color: "rgba(255,255,255,0.4)", fontWeight: 700 } }}>
+                    <TableRow>
+                      <TableCell>Symbol</TableCell>
+                      <TableCell>Base Asset</TableCell>
+                      <TableCell>Quote Asset</TableCell>
+                      <TableCell>Max Leverage</TableCell>
+                      <TableCell align="right">Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {discoverableContracts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center" sx={{ py: 6, color: "rgba(255,255,255,0.3)" }}>
+                          {allContracts.length === 0 ? "Failed to connect to KuCoin. Please try syncing." : "No matching contract symbols found."}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      discoverableContracts.slice(0, 50).map((row) => (
+                        <TableRow key={row.symbol} sx={{ "&:hover": { bgcolor: "rgba(255,255,255,0.01)" } }}>
+                          <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "#fff", fontWeight: 700 }}>
+                            {row.symbol}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                            {row.baseCurrency}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                            {row.quoteCurrency}
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.8)" }}>
+                            {row.maxLeverage}x
+                          </TableCell>
+                          <TableCell align="right" sx={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleEnableToken(row.symbol)}
+                              disabled={saving}
+                              startIcon={<Plus size={14} />}
+                              sx={{
+                                borderRadius: "10px",
+                                textTransform: "none",
+                                bgcolor: "#D4AF37",
+                                color: "#121214",
+                                fontWeight: "bold",
+                                "&:hover": { bgcolor: "#F3E5AB" }
+                              }}
+                            >
+                              Enable
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            {!loadingContracts && discoverableContracts.length > 50 && (
+              <Typography variant="caption" sx={{ display: "block", mt: 2, textAlign: "center", color: "rgba(255,255,255,0.4)" }}>
+                Showing first 50 matched results. Use search filters to refine results.
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tab 3: Manual Override */}
+      {activeTab === "manual" && (
+        <Card sx={{
+          borderRadius: "24px",
+          border: "1px solid rgba(255,255,255,0.05)",
+          bgcolor: "#121214",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+        }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h6" sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 700, color: "#fff", mb: 1 }}>
+              Add Contract Manually
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Manually append custom contracts. Note that custom/unofficial contract symbols must match the KuCoin ticker standard for candlestick charting and ticker sockets to work.
+            </Typography>
+
+            <Box component="form" onSubmit={handleManualAddSubmit} sx={{ maxWidth: "500px" }}>
+              <Stack spacing={3}>
+                <TextField
+                  label="Contract Symbol"
+                  placeholder="e.g. DOGEUSDTM"
+                  value={manualSymbol}
+                  onChange={(e) => setManualSymbol(e.target.value)}
+                  error={!!manualError}
+                  helperText={manualError || "Enter the exact contract ticker on KuCoin Futures (usually ends with M)"}
+                  fullWidth
+                  InputProps={{
+                    sx: { borderRadius: "16px" }
+                  }}
+                />
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  startIcon={<Plus size={16} />}
+                  sx={{
+                    borderRadius: "16px",
+                    py: 1.5,
+                    textTransform: "none",
+                    fontWeight: "bold",
+                    bgcolor: "#D4AF37",
+                    color: "#121214",
+                    "&:hover": { bgcolor: "#F3E5AB" }
+                  }}
+                >
+                  {saving ? "Saving..." : "Force Enable Ticker"}
+                </Button>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Custom Confirmation Dialog */}
+      <Dialog
+        open={openConfirmDialog}
+        onClose={() => setOpenConfirmDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            border: "1px solid rgba(212, 175, 55, 0.2)",
+            bgcolor: "#121214",
+            color: "#fff",
+            p: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontFamily: '"Montserrat", sans-serif', fontWeight: 700 }}>
+          Confirm Custom Symbol
+        </DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            The symbol <strong>{pendingSymbol}</strong> was not verified as an active contract on KuCoin Futures.
+          </Typography>
+          <Typography color="text.secondary">
+            Are you sure you want to force enable this ticker? Charting and socket ticker updates may fail if the ticker is invalid.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenConfirmDialog(false)}
+            sx={{ color: "rgba(255,255,255,0.6)", textTransform: "none", borderRadius: "10px" }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={async () => {
+              setOpenConfirmDialog(false);
+              const updated = [...tokensList, pendingSymbol];
+              await saveTokensToFirebase(updated);
+              setManualSymbol("");
+              setActiveTab("active");
+            }}
+            variant="contained"
+            sx={{
+              bgcolor: "#D4AF37",
+              color: "#121214",
+              fontWeight: "bold",
+              borderRadius: "10px",
+              textTransform: "none",
+              "&:hover": { bgcolor: "#F3E5AB" }
+            }}
+          >
+            Force Enable Ticker
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
