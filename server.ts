@@ -19,7 +19,7 @@ const openai = new OpenAI({
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("dist exists:", fs.existsSync(path.join(process.cwd(), "dist")));
 
