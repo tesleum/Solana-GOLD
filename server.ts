@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
+import crypto from "crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -92,6 +93,180 @@ async function startServer() {
     }
   });
 
+  // KuCoin Futures API signing helper
+  const KUCOIN_KEY = process.env.KUCOIN_API_KEY || "";
+  const KUCOIN_SECRET = process.env.KUCOIN_API_SECRET || "";
+  const KUCOIN_PASSPHRASE = process.env.KUCOIN_API_PASSPHRASE || "";
+
+  function getKucoinHeaders(method: string, endpoint: string, bodyStr: string = "") {
+    const timestamp = Date.now().toString();
+    const strToSign = timestamp + method.toUpperCase() + endpoint + bodyStr;
+    
+    const sign = crypto
+      .createHmac("sha256", KUCOIN_SECRET)
+      .update(strToSign)
+      .digest("base64");
+      
+    const passphraseSign = crypto
+      .createHmac("sha256", KUCOIN_SECRET)
+      .update(KUCOIN_PASSPHRASE)
+      .digest("base64");
+
+    return {
+      "KC-API-KEY": KUCOIN_KEY,
+      "KC-API-SIGN": sign,
+      "KC-API-TIMESTAMP": timestamp,
+      "KC-API-PASSPHRASE": passphraseSign,
+      "KC-API-KEY-VERSION": "2",
+      "Content-Type": "application/json"
+    };
+  }
+
+  // Get KuCoin Futures Account Overview
+  app.get("/api/kucoin/account", async (req, res) => {
+    try {
+      const endpoint = "/api/v1/account-overview?currency=USDT";
+      const headers = getKucoinHeaders("GET", endpoint, "");
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        headers
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Account Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get KuCoin Futures Positions
+  app.get("/api/kucoin/positions", async (req, res) => {
+    try {
+      const endpoint = "/api/v1/positions";
+      const headers = getKucoinHeaders("GET", endpoint, "");
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        headers
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Positions Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get KuCoin Futures Open Orders
+  app.get("/api/kucoin/orders", async (req, res) => {
+    try {
+      const endpoint = "/api/v1/orders?status=active";
+      const headers = getKucoinHeaders("GET", endpoint, "");
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        headers
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Orders Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Place KuCoin Futures Order
+  app.post("/api/kucoin/order", async (req, res) => {
+    try {
+      const endpoint = "/api/v1/orders";
+      const bodyStr = JSON.stringify(req.body);
+      const headers = getKucoinHeaders("POST", endpoint, bodyStr);
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        method: "POST",
+        headers,
+        body: bodyStr
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Place Order Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Cancel KuCoin Futures Order
+  app.delete("/api/kucoin/order/:id", async (req, res) => {
+    try {
+      const orderId = req.params.id;
+      const endpoint = `/api/v1/orders/${orderId}`;
+      const headers = getKucoinHeaders("DELETE", endpoint, "");
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        method: "DELETE",
+        headers
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Cancel Order Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get Public WS bullet token
+  app.post("/api/kucoin/bullet-public", async (req, res) => {
+    try {
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com/api/v1/bullet-public`, {
+        method: "POST"
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Bullet Public Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/kucoin/contracts/active", async (req, res) => {
+    try {
+      const kucoinRes = await fetch("https://api-futures.kucoin.com/api/v1/contracts/active");
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Contracts Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Get Private WS bullet token
+  app.post("/api/kucoin/bullet-private", async (req, res) => {
+    try {
+      const endpoint = "/api/v1/bullet-private";
+      const headers = getKucoinHeaders("POST", endpoint, "");
+      
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com${endpoint}`, {
+        method: "POST",
+        headers
+      });
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Bullet Private Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/kucoin/kline", async (req, res) => {
+    try {
+      const { symbol, granularity } = req.query;
+      const kucoinRes = await fetch(`https://api-futures.kucoin.com/api/v1/kline/query?symbol=${symbol}&granularity=${granularity}`);
+      const data = await kucoinRes.json();
+      res.status(kucoinRes.status).json(data);
+    } catch (err: any) {
+      console.error("Kucoin Kline Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
   
@@ -119,4 +294,3 @@ async function startServer() {
   });
 }
 
-startServer();

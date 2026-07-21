@@ -1375,6 +1375,7 @@ function AdminSettings() {
     "8Nf8G28zV2rk91hw41dpt1aL2eBk2zirqZZAbpJ1cAS8",
   );
   const [apyYield, setApyYield] = useState("8");
+  const [futuresTokens, setFuturesTokens] = useState("XBTUSDTM,ETHUSDTM,SOLUSDTM,XRPUSDTM,ADAUSDTM");
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [adminVolumes, setAdminVolumes] = useState<{
@@ -1416,6 +1417,7 @@ function AdminSettings() {
       const data = snapshot.val();
       if (data) {
         setApyYield(data.apyYield || "8");
+        setFuturesTokens(data.futuresTokens || "XBTUSDTM,ETHUSDTM,SOLUSDTM,XRPUSDTM,ADAUSDTM");
       }
     });
 
@@ -1489,6 +1491,7 @@ function AdminSettings() {
 
     const saveGeneralSettings = set(ref(database, "mlmSettings/general"), {
       apyYield: apyYield,
+      futuresTokens: futuresTokens,
     });
 
     Promise.all([saveAdminWallets, saveGeneralSettings])
@@ -1667,6 +1670,13 @@ function AdminSettings() {
               onChange={(e) => setApyYield(e.target.value)}
               placeholder="e.g. 8"
               type="number"
+            />
+            <TextField
+              label="KuCoin Futures Tokens (comma separated)"
+              fullWidth
+              value={futuresTokens}
+              onChange={(e) => setFuturesTokens(e.target.value)}
+              placeholder="e.g. XBTUSDTM,ETHUSDTM"
             />
             <Button
               variant="contained"
