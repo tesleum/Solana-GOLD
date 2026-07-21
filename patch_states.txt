@@ -1,0 +1,11 @@
+@@ -102,6 +102,7 @@
+   const [apyYield, setApyYield] = useState('8');
+   const [activeTab, setActiveTab] = useState('vault');
+   const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity' | 'performance'>('structure');
++  const [txFilterType, setTxFilterType] = useState('all');
++  const [txDateRange, setTxDateRange] = useState('all');
++  const [notifications, setNotifications] = useState<any[]>([]);
++  const [unreadCount, setUnreadCount] = useState(0);
++  const [showNotifications, setShowNotifications] = useState(false);
+   const [isInvesting, setIsInvesting] = useState(false);
+   const [investAmount, setInvestAmount] = useState<number>(10);

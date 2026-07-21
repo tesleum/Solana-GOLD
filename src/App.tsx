@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
@@ -9,7 +9,7 @@ import { projectId } from './lib/reown'; // Initialize Reown AppKit
 import { Buffer } from 'buffer';
 import { LAMPORTS_PER_SOL, Transaction, SystemProgram, PublicKey, VersionedTransaction, TransactionInstruction, TransactionMessage, AddressLookupTableAccount, Connection } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Home, Users, User, Activity, BarChart3, Coins, Copy, CopyCheck, ArrowUpRight, ArrowDownRight, QrCode, Filter, Download, Search, Info, ChevronDown, Globe, Wallet, Bot } from 'lucide-react';
+import { Home, Users, User, Activity, BarChart3, Coins, Copy, CopyCheck, ArrowUpRight, ArrowDownRight, QrCode, Filter, Download, Search, Info, ChevronDown, Globe, Wallet, Bot, Bell } from 'lucide-react';
 import { AppWalletProvider } from './components/WalletProvider';
 import { NetworkTree } from './components/NetworkTree';
 import { ROIAnalyzer } from './components/ROIAnalyzer';
@@ -59,10 +59,11 @@ import {
   Menu,
   MenuItem,
   CircularProgress,
-  Skeleton
+  Skeleton,
+  Badge
 } from '@mui/material';
 import QRCode from "react-qr-code";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, BarChart, Bar, Legend } from 'recharts';
 import axios from 'axios';
 import { database } from './firebase';
 import { ref, get, push, onValue, set, update } from 'firebase/database';
@@ -101,7 +102,12 @@ function Dashboard() {
   const [totalMembers, setTotalMembers] = useState(0);
   const [apyYield, setApyYield] = useState('8');
   const [activeTab, setActiveTab] = useState('vault');
-  const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity'>('structure');
+  const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity' | 'performance'>('structure');
+  const [txFilterType, setTxFilterType] = useState('all');
+  const [txDateRange, setTxDateRange] = useState('all');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [isInvesting, setIsInvesting] = useState(false);
   const [investAmount, setInvestAmount] = useState<number>(10);
   const [qrOpen, setQrOpen] = useState(false);
@@ -326,6 +332,30 @@ function Dashboard() {
       setTransactions([]);
     }
   }, [effectiveAddress]);
+
+  const prevTxLengthRef = useRef<number>(0);
+  useEffect(() => {
+    if (transactions.length > prevTxLengthRef.current && prevTxLengthRef.current > 0) {
+      const newCount = transactions.length - prevTxLengthRef.current;
+      const newTxs = transactions.slice(0, newCount); // transactions is sorted newest first
+      const newNotifs = newTxs
+        .filter(tx => tx.type === 'referral' || tx.type === 'pool_bonus')
+        .map(tx => ({
+          id: tx.id,
+          title: tx.type === 'referral' ? 'Referral Commission!' : 'Pool Reward!',
+          message: `You received ${tx.amount} from a ${tx.type === 'referral' ? 'referral' : 'pool'} event.`,
+          timestamp: tx.timestamp || Date.now(),
+          read: false
+        }));
+      
+      if (newNotifs.length > 0) {
+        setNotifications(prev => [...newNotifs, ...prev]);
+        setUnreadCount(prev => prev + newNotifs.length);
+        triggerHaptic('success');
+      }
+    }
+    prevTxLengthRef.current = transactions.length;
+  }, [transactions]);
 
   useEffect(() => {
     // Keep a synced state of all users to allow synchronous transaction building for mobile wallets
@@ -1218,6 +1248,26 @@ function Dashboard() {
     stylisPlugins: [prefixer],
   }), []);
 
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      if (txFilterType !== 'all') {
+        if (tx.type !== txFilterType) return false;
+      }
+      
+      if (txDateRange !== 'all') {
+        const txTime = tx.timestamp || (tx.time ? new Date(tx.time).getTime() : Date.now());
+        const now = Date.now();
+        const diffMs = now - txTime;
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (txDateRange === 'day' && diffMs > oneDay) return false;
+        if (txDateRange === 'week' && diffMs > 7 * oneDay) return false;
+        if (txDateRange === 'month' && diffMs > 30 * oneDay) return false;
+      }
+      
+      return true;
+    });
+  }, [transactions, txFilterType, txDateRange]);
+
   return (
   <CacheProvider value={isRtl ? cacheRtl : cacheLtr}>
     <ThemeProvider theme={rtlTheme}>
@@ -1406,9 +1456,60 @@ function Dashboard() {
             >
               <Info size={18} />
             </MuiIconButton>
+            <MuiIconButton 
+              size="small" 
+              onClick={() => {
+                setShowNotifications(true);
+                setUnreadCount(0);
+              }}
+              sx={{ 
+                borderRadius: '12px',
+                bgcolor: alpha('#D4AF37', 0.08), 
+                color: 'primary.main',
+                '&:hover': { bgcolor: alpha('#D4AF37', 0.15) },
+                ml: 1
+              }}
+            >
+              <Badge badgeContent={unreadCount} color="error">
+                <Bell size={18} />
+              </Badge>
+            </MuiIconButton>
           </Box>
         </Toolbar>
       </AppBar>
+
+      <Dialog open={showNotifications} onClose={() => setShowNotifications(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#121214', color: '#fff', borderRadius: '24px', border: `1px solid ${alpha('#D4AF37', 0.3)}` } }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: `1px solid ${alpha('#fff', 0.1)}` }}>
+          <Typography variant="h6" fontWeight="bold" fontFamily='"Cinzel", serif' color="#D4AF37">Notifications</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 2, minHeight: '300px' }}>
+          {notifications.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 5, opacity: 0.5 }}>
+              <Bell size={48} style={{ margin: '0 auto', opacity: 0.5, marginBottom: '16px' }} />
+              <Typography>No new notifications</Typography>
+            </Box>
+          ) : (
+            <List>
+              {notifications.map((notif, idx) => (
+                <ListItem key={idx} sx={{ bgcolor: alpha('#D4AF37', 0.05), mb: 1, borderRadius: '12px', border: `1px solid ${alpha('#D4AF37', 0.1)}` }}>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37' }}>
+                      {notif.title.includes('Referral') ? <Users size={20} /> : <Coins size={20} />}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText 
+                    primary={<Typography fontWeight="bold" color="#fff">{notif.title}</Typography>}
+                    secondary={<Typography variant="body2" color="text.secondary">{notif.message}</Typography>}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: `1px solid ${alpha('#fff', 0.1)}` }}>
+          <Button onClick={() => setShowNotifications(false)} color="primary" sx={{ fontWeight: 'bold' }}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Container maxWidth="sm" sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
         {activeTab === 'vault' && (
@@ -2071,6 +2172,33 @@ function Dashboard() {
                 <Activity size={18} style={{ marginRight: 8 }} />
                 {t('recentActivity', language)}
               </Button>
+              <Button
+                fullWidth
+                onClick={() => setNetworkSubTab('performance')}
+                sx={{
+                  borderRadius: '18px',
+                  py: 1.5,
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  letterSpacing: 1,
+                  fontFamily: '"Cinzel", serif',
+                  background: networkSubTab === 'performance' 
+                    ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                    : 'transparent',
+                  color: networkSubTab === 'performance' ? '#000' : alpha('#fff', 0.7),
+                  border: 'none',
+                  boxShadow: networkSubTab === 'performance' ? `0 0 15px ${alpha('#D4AF37', 0.4)}` : 'none',
+                  '&:hover': {
+                    background: networkSubTab === 'performance' 
+                      ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
+                      : alpha('#D4AF37', 0.08),
+                    color: networkSubTab === 'performance' ? '#000' : '#fff'
+                  }
+                }}
+              >
+                <BarChart3 size={18} style={{ marginRight: 8 }} />
+                Analytics
+              </Button>
             </Box>
 
             {networkSubTab === 'structure' ? (
@@ -2362,7 +2490,7 @@ function Dashboard() {
               language={language}
             />
               </>
-            ) : (
+            ) : networkSubTab === 'activity' ? (
               <>
                 {/* Game-like Header for Activity */}
                 <Box sx={{ textAlign: 'center', mb: 2 }}>
@@ -2422,11 +2550,70 @@ function Dashboard() {
                   </Box>
                 </Stack>
 
+                {/* Filters Row */}
+                <Grid container spacing={2} sx={{ mb: 4, px: 1 }}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      label="Filter by Type"
+                      value={txFilterType}
+                      onChange={(e) => setTxFilterType(e.target.value)}
+                      SelectProps={{ native: true }}
+                      size="small"
+                      fullWidth
+                      sx={{
+                        '& .MuiInputLabel-root': { color: alpha('#fff', 0.6) },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '16px',
+                          bgcolor: alpha('#121214', 0.8),
+                          color: '#fff',
+                          '& fieldset': { borderColor: alpha('#D4AF37', 0.3) },
+                          '&:hover fieldset': { borderColor: alpha('#D4AF37', 0.5) },
+                          '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
+                        }
+                      }}
+                    >
+                      <option value="all" style={{ background: '#121214', color: '#fff' }}>All Types</option>
+                      <option value="buy" style={{ background: '#121214', color: '#fff' }}>Minted GOLD</option>
+                      <option value="referral" style={{ background: '#121214', color: '#fff' }}>Referral Dynasty</option>
+                      <option value="claim" style={{ background: '#121214', color: '#fff' }}>Claims</option>
+                      <option value="pool_bonus" style={{ background: '#121214', color: '#fff' }}>Pool Rewards</option>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      label="Time Range"
+                      value={txDateRange}
+                      onChange={(e) => setTxDateRange(e.target.value)}
+                      SelectProps={{ native: true }}
+                      size="small"
+                      fullWidth
+                      sx={{
+                        '& .MuiInputLabel-root': { color: alpha('#fff', 0.6) },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '16px',
+                          bgcolor: alpha('#121214', 0.8),
+                          color: '#fff',
+                          '& fieldset': { borderColor: alpha('#D4AF37', 0.3) },
+                          '&:hover fieldset': { borderColor: alpha('#D4AF37', 0.5) },
+                          '&.Mui-focused fieldset': { borderColor: '#D4AF37' },
+                        }
+                      }}
+                    >
+                      <option value="all" style={{ background: '#121214', color: '#fff' }}>All Time</option>
+                      <option value="day" style={{ background: '#121214', color: '#fff' }}>Last 24 Hours</option>
+                      <option value="week" style={{ background: '#121214', color: '#fff' }}>Last 7 Days</option>
+                      <option value="month" style={{ background: '#121214', color: '#fff' }}>Last 30 Days</option>
+                    </TextField>
+                  </Grid>
+                </Grid>
+
                 {/* The Vault View (Game-like Transaction List) */}
                 <Box>
                   <Typography variant="overline" color="text.secondary" sx={{ ml: 2, fontWeight: 800, letterSpacing: 2 }}>{t('ledgerEntriesTitle', language)}</Typography>
                   <Stack spacing={3} sx={{ mt: 2 }}>
-                    {transactions.length > 0 ? transactions.map((tx: any, i: number) => {
+                    {filteredTransactions.length > 0 ? filteredTransactions.map((tx: any, i: number) => {
                       const isBuy = tx.type === 'buy';
                       const amount = parseFloat(tx.amount.replace(/ \$usGOLD| SOL|/g, ''));
                       return (
@@ -2553,6 +2740,62 @@ function Dashboard() {
                   </CardContent>
                 </Card>
               </>
+            ) : (
+              <Box>
+                <Typography variant="h5" fontWeight="900" sx={{ mb: 3, fontFamily: '"Cinzel", serif', color: '#D4AF37' }}>
+                  Performance Analytics
+                </Typography>
+
+                <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px', mb: 3 }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" mb={2}>Growth Trends Per Line</Typography>
+                    <Box sx={{ width: '100%', height: 300 }}>
+                      <ResponsiveContainer>
+                        <LineChart data={[
+                          { name: 'Jan', A: 40, B: 24, C: 24, D: 10 },
+                          { name: 'Feb', A: 60, B: 48, C: 38, D: 22 },
+                          { name: 'Mar', A: 95, B: 70, C: 45, D: 35 },
+                          { name: 'Apr', A: 150, B: 98, C: 76, D: 55 },
+                          { name: 'May', A: 210, B: 140, C: 110, D: 85 },
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={alpha('#ffffff', 0.1)} />
+                          <XAxis dataKey="name" stroke={alpha('#ffffff', 0.5)} />
+                          <YAxis stroke={alpha('#ffffff', 0.5)} />
+                          <Tooltip contentStyle={{ backgroundColor: '#1a1b1f', border: '1px solid #D4AF37' }} />
+                          <Legend />
+                          <Line type="monotone" dataKey="A" stroke="#D4AF37" strokeWidth={3} />
+                          <Line type="monotone" dataKey="B" stroke="#4caf50" strokeWidth={3} />
+                          <Line type="monotone" dataKey="C" stroke="#2196f3" strokeWidth={3} />
+                          <Line type="monotone" dataKey="D" stroke="#f44336" strokeWidth={3} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+
+                <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px' }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" mb={2}>Referral Link Conversion Rates (%)</Typography>
+                    <Box sx={{ width: '100%', height: 250 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={[
+                          { name: 'Jan', Rate: 2.4 },
+                          { name: 'Feb', Rate: 3.1 },
+                          { name: 'Mar', Rate: 4.8 },
+                          { name: 'Apr', Rate: 6.2 },
+                          { name: 'May', Rate: 8.5 },
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={alpha('#ffffff', 0.1)} />
+                          <XAxis dataKey="name" stroke={alpha('#ffffff', 0.5)} />
+                          <YAxis stroke={alpha('#ffffff', 0.5)} />
+                          <Tooltip contentStyle={{ backgroundColor: '#1a1b1f', border: '1px solid #D4AF37' }} />
+                          <Bar dataKey="Rate" fill="#D4AF37" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
             )}
           </Stack>
         )}

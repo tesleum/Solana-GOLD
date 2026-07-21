@@ -240,7 +240,7 @@ export function FuturesTrading({ language }: { language: string }) {
       },
     });
 
-    const series = chart.addCandlestickSeries({
+    const series = (chart as any).addCandlestickSeries({
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
