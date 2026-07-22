@@ -14,6 +14,7 @@ export default defineConfig(({mode}) => {
     plugins: [
       react(), 
       nodePolyfills(),
+      /*
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['icon.svg'],
@@ -47,6 +48,7 @@ export default defineConfig(({mode}) => {
           ]
         }
       })
+      */
     ],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || ''),
