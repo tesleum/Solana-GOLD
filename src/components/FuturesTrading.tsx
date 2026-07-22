@@ -23,6 +23,8 @@ interface ContractData {
   volume24h: number;
   turnover24h: number;
   fundingRate: number;
+  multiplier?: number;
+  lotSize?: number;
 }
 
 interface OrderBookItem {
@@ -72,6 +74,8 @@ export function FuturesTrading({ language }: { language: string }) {
   const [leverage, setLeverage] = useState<number>(20);
   const [amount, setAmount] = useState<string>('');
   const [priceInput, setPriceInput] = useState<string>('');
+  const [unit, setUnit] = useState<'LOTS' | 'USDT'>('LOTS');
+  const [marginMode, setMarginMode] = useState<'ISOLATED' | 'CROSS'>('ISOLATED');
   
   const [orderBook, setOrderBook] = useState<OrderBook>({ bids: [], asks: [] });
   const [currentTab, setCurrentTab] = useState<'positions' | 'orders' | 'history' | 'assets'>('positions');
@@ -139,7 +143,9 @@ export function FuturesTrading({ language }: { language: string }) {
               priceChangeRate: parseFloat(contract.priceChangeRate || '0'),
               volume24h: parseFloat(contract.volume24h || '0'),
               turnover24h: parseFloat(contract.turnover24h || '0'),
-              fundingRate: parseFloat(contract.fundingFeeRate || '0')
+              fundingRate: parseFloat(contract.fundingFeeRate || '0'),
+              multiplier: parseFloat(contract.multiplier || '1'),
+              lotSize: parseFloat(contract.lotSize || '1')
             };
           }
         });
@@ -448,7 +454,7 @@ export function FuturesTrading({ language }: { language: string }) {
           }
 
           // Real-time Level 2 Order Book update
-          if (message.type === 'message' && message.subject === 'level2Depth5') {
+          if (message.type === 'message' && (message.subject === 'level2Depth5' || message.subject === 'level2' || (message.topic && message.topic.includes('level2Depth5')))) {
             const data = message.data;
             if (data && (data.bids || data.asks)) {
               const mappedBids = (data.bids || []).map((b: any) => ({
@@ -492,6 +498,36 @@ export function FuturesTrading({ language }: { language: string }) {
   }, [selectedSymbol]);
 
   // Format Helper Methods
+  const generateMockOrderBook = (centerPrice: number) => {
+    const bids: OrderBookItem[] = [];
+    const asks: OrderBookItem[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const spread = (centerPrice * 0.00012) * i;
+      bids.push({
+        price: centerPrice - spread,
+        size: Math.random() * 2.2 + 0.1
+      });
+      asks.push({
+        price: centerPrice + spread,
+        size: Math.random() * 2.2 + 0.1
+      });
+    }
+    return { bids, asks };
+  };
+
+  useEffect(() => {
+    if (!selectedSymbol) return;
+    const activeContract = contracts[selectedSymbol];
+    if (activeContract?.price) {
+      setOrderBook(prev => {
+        if (prev.bids.length === 0) {
+          return generateMockOrderBook(activeContract.price);
+        }
+        return prev;
+      });
+    }
+  }, [selectedSymbol, contracts[selectedSymbol || '']?.price]);
+
   const formatPrice = (price: number) => {
     if (!price) return '...';
     return price < 1 ? price.toFixed(4) : price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -509,12 +545,8 @@ export function FuturesTrading({ language }: { language: string }) {
 
   // Place Order Action (Supports Real and Demo Hybrid Modes)
   const handlePlaceOrder = async () => {
-    const size = parseFloat(amount);
-    if (isNaN(size) || size <= 0) {
-      alert("Please enter a valid size");
-      return;
-    }
-
+    const multiplier = activeContract?.multiplier || 1;
+    const lotSize = activeContract?.lotSize || 1;
     const curPrice = getContractPrice();
     const targetPrice = orderType === 'limit' ? parseFloat(priceInput) : curPrice;
 
@@ -523,7 +555,22 @@ export function FuturesTrading({ language }: { language: string }) {
       return;
     }
 
-    const estimatedMargin = (size * targetPrice) / leverage;
+    let size = parseFloat(amount);
+    if (unit === 'USDT') {
+      const rawSize = size / (targetPrice * multiplier);
+      size = Math.floor(rawSize / lotSize) * lotSize;
+    }
+
+    if (isNaN(size) || size <= 0) {
+      alert(unit === 'USDT'
+        ? `USDT amount is too small. Minimum contract size is ${lotSize} LOT (${(lotSize * targetPrice * multiplier).toFixed(2)} USDT)`
+        : "Please enter a valid size"
+      );
+      return;
+    }
+
+    const calculatedUsdt = size * targetPrice * multiplier;
+    const estimatedMargin = calculatedUsdt / leverage;
 
     // A. Live Real Trading Mode
     if (!isDemoMode && apiStatus === 'connected') {
@@ -536,7 +583,7 @@ export function FuturesTrading({ language }: { language: string }) {
           leverage: leverage,
           size: size,
           price: orderType === 'limit' ? targetPrice.toString() : undefined,
-          marginMode: "ISOLATED"
+          marginMode: marginMode
         };
 
         const res = await axios.post('/api/kucoin/order', orderPayload);
@@ -832,6 +879,19 @@ export function FuturesTrading({ language }: { language: string }) {
   const isUp = activeContract ? activeContract.priceChangeRate >= 0 : true;
   const priceColor = isUp ? '#00b894' : '#ff7675';
 
+  const multiplier = activeContract?.multiplier || 1;
+  const lotSize = activeContract?.lotSize || 1;
+  const targetPrice = orderType === 'limit' ? parseFloat(priceInput) || getContractPrice() : getContractPrice();
+  
+  const rawSizeVal = parseFloat(amount) || 0;
+  const sizeInLots = unit === 'USDT'
+    ? (targetPrice * multiplier > 0 ? Math.floor((rawSizeVal / (targetPrice * multiplier)) / lotSize) * lotSize : 0)
+    : rawSizeVal;
+
+  const usdtValue = unit === 'LOTS'
+    ? rawSizeVal * targetPrice * multiplier
+    : rawSizeVal;
+
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
       {/* 1. Header Row */}
@@ -906,12 +966,12 @@ export function FuturesTrading({ language }: { language: string }) {
       </Card>
 
       {/* 4. Two-Column Layout (Order Book & Trade Entry) */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1.3fr', sm: '1fr 1fr', md: '1.2fr 1fr' }, gap: { xs: 1.5, sm: 3 }, mb: 4 }}>
         
         {/* Left column: Live Order Book */}
-        <Box sx={{ flex: 1.2 }}>
-          <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '20px', p: 2 }}>
-            <Typography variant="subtitle2" fontWeight="bold" color="#fff" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box>
+          <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '20px', p: { xs: 1.5, sm: 2 }, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2" fontWeight="bold" color="#fff" mb={1.5} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Activity size={16} color="#D4AF37" /> Live Order Book
             </Typography>
 
@@ -922,8 +982,8 @@ export function FuturesTrading({ language }: { language: string }) {
                 return (
                   <Box key={`ask-${idx}`} sx={{ display: 'flex', justifyContent: 'space-between', position: 'relative', py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden' }}>
                     <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#ff7675', 0.1), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
-                    <Typography variant="caption" sx={{ color: '#ff7675', fontWeight: 'bold', zIndex: 1 }}>${formatPrice(ask.price)}</Typography>
-                    <Typography variant="caption" sx={{ color: '#fff', zIndex: 1 }}>{ask.size.toFixed(3)}</Typography>
+                    <Typography variant="caption" sx={{ color: '#ff7675', fontWeight: 'bold', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>${formatPrice(ask.price)}</Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>{ask.size.toFixed(3)}</Typography>
                   </Box>
                 );
               })}
@@ -931,10 +991,10 @@ export function FuturesTrading({ language }: { language: string }) {
 
             {/* Mid Price Separator */}
             <Box sx={{ py: 1, borderTop: `1px solid ${alpha('#fff', 0.05)}`, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, my: 1, textAlign: 'center' }}>
-              <Typography variant="h6" fontWeight="bold" sx={{ color: priceColor }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ color: priceColor, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 ${formatPrice(activeContract?.price || 0)}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                 Spread: $0.05
               </Typography>
             </Box>
@@ -946,8 +1006,8 @@ export function FuturesTrading({ language }: { language: string }) {
                 return (
                   <Box key={`bid-${idx}`} sx={{ display: 'flex', justifyContent: 'space-between', position: 'relative', py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden' }}>
                     <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#00b894', 0.1), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
-                    <Typography variant="caption" sx={{ color: '#00b894', fontWeight: 'bold', zIndex: 1 }}>${formatPrice(bid.price)}</Typography>
-                    <Typography variant="caption" sx={{ color: '#fff', zIndex: 1 }}>{bid.size.toFixed(3)}</Typography>
+                    <Typography variant="caption" sx={{ color: '#00b894', fontWeight: 'bold', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>${formatPrice(bid.price)}</Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>{bid.size.toFixed(3)}</Typography>
                   </Box>
                 );
               })}
@@ -956,8 +1016,8 @@ export function FuturesTrading({ language }: { language: string }) {
         </Box>
 
         {/* Right column: Trade Form Panel */}
-        <Box sx={{ flex: 1 }}>
-          <Card sx={{ bgcolor: alpha('#121214', 0.95), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px', p: 2 }}>
+        <Box>
+          <Card sx={{ bgcolor: alpha('#121214', 0.95), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: { xs: '16px', sm: '24px' }, p: { xs: 1.5, sm: 2 } }}>
             
             {/* Long vs Short Toggle Buttons */}
             <Stack direction="row" spacing={1} sx={{ mb: 2, p: 0.5, bgcolor: alpha('#000', 0.4), borderRadius: '12px' }}>
@@ -970,6 +1030,7 @@ export function FuturesTrading({ language }: { language: string }) {
                   color: '#fff',
                   fontWeight: 'bold',
                   py: 1,
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                   '&:hover': { bgcolor: side === 'buy' ? '#00b894' : alpha('#fff', 0.05) }
                 }}
               >
@@ -984,6 +1045,7 @@ export function FuturesTrading({ language }: { language: string }) {
                   color: '#fff',
                   fontWeight: 'bold',
                   py: 1,
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
                   '&:hover': { bgcolor: side === 'sell' ? '#ff7675' : alpha('#fff', 0.05) }
                 }}
               >
@@ -1002,9 +1064,10 @@ export function FuturesTrading({ language }: { language: string }) {
                   bgcolor: orderType === 'market' ? alpha('#fff', 0.1) : 'transparent',
                   color: orderType === 'market' ? '#fff' : alpha('#fff', 0.5),
                   fontWeight: orderType === 'market' ? 800 : 500,
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
                 }}
               >
-                Market Order
+                Market
               </Button>
               <Button 
                 fullWidth 
@@ -1015,48 +1078,124 @@ export function FuturesTrading({ language }: { language: string }) {
                   bgcolor: orderType === 'limit' ? alpha('#fff', 0.1) : 'transparent',
                   color: orderType === 'limit' ? '#fff' : alpha('#fff', 0.5),
                   fontWeight: orderType === 'limit' ? 800 : 500,
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
                 }}
               >
-                Limit Order
+                Limit
               </Button>
+            </Stack>
+
+            {/* Margin Mode & Size Unit Selection Row */}
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block', fontSize: '0.7rem' }}>Margin Mode</Typography>
+                <Stack direction="row" sx={{ bgcolor: alpha('#000', 0.4), p: 0.3, borderRadius: '8px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+                  {['ISOLATED', 'CROSS'].map((m) => (
+                    <Button
+                      key={m}
+                      fullWidth
+                      size="small"
+                      onClick={() => setMarginMode(m as any)}
+                      sx={{
+                        py: 0.25,
+                        borderRadius: '6px',
+                        fontSize: '0.65rem',
+                        bgcolor: marginMode === m ? alpha('#D4AF37', 0.15) : 'transparent',
+                        color: marginMode === m ? '#D4AF37' : alpha('#fff', 0.4),
+                        fontWeight: marginMode === m ? 'bold' : 'normal',
+                        border: marginMode === m ? '1px solid rgba(212, 175, 55, 0.2)' : '1px solid transparent',
+                        minWidth: 0,
+                        '&:hover': { bgcolor: alpha('#D4AF37', 0.1) }
+                      }}
+                    >
+                      {m}
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
+
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block', fontSize: '0.7rem' }}>Size Unit</Typography>
+                <Stack direction="row" sx={{ bgcolor: alpha('#000', 0.4), p: 0.3, borderRadius: '8px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+                  {['LOTS', 'USDT'].map((u) => (
+                    <Button
+                      key={u}
+                      fullWidth
+                      size="small"
+                      onClick={() => {
+                        setUnit(u as any);
+                        setAmount('');
+                      }}
+                      sx={{
+                        py: 0.25,
+                        borderRadius: '6px',
+                        fontSize: '0.65rem',
+                        bgcolor: unit === u ? alpha('#D4AF37', 0.15) : 'transparent',
+                        color: unit === u ? '#D4AF37' : alpha('#fff', 0.4),
+                        fontWeight: unit === u ? 'bold' : 'normal',
+                        border: unit === u ? '1px solid rgba(212, 175, 55, 0.2)' : '1px solid transparent',
+                        minWidth: 0,
+                        '&:hover': { bgcolor: alpha('#D4AF37', 0.1) }
+                      }}
+                    >
+                      {u}
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
             </Stack>
 
             {/* Price Input (if limit) */}
             {orderType === 'limit' && (
               <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block' }}>Limit Price</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: alpha('#000', 0.5), borderRadius: '12px', p: 1, border: `1px solid ${alpha('#fff', 0.1)}` }}>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block', fontSize: '0.75rem' }}>Limit Price</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: alpha('#000', 0.5), borderRadius: '12px', p: 0.75, border: `1px solid ${alpha('#fff', 0.1)}` }}>
                   <InputBase 
                     fullWidth 
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
-                    sx={{ color: '#fff', fontWeight: 'bold' }} 
+                    sx={{ color: '#fff', fontWeight: 'bold', px: 1, fontSize: '0.9rem' }} 
                   />
-                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>USDT</Typography>
+                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), pr: 1 }}>USDT</Typography>
                 </Box>
               </Box>
             )}
 
             {/* Order Size (Amount) Input */}
             <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block' }}>Size (Contracts)</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: alpha('#000', 0.5), borderRadius: '12px', p: 1, border: `1px solid ${alpha('#fff', 0.1)}` }}>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block', fontSize: '0.75rem' }}>
+                Size ({unit === 'USDT' ? 'USDT value' : 'Contracts'})
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: alpha('#000', 0.5), borderRadius: '12px', p: 0.75, border: `1px solid ${alpha('#fff', 0.1)}` }}>
                 <InputBase 
                   fullWidth 
-                  placeholder="0.00" 
+                  placeholder={unit === 'USDT' ? 'Enter USDT amount' : '0.00'} 
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  sx={{ color: '#fff', fontWeight: 'bold' }} 
+                  sx={{ color: '#fff', fontWeight: 'bold', px: 1, fontSize: '0.9rem' }} 
                 />
-                <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold' }}>LOTS</Typography>
+                <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold', pr: 1 }}>
+                  {unit}
+                </Typography>
               </Box>
+              
+              {/* Equivalent conversion indicator */}
+              {amount && parseFloat(amount) > 0 && (
+                <Typography variant="caption" sx={{ mt: 0.5, display: 'block', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', textAlign: 'right', fontSize: '0.7rem' }}>
+                  {unit === 'USDT' ? (
+                    `≈ ${(rawSizeVal / (targetPrice * multiplier)).toFixed(4)} LOTS (rounded: ${sizeInLots} LOTS)`
+                  ) : (
+                    `≈ $${usdtValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
+                  )}
+                </Typography>
+              )}
             </Box>
 
             {/* Leverage Slider */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>Leverage Mode</Typography>
-                <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 800 }}>{leverage}x Cross</Typography>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Leverage Mode</Typography>
+                <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 800, fontSize: '0.75rem' }}>{leverage}x Cross</Typography>
               </Box>
               <Slider 
                 value={leverage}
@@ -1067,8 +1206,8 @@ export function FuturesTrading({ language }: { language: string }) {
                   color: '#D4AF37',
                   py: 1,
                   '& .MuiSlider-thumb': {
-                    width: 18,
-                    height: 18,
+                    width: 16,
+                    height: 16,
                     border: '2px solid #D4AF37',
                     bgcolor: '#121214',
                   }
@@ -1076,7 +1215,7 @@ export function FuturesTrading({ language }: { language: string }) {
               />
               <Stack direction="row" justifyContent="space-between">
                 {[1, 10, 25, 50, 75, 100].map(val => (
-                  <Typography key={val} variant="caption" sx={{ color: alpha('#fff', 0.3), cursor: 'pointer' }} onClick={() => setLeverage(val)}>
+                  <Typography key={val} variant="caption" sx={{ color: alpha('#fff', 0.3), cursor: 'pointer', fontSize: '0.7rem' }} onClick={() => setLeverage(val)}>
                     {val}x
                   </Typography>
                 ))}
@@ -1086,15 +1225,15 @@ export function FuturesTrading({ language }: { language: string }) {
             {/* Estimated Stats */}
             <Box sx={{ p: 1.5, bgcolor: alpha('#000', 0.3), borderRadius: '12px', mb: 2, border: `1px dashed ${alpha('#fff', 0.05)}` }}>
               <Stack direction="row" justifyContent="space-between" mb={1}>
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>Available Margin</Typography>
-                <Typography variant="caption" color="#fff" fontWeight="bold">
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Available Margin</Typography>
+                <Typography variant="caption" color="#fff" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
                   ${activeBalanceAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>Order Cost (Margin)</Typography>
-                <Typography variant="caption" color="#fff" fontWeight="bold">
-                  ${((parseFloat(amount) || 0) * (orderType === 'limit' ? parseFloat(priceInput) || 0 : activeContract?.price || 0) / leverage).toFixed(2)} USDT
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Order Cost (Margin)</Typography>
+                <Typography variant="caption" color="#fff" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                  ${(usdtValue / leverage).toFixed(2)} USDT
                 </Typography>
               </Stack>
             </Box>
@@ -1107,19 +1246,19 @@ export function FuturesTrading({ language }: { language: string }) {
                 bgcolor: side === 'buy' ? '#00b894' : '#ff7675', 
                 color: '#fff',
                 fontWeight: 900,
-                py: 2,
+                py: 1.5,
                 borderRadius: '12px',
-                fontSize: '1rem',
+                fontSize: { xs: '0.875rem', sm: '1rem' },
                 textTransform: 'none',
                 boxShadow: `0 4px 20px ${alpha(side === 'buy' ? '#00b894' : '#ff7675', 0.3)}`,
                 '&:hover': { bgcolor: side === 'buy' ? '#007a61' : '#cc5252' }
               }}
             >
-              Confirm {side === 'buy' ? 'Buy / Long' : 'Sell / Short'} Order
+              Confirm {side === 'buy' ? 'Buy / Long' : 'Sell / Short'}
             </Button>
           </Card>
         </Box>
-      </Stack>
+      </Box>
 
       {/* 5. Positions, Active Orders, History Tab panel */}
       <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '24px', overflow: 'hidden' }}>
