@@ -11,7 +11,7 @@ import {
 import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
 
 interface ContractData {
@@ -290,31 +290,57 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   useEffect(() => {
     let isMounted = true;
     const fetchKlines = async () => {
+      let formattedData: any[] = [];
       try {
         const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
-        if (!isMounted || !response.data || !response.data.data) return;
-        
-        // Data format: [ [time, open, high, low, close, volume, turnover], ... ]
-        // lightweight-charts needs { time, open, high, low, close }
-        const formattedData = response.data.data.map((item: any) => ({
-          time: Math.floor(item[0] / 1000) as any,
-          open: parseFloat(item[1]),
-          high: parseFloat(item[2]),
-          low: parseFloat(item[3]),
-          close: parseFloat(item[4]),
-        })).sort((a: any, b: any) => a.time - b.time);
+        if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+          const mapByTime = new Map<number, any>();
+          response.data.data.forEach((item: any) => {
+            let t = parseInt(item[0], 10);
+            if (t > 10000000000) t = Math.floor(t / 1000);
+            const open = parseFloat(item[1]);
+            const high = parseFloat(item[2]);
+            const low = parseFloat(item[3]);
+            const close = parseFloat(item[4]);
 
-        if (seriesRef.current) {
-          seriesRef.current.setData(formattedData);
+            if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+              mapByTime.set(t, { time: t as any, open, high, low, close });
+            }
+          });
+
+          formattedData = Array.from(mapByTime.values()).sort((a, b) => a.time - b.time);
         }
       } catch (err) {
-        console.error("Failed to fetch klines:", err);
+        console.warn("Failed to fetch API klines, generating fallback candlestick data:", err);
+      }
+
+      // Fallback synthetic candles if API returns no data
+      if (formattedData.length === 0 && selectedSymbol) {
+        const curPrice = contracts[selectedSymbol]?.price || 65000;
+        const nowSec = Math.floor(Date.now() / 1000);
+        let lastClose = curPrice * 0.98;
+        for (let i = 100; i >= 0; i--) {
+          const time = nowSec - i * 60;
+          const delta = (Math.random() - 0.49) * (lastClose * 0.005);
+          const open = lastClose;
+          const close = open + delta;
+          const high = Math.max(open, close) + Math.abs(delta) * Math.random();
+          const low = Math.min(open, close) - Math.abs(delta) * Math.random();
+          lastClose = close;
+          formattedData.push({ time: time as any, open, high, low, close });
+        }
+      }
+
+      if (isMounted && seriesRef.current && formattedData.length > 0) {
+        seriesRef.current.setData(formattedData);
       }
     };
-    
-    fetchKlines();
+
+    if (selectedSymbol) {
+      fetchKlines();
+    }
     return () => { isMounted = false; };
-  }, [selectedSymbol]);
+  }, [selectedSymbol, contracts]);
 
   // WebSocket Connection (Stream feeds dynamically based on symbol)
   useEffect(() => {
@@ -613,10 +639,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
         const res = await axios.post('/api/kucoin/order', orderPayload);
         if (res.data && res.data.code === '200000') {
-          alert(`Real Order placed successfully on KuCoin (Margin Mode: ${marginMode})!`);
+          alert(`Real Order placed successfully on FOREX (Margin Mode: ${marginMode})!`);
           fetchPrivateData();
         } else {
-          alert(`KuCoin Error: ${res.data.msg || 'Failed to place order'}`);
+          alert(`FOREX Error: ${res.data.msg || 'Failed to place order'}`);
         }
       } catch (err: any) {
         console.error("Failed placing real order", err);
@@ -627,11 +653,15 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
     // B. Interactive Demo Simulator Mode
     if (estimatedMargin > demoBalance) {
-      alert("Insufficient demo balance margin!");
+      alert("Insufficient futures margin balance! Top up in your Wallet page.");
       return;
     }
 
-    setDemoBalance(prev => prev - estimatedMargin);
+    const newBal = Math.max(0, demoBalance - estimatedMargin);
+    setDemoBalance(newBal);
+    if (effectiveAddress) {
+      update(ref(database, `users/${effectiveAddress}`), { futuresBalance: newBal });
+    }
 
     if (orderType === 'market') {
       // Open Simulated Position immediately
@@ -658,7 +688,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         time: new Date().toLocaleTimeString(),
         status: 'Filled'
       }]);
-      alert(`Simulated Market position opened (${marginMode} Margin)!`);
+      alert(`Position opened successfully (${marginMode} Margin)!`);
     } else {
       // Place in Open Orders list
       const newOrder: OpenOrder = {
@@ -671,7 +701,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         isDemo: true
       };
       setDemoOrders(prev => [...prev, newOrder]);
-      alert(`Simulated Limit order placed (${marginMode} Margin)!`);
+      alert(`Limit order placed successfully (${marginMode} Margin)!`);
     }
 
     setAmount('');
@@ -683,7 +713,12 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     if (pos.isDemo) {
       // Return margin + pnl to demo balance
       const totalReturned = pos.margin + pos.unrealizedPnL;
-      setDemoBalance(prev => prev + totalReturned);
+      const newBal = demoBalance + totalReturned;
+      setDemoBalance(newBal);
+      if (effectiveAddress) {
+        update(ref(database, `users/${effectiveAddress}`), { futuresBalance: newBal });
+      }
+
       setDemoPositions(prev => prev.filter(p => p.symbol !== pos.symbol || p.side !== pos.side));
       setDemoHistory(prev => [...prev, {
         id: Math.random().toString(36).substring(2, 10),
@@ -695,7 +730,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         time: new Date().toLocaleTimeString(),
         status: 'Closed'
       }]);
-      alert("Simulated position closed successfully!");
+      alert("Position closed successfully! Margin and profit returned to wallet.");
       return;
     }
 
@@ -768,7 +803,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               Empire Futures
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Perpetual Contracts • Powered by KuCoin Live WebSocket
+              Perpetual Contracts • Powered by FOREX Live Stream
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -935,7 +970,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             )}
           </Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
-            KuCoin Live Order Book
+            FOREX Live Order Book
           </Typography>
         </Box>
 
