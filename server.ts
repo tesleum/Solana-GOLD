@@ -267,18 +267,6 @@ async function startServer() {
     }
   });
 
-  app.get("/api/kucoin/level2/snapshot", async (req, res) => {
-    try {
-      const { symbol } = req.query;
-      const kucoinRes = await fetch(`https://api-futures.kucoin.com/api/v1/level2/snapshot?symbol=${symbol}`);
-      const data = await kucoinRes.json();
-      res.status(kucoinRes.status).json(data);
-    } catch (err: any) {
-      console.error("Kucoin Level2 Snapshot Error:", err);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
   
