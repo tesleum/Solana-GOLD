@@ -689,7 +689,7 @@ function UserRow({ row }: { row: any }) {
         </TableCell>
         <TableCell sx={{ py: 1.5, fontWeight: 500 }}>
           <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-            {row.address}
+            {isMobile && row.address && row.address.length > 12 ? `${row.address.substring(0, 6)}...${row.address.substring(row.address.length - 6)}` : row.address}
           </Typography>
         </TableCell>
         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Lvl {row.refLvl}</TableCell>
@@ -774,10 +774,13 @@ function UserRow({ row }: { row: any }) {
                     boxShadow: "none",
                     border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                     borderRadius: 2,
-                    mb: 2
+                    mb: 2,
+                    overflowX: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    width: "100%"
                   }}
                 >
-                  <Table size="small">
+                  <Table size="small" sx={{ minWidth: { xs: 450, sm: "100%" } }}>
                     <TableHead sx={{ bgcolor: alpha('#fff', 0.03) }}>
                       <TableRow>
                         <TableCell sx={{ fontSize: '0.65rem', fontWeight: 800 }}>DATE</TableCell>
@@ -944,10 +947,12 @@ function UsersManagement() {
           backgroundImage: 'none',
           borderRadius: 3,
           border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          overflowX: 'auto'
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          width: '100%'
         }}
       >
-        <Table size="small">
+        <Table size="small" sx={{ minWidth: { xs: 550, sm: '100%' } }}>
           <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
             <TableRow>
               <TableCell width={50} />
@@ -1276,10 +1281,12 @@ function Transactions() {
           backgroundImage: 'none',
           borderRadius: 3,
           border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          overflowX: 'auto'
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          width: '100%'
         }}
       >
-        <Table size={isMobile ? "small" : "medium"}>
+        <Table size={isMobile ? "small" : "medium"} sx={{ minWidth: { xs: 500, sm: '100%' } }}>
           <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Type</TableCell>
@@ -1988,8 +1995,8 @@ function FuturesManagement() {
               </Button>
             </Stack>
 
-            <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", overflow: "hidden" }}>
-              <Table>
+            <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", overflowX: "auto", WebkitOverflowScrolling: 'touch', width: '100%' }}>
+              <Table sx={{ minWidth: { xs: 800, sm: "100%" } }}>
                 <TableHead sx={{ bgcolor: "rgba(255,255,255,0.02)" }}>
                   <TableRow>
                     <TableCell sx={{ color: "rgba(255,255,255,0.4)", fontWeight: 700, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>Symbol</TableCell>
@@ -2162,8 +2169,8 @@ function FuturesManagement() {
                 <CircularProgress sx={{ color: "#D4AF37" }} />
               </Box>
             ) : (
-              <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", maxHeight: "500px", overflow: "auto" }}>
-                <Table stickyHeader>
+              <TableContainer component={Paper} sx={{ bgcolor: "transparent", backgroundImage: "none", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "16px", maxHeight: "500px", overflowX: "auto", overflowY: "auto", WebkitOverflowScrolling: 'touch', width: '100%' }}>
+                <Table stickyHeader sx={{ minWidth: { xs: 600, sm: "100%" } }}>
                   <TableHead sx={{ "& th": { bgcolor: "#121214 !important", color: "rgba(255,255,255,0.4)", fontWeight: 700 } }}>
                     <TableRow>
                       <TableCell>Symbol</TableCell>
