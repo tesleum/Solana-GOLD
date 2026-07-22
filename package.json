@@ -53,9 +53,9 @@
     "@types/react-dom": "^19.2.3",
     "@types/stylis": "^4.2.7",
     "bs58": "^6.0.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "typescript": "~5.8.2",
-    "vite": "^5.4.11",
+    "vite": "^5.4.21",
     "vite-plugin-node-polyfills": "^0.26.0"
   }
 }
