@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
-  Box, Typography, Stack, Card, CardContent, CircularProgress, 
+  Box, Typography, Stack, Card, CircularProgress, 
   alpha, useTheme, Button, Divider, Slider, IconButton, InputBase, 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Badge
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Badge
 } from '@mui/material';
 import { 
-  Activity, ChevronLeft, BarChart2, Info, ArrowUpRight, ArrowDownRight, 
-  Settings, RefreshCw, AlertTriangle, Play, Square, User, Wallet, Check, X
+  Activity, ChevronLeft, Info, Search,
+  User, Wallet, AlertTriangle
 } from 'lucide-react';
-import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
 import { ref, onValue } from 'firebase/database';
@@ -60,15 +59,27 @@ interface OpenOrder {
   isDemo?: boolean;
 }
 
+const TIMEFRAMES = [
+  { label: '1m', value: 1, wsTag: '1min' },
+  { label: '5m', value: 5, wsTag: '5min' },
+  { label: '15m', value: 15, wsTag: '15min' },
+  { label: '1h', value: 60, wsTag: '1hour' },
+  { label: '4h', value: 240, wsTag: '4hour' },
+  { label: '1d', value: 1440, wsTag: '1day' },
+];
+
 export function FuturesTrading({ language }: { language: string }) {
   const theme = useTheme();
   
   // App states
   const [contracts, setContracts] = useState<Record<string, ContractData>>({});
+  const [allContractsList, setAllContractsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [granularity, setGranularity] = useState<number>(1);
+  
   const [orderType, setOrderType] = useState<'limit' | 'market'>('market');
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [leverage, setLeverage] = useState<number>(20);
@@ -94,7 +105,7 @@ export function FuturesTrading({ language }: { language: string }) {
   const [demoOrders, setDemoOrders] = useState<OpenOrder[]>([]);
   const [demoHistory, setDemoHistory] = useState<any[]>([]);
 
-  // Refs for WebSockets
+  // Refs for WebSockets & Chart
   const wsRef = useRef<WebSocket | null>(null);
   const connectId = useRef<string>(Math.random().toString(36).substring(2, 10));
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -103,7 +114,10 @@ export function FuturesTrading({ language }: { language: string }) {
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
 
-  const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
+  const [symbols, setSymbols] = useState<string[]>([
+    'XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'PEPEUSDTM', 
+    'DOGEUSDTM', 'XRPUSDTM', 'ADAUSDTM', 'WIFUSDTM'
+  ]);
 
   // Fetch settings from Firebase
   useEffect(() => {
@@ -120,7 +134,7 @@ export function FuturesTrading({ language }: { language: string }) {
     return () => unsub();
   }, []);
 
-  // Initialize and Fetch General Market Data
+  // Initialize and Fetch Active Contracts
   useEffect(() => {
     let isMounted = true;
 
@@ -129,10 +143,14 @@ export function FuturesTrading({ language }: { language: string }) {
         const res = await axios.get('/api/kucoin/contracts/active');
         if (!isMounted) return;
         
-        const activeContracts = res.data.data;
+        const activeContracts = res.data.data || [];
+        setAllContractsList(activeContracts);
+        
         const initialData: Record<string, ContractData> = {};
         
-        symbols.forEach(sym => {
+        // Populate all active symbols
+        const targetSymbols = Array.from(new Set([...symbols, 'XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']));
+        targetSymbols.forEach(sym => {
           const contract = activeContracts.find((c: any) => c.symbol === sym);
           if (contract) {
             initialData[sym] = {
@@ -158,9 +176,7 @@ export function FuturesTrading({ language }: { language: string }) {
       }
     };
 
-    if (symbols.length > 0) {
-      fetchInitialData();
-    }
+    fetchInitialData();
 
     return () => {
       isMounted = false;
@@ -170,7 +186,6 @@ export function FuturesTrading({ language }: { language: string }) {
   // Fetch Private API data from backend proxy
   const fetchPrivateData = async () => {
     try {
-      // 1. Fetch Account Balance
       const accRes = await axios.get('/api/kucoin/account');
       if (accRes.data && accRes.data.code === '200000' && accRes.data.data) {
         setAccountBalance({
@@ -183,7 +198,6 @@ export function FuturesTrading({ language }: { language: string }) {
         setApiStatus('error');
       }
 
-      // 2. Fetch Real Positions
       const posRes = await axios.get('/api/kucoin/positions');
       if (posRes.data && posRes.data.code === '200000' && Array.isArray(posRes.data.data)) {
         const mappedPos: Position[] = posRes.data.data.map((p: any) => ({
@@ -200,7 +214,6 @@ export function FuturesTrading({ language }: { language: string }) {
         setPositions(mappedPos);
       }
 
-      // 3. Fetch Real Open Orders
       const ordRes = await axios.get('/api/kucoin/orders');
       if (ordRes.data && ordRes.data.code === '200000' && Array.isArray(ordRes.data.data)) {
         const mappedOrders: OpenOrder[] = ordRes.data.data.map((o: any) => ({
@@ -214,7 +227,7 @@ export function FuturesTrading({ language }: { language: string }) {
         setOpenOrders(mappedOrders);
       }
     } catch (err) {
-      console.warn("Kucoin private API authentication failed, falling back to Demo Trading Mode.", err);
+      console.warn("Kucoin private API auth not present, using Demo Mode.", err);
       setApiStatus('error');
       setIsDemoMode(true);
     }
@@ -224,9 +237,46 @@ export function FuturesTrading({ language }: { language: string }) {
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Initialize Chart
+  // Fetch Level2 Orderbook Snapshot on symbol change
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!selectedSymbol) return;
+    let isMounted = true;
+
+    const fetchOrderbookSnapshot = async () => {
+      try {
+        const res = await axios.get(`/api/kucoin/level2/snapshot?symbol=${selectedSymbol}`);
+        if (!isMounted || !res.data || res.data.code !== '200000' || !res.data.data) return;
+
+        const data = res.data.data;
+        const bids: OrderBookItem[] = (data.bids || []).slice(0, 10).map((b: any) => ({
+          price: parseFloat(b[0]),
+          size: parseFloat(b[1])
+        }));
+        const asks: OrderBookItem[] = (data.asks || []).slice(0, 10).map((a: any) => ({
+          price: parseFloat(a[0]),
+          size: parseFloat(a[1])
+        }));
+
+        setOrderBook({ bids, asks });
+      } catch (err) {
+        console.error("Failed to fetch orderbook snapshot:", err);
+      }
+    };
+
+    fetchOrderbookSnapshot();
+    return () => { isMounted = false; };
+  }, [selectedSymbol]);
+
+  // Initialize and update Lightweight Candlestick Chart
+  useEffect(() => {
+    if (!selectedSymbol || !chartContainerRef.current) return;
+
+    // Clean up previous chart instance if exists
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    }
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -247,39 +297,44 @@ export function FuturesTrading({ language }: { language: string }) {
     });
 
     const series = (chart as any).addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
+      upColor: '#00b894',
+      downColor: '#ff7675',
       borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
+      wickUpColor: '#00b894',
+      wickDownColor: '#ff7675',
     });
 
     chartRef.current = chart;
-    seriesRef.current = series as any;
+    seriesRef.current = series;
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
       }
     };
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        seriesRef.current = null;
+      }
     };
-  }, []);
+  }, [selectedSymbol]);
 
-  // Fetch Klines when symbol changes
+  // Fetch Klines when symbol or timeframe changes
   useEffect(() => {
+    if (!selectedSymbol) return;
     let isMounted = true;
+
     const fetchKlines = async () => {
       try {
-        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
+        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=${granularity}`);
         if (!isMounted || !response.data || !response.data.data) return;
         
-        // Data format: [ [time, open, close, high, low, volume, turnover], ... ]
-        // lightweight-charts needs { time, open, high, low, close }
+        // Data format: [ [time, open, high, low, close, volume, turnover], ... ]
         const formattedData = response.data.data.map((item: any) => ({
           time: Math.floor(item[0] / 1000) as any,
           open: parseFloat(item[1]),
@@ -288,8 +343,11 @@ export function FuturesTrading({ language }: { language: string }) {
           close: parseFloat(item[4]),
         })).sort((a: any, b: any) => a.time - b.time);
 
-        if (seriesRef.current) {
+        if (seriesRef.current && formattedData.length > 0) {
           seriesRef.current.setData(formattedData);
+          if (chartRef.current) {
+            chartRef.current.timeScale().fitContent();
+          }
         }
       } catch (err) {
         console.error("Failed to fetch klines:", err);
@@ -298,13 +356,11 @@ export function FuturesTrading({ language }: { language: string }) {
     
     fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol]);
-  // WebSocket Connection (Stream feeds dynamically based on symbol)
-  useEffect(() => {
-    if (!selectedSymbol) return;
+  }, [selectedSymbol, granularity]);
 
+  // KuCoin Live WebSocket Connection
+  useEffect(() => {
     let isMounted = true;
-    setOrderBook({ bids: [], asks: [] });
 
     const connectToKucoinWS = async () => {
       try {
@@ -322,32 +378,38 @@ export function FuturesTrading({ language }: { language: string }) {
         ws.onopen = () => {
           if (!isMounted) return;
           
-          // Subscribe to Ticker
-          ws.send(JSON.stringify({
-            id: Date.now(),
-            type: 'subscribe',
-            topic: `/contractMarket/tickerV2:${selectedSymbol}`,
-            privateChannel: false,
-            response: true
-          }));
+          // 1. Subscribe to Ticker for active symbols
+          const activeSymbolsToSub = Array.from(new Set([...symbols, selectedSymbol].filter(Boolean)));
+          activeSymbolsToSub.forEach((sym, idx) => {
+            ws.send(JSON.stringify({
+              id: Date.now() + idx,
+              type: 'subscribe',
+              topic: `/contractMarket/tickerV2:${sym}`,
+              privateChannel: false,
+              response: true
+            }));
+          });
 
-          // Subscribe to Klines (1min)
-          ws.send(JSON.stringify({
-            id: Date.now() + 2,
-            type: 'subscribe',
-            topic: `/contractMarket/limitCandle:${selectedSymbol}_1min`,
-            privateChannel: false,
-            response: true
-          }));
+          // 2. If a symbol is selected, subscribe to its level2 depth5 & limitCandle
+          if (selectedSymbol) {
+            const currentTfObj = TIMEFRAMES.find(t => t.value === granularity) || TIMEFRAMES[0];
+            
+            ws.send(JSON.stringify({
+              id: Date.now() + 100,
+              type: 'subscribe',
+              topic: `/contractMarket/level2Depth5:${selectedSymbol}`,
+              privateChannel: false,
+              response: true
+            }));
 
-          // Subscribe to Order Book Level 2 Depth 5
-          ws.send(JSON.stringify({
-            id: Date.now() + 1,
-            type: 'subscribe',
-            topic: `/contractMarket/level2Depth5:${selectedSymbol}`,
-            privateChannel: false,
-            response: true
-          }));
+            ws.send(JSON.stringify({
+              id: Date.now() + 101,
+              type: 'subscribe',
+              topic: `/contractMarket/limitCandle:${selectedSymbol}_${currentTfObj.wsTag}`,
+              privateChannel: false,
+              response: true
+            }));
+          }
 
           // Setup ping
           pingInterval.current = setInterval(() => {
@@ -361,130 +423,169 @@ export function FuturesTrading({ language }: { language: string }) {
           if (!isMounted) return;
           const message = JSON.parse(event.data);
           
-          // Real-time kline update
+          // A. Real-time kline update
           if (message.type === 'message' && message.subject === 'candle.stick') {
-            const data = message.data;
-            if (data.symbol === selectedSymbol && seriesRef.current) {
-              const candle = data.candles;
-              seriesRef.current.update({
-                time: parseInt(candle[0], 10) as any,
-                open: parseFloat(candle[1]),
-                high: parseFloat(candle[3]),
-                low: parseFloat(candle[4]),
-                close: parseFloat(candle[2]),
-              });
-            }
-          }
+            const candleData = message.data;
+            if (candleData && candleData.symbol === selectedSymbol && seriesRef.current) {
+              const candle = candleData.candles;
+              if (Array.isArray(candle) && candle.length >= 5) {
+                const candleTime = parseInt(candle[0], 10);
+                const openPrice = parseFloat(candle[1]);
+                const closePrice = parseFloat(candle[2]);
+                const highPrice = parseFloat(candle[3]);
+                const lowPrice = parseFloat(candle[4]);
 
-          // Real-time price update
-          if (message.type === 'message' && message.subject === 'tickerV2') {
-            const data = message.data;
-            let currentPrice = parseFloat(data.price);
-            if (isNaN(currentPrice)) {
-              const bestBid = parseFloat(data.bestBidPrice);
-              const bestAsk = parseFloat(data.bestAskPrice);
-              if (!isNaN(bestBid) && !isNaN(bestAsk)) {
-                currentPrice = (bestBid + bestAsk) / 2;
-              } else if (!isNaN(bestAsk)) {
-                currentPrice = bestAsk;
-              } else if (!isNaN(bestBid)) {
-                currentPrice = bestBid;
-              }
-            }
-            
-            if (!isNaN(currentPrice)) {
-              setContracts(prev => {
-                const existing = prev[selectedSymbol];
-                if (!existing) return prev;
-                return {
-                  ...prev,
-                  [selectedSymbol]: {
-                    ...existing,
-                    price: currentPrice
-                  }
-                };
-              });
-
-              // Update live demo position metrics in real-time
-              setDemoPositions(prev => prev.map(pos => {
-                if (pos.symbol !== selectedSymbol) return pos;
-                const pnl = pos.side === 'long' 
-                  ? pos.size * (currentPrice - pos.entryPrice)
-                  : pos.size * (pos.entryPrice - currentPrice);
-              const roe = (pnl / pos.margin) * 100;
-              return {
-                ...pos,
-                markPrice: currentPrice,
-                unrealizedPnL: pnl,
-                roe: roe
-              };
-            }));
-
-            // Check if limit orders can be triggered
-            setDemoOrders(prevOrders => {
-              const fillable = prevOrders.filter(ord => {
-                if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
-                if (ord.side === 'buy' && currentPrice <= ord.price) return true;
-                if (ord.side === 'sell' && currentPrice >= ord.price) return true;
-                return false;
-              });
-
-              if (fillable.length > 0) {
-                fillable.forEach(ord => {
-                  const entry = ord.price || currentPrice;
-                  const margin = (ord.size * entry) / leverage;
-                  const newPos: Position = {
-                    symbol: ord.symbol,
-                    side: ord.side === 'buy' ? 'long' : 'short',
-                    size: ord.size,
-                    entryPrice: entry,
-                    markPrice: currentPrice,
-                    leverage: leverage,
-                    margin: margin,
-                    unrealizedPnL: 0,
-                    roe: 0,
-                    isDemo: true
-                  };
-                  
-                  setDemoPositions(prev => [...prev, newPos]);
-                  setDemoHistory(prev => [...prev, {
-                    id: ord.id,
-                    symbol: ord.symbol,
-                    side: ord.side,
-                    type: ord.type,
-                    price: entry,
-                    size: ord.size,
-                    time: new Date().toLocaleTimeString(),
-                    status: 'Filled'
-                  }]);
+                seriesRef.current.update({
+                  time: candleTime as any,
+                  open: openPrice,
+                  high: highPrice,
+                  low: lowPrice,
+                  close: closePrice,
                 });
-                
-                return prevOrders.filter(ord => !fillable.some(f => f.id === ord.id));
-              }
-              return prevOrders;
-            });
-          }
-        }
 
-          // Real-time Level 2 Order Book update
-          if (message.type === 'message' && (message.subject === 'level2Depth5' || message.subject === 'level2' || (message.topic && message.topic.includes('level2Depth5')))) {
-            const data = message.data;
-            if (data && (data.bids || data.asks)) {
-              const mappedBids = (data.bids || []).map((b: any) => ({
+                // Also update contracts current price
+                setContracts(prev => {
+                  const existing = prev[selectedSymbol];
+                  if (!existing) return prev;
+                  return {
+                    ...prev,
+                    [selectedSymbol]: {
+                      ...existing,
+                      price: closePrice
+                    }
+                  };
+                });
+              }
+            }
+          }
+
+          // B. Real-time ticker price update
+          if (message.type === 'message' && (message.subject === 'tickerV2' || message.subject === 'ticker')) {
+            const tickerData = message.data;
+            if (tickerData && tickerData.symbol) {
+              const sym = tickerData.symbol;
+              let currentPrice = parseFloat(tickerData.price);
+              if (isNaN(currentPrice)) {
+                const bestBid = parseFloat(tickerData.bestBidPrice);
+                const bestAsk = parseFloat(tickerData.bestAskPrice);
+                if (!isNaN(bestBid) && !isNaN(bestAsk)) {
+                  currentPrice = (bestBid + bestAsk) / 2;
+                } else if (!isNaN(bestAsk)) {
+                  currentPrice = bestAsk;
+                } else if (!isNaN(bestBid)) {
+                  currentPrice = bestBid;
+                }
+              }
+
+              if (!isNaN(currentPrice) && currentPrice > 0) {
+                setContracts(prev => {
+                  const existing = prev[sym] || {
+                    symbol: sym,
+                    price: currentPrice,
+                    indexPrice: currentPrice,
+                    markPrice: currentPrice,
+                    priceChangeRate: 0,
+                    volume24h: 0,
+                    turnover24h: 0,
+                    fundingRate: 0,
+                    multiplier: 1,
+                    lotSize: 1
+                  };
+                  return {
+                    ...prev,
+                    [sym]: {
+                      ...existing,
+                      price: currentPrice
+                    }
+                  };
+                });
+
+                // If this ticker is for selectedSymbol, trigger demo position & orders updates
+                if (sym === selectedSymbol) {
+                  setDemoPositions(prev => prev.map(pos => {
+                    if (pos.symbol !== selectedSymbol) return pos;
+                    const pnl = pos.side === 'long' 
+                      ? pos.size * (currentPrice - pos.entryPrice)
+                      : pos.size * (pos.entryPrice - currentPrice);
+                    const roe = pos.margin > 0 ? (pnl / pos.margin) * 100 : 0;
+                    return {
+                      ...pos,
+                      markPrice: currentPrice,
+                      unrealizedPnL: pnl,
+                      roe: roe
+                    };
+                  }));
+
+                  // Check if limit orders trigger
+                  setDemoOrders(prevOrders => {
+                    const fillable = prevOrders.filter(ord => {
+                      if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
+                      if (ord.side === 'buy' && currentPrice <= ord.price) return true;
+                      if (ord.side === 'sell' && currentPrice >= ord.price) return true;
+                      return false;
+                    });
+
+                    if (fillable.length > 0) {
+                      fillable.forEach(ord => {
+                        const entry = ord.price || currentPrice;
+                        const margin = (ord.size * entry) / leverage;
+                        const newPos: Position = {
+                          symbol: ord.symbol,
+                          side: ord.side === 'buy' ? 'long' : 'short',
+                          size: ord.size,
+                          entryPrice: entry,
+                          markPrice: currentPrice,
+                          leverage: leverage,
+                          margin: margin,
+                          unrealizedPnL: 0,
+                          roe: 0,
+                          isDemo: true
+                        };
+                        
+                        setDemoPositions(prev => [...prev, newPos]);
+                        setDemoHistory(prev => [...prev, {
+                          id: ord.id,
+                          symbol: ord.symbol,
+                          side: ord.side,
+                          type: ord.type,
+                          price: entry,
+                          size: ord.size,
+                          time: new Date().toLocaleTimeString(),
+                          status: 'Filled'
+                        }]);
+                      });
+                      
+                      return prevOrders.filter(ord => !fillable.some(f => f.id === ord.id));
+                    }
+                    return prevOrders;
+                  });
+                }
+              }
+            }
+          }
+
+          // C. Real-time Level 2 Order Book update
+          if (message.type === 'message' && (message.subject === 'level2' || message.subject === 'level2Depth5' || (message.topic && message.topic.includes('level2')))) {
+            const obData = message.data;
+            if (obData && (obData.bids || obData.asks)) {
+              const mappedBids = (obData.bids || []).slice(0, 10).map((b: any) => ({
                 price: parseFloat(b[0]),
                 size: parseFloat(b[1])
               }));
-              const mappedAsks = (data.asks || []).map((a: any) => ({
+              const mappedAsks = (obData.asks || []).slice(0, 10).map((a: any) => ({
                 price: parseFloat(a[0]),
                 size: parseFloat(a[1])
               }));
-              setOrderBook({ bids: mappedBids, asks: mappedAsks });
+
+              if (mappedBids.length > 0 || mappedAsks.length > 0) {
+                setOrderBook({ bids: mappedBids, asks: mappedAsks });
+              }
             }
           }
         };
 
         ws.onerror = (err) => {
-          console.error('Kucoin WS Error', err);
+          console.error('KuCoin WS Error', err);
         };
 
         ws.onclose = () => {
@@ -496,7 +597,7 @@ export function FuturesTrading({ language }: { language: string }) {
       } catch (err) {
         console.error('Failed to connect KuCoin websocket feed', err);
         if (isMounted) {
-          setTimeout(connectToKucoinWS, 10000);
+          setTimeout(connectToKucoinWS, 8000);
         }
       }
     };
@@ -508,47 +609,19 @@ export function FuturesTrading({ language }: { language: string }) {
       if (wsRef.current) wsRef.current.close();
       if (pingInterval.current) clearInterval(pingInterval.current);
     };
-  }, [selectedSymbol]);
+  }, [selectedSymbol, granularity, symbols]);
 
   // Format Helper Methods
-  const generateMockOrderBook = (centerPrice: number) => {
-    const bids: OrderBookItem[] = [];
-    const asks: OrderBookItem[] = [];
-    for (let i = 1; i <= 5; i++) {
-      const spread = (centerPrice * 0.00012) * i;
-      bids.push({
-        price: centerPrice - spread,
-        size: Math.random() * 2.2 + 0.1
-      });
-      asks.push({
-        price: centerPrice + spread,
-        size: Math.random() * 2.2 + 0.1
-      });
-    }
-    return { bids, asks };
-  };
-
-  useEffect(() => {
-    if (!selectedSymbol) return;
-    const activeContract = contracts[selectedSymbol];
-    if (activeContract?.price) {
-      setOrderBook(prev => {
-        if (prev.bids.length === 0) {
-          return generateMockOrderBook(activeContract.price);
-        }
-        return prev;
-      });
-    }
-  }, [selectedSymbol, contracts[selectedSymbol || '']?.price]);
-
   const formatPrice = (price: number) => {
-    if (!price) return '...';
-    return price < 1 ? price.toFixed(4) : price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (!price || isNaN(price)) return '...';
+    if (price < 0.001) return price.toFixed(6);
+    if (price < 1) return price.toFixed(4);
+    return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   
   const formatPercentage = (val: number) => {
     if (isNaN(val)) return '0.00%';
-    return `${val > 0 ? '+' : ''}${(val * 100).toFixed(2)}%`;
+    return `${val >= 0 ? '+' : ''}${(val * 100).toFixed(2)}%`;
   };
 
   const getContractPrice = () => {
@@ -556,8 +629,12 @@ export function FuturesTrading({ language }: { language: string }) {
     return contracts[selectedSymbol].price;
   };
 
-  // Place Order Action (Supports Real and Demo Hybrid Modes)
+  const activeContract = selectedSymbol ? contracts[selectedSymbol] : null;
+
+  // Place Order Action
   const handlePlaceOrder = async () => {
+    if (!selectedSymbol) return;
+
     const multiplier = activeContract?.multiplier || 1;
     const lotSize = activeContract?.lotSize || 1;
     const curPrice = getContractPrice();
@@ -576,8 +653,8 @@ export function FuturesTrading({ language }: { language: string }) {
 
     if (isNaN(size) || size <= 0) {
       alert(unit === 'USDT'
-        ? `USDT amount is too small. Minimum contract size is ${lotSize} LOT (${(lotSize * targetPrice * multiplier).toFixed(2)} USDT)`
-        : "Please enter a valid size"
+        ? `USDT amount is too small. Minimum size is ${lotSize} LOT (${(lotSize * targetPrice * multiplier).toFixed(2)} USDT)`
+        : "Please enter a valid contract size"
       );
       return;
     }
@@ -622,9 +699,8 @@ export function FuturesTrading({ language }: { language: string }) {
     setDemoBalance(prev => prev - estimatedMargin);
 
     if (orderType === 'market') {
-      // Open Simulated Position immediately
       const newPos: Position = {
-        symbol: selectedSymbol!,
+        symbol: selectedSymbol,
         side: side === 'buy' ? 'long' : 'short',
         size: size,
         entryPrice: curPrice,
@@ -648,10 +724,9 @@ export function FuturesTrading({ language }: { language: string }) {
       }]);
       alert("Simulated Market position opened!");
     } else {
-      // Place in Open Orders list
       const newOrder: OpenOrder = {
         id: Math.random().toString(36).substring(2, 10),
-        symbol: selectedSymbol!,
+        symbol: selectedSymbol,
         side: side === 'buy' ? 'buy' : 'sell',
         type: 'limit',
         price: targetPrice,
@@ -666,10 +741,9 @@ export function FuturesTrading({ language }: { language: string }) {
     setPriceInput('');
   };
 
-  // Close Position (Real vs. Demo)
+  // Close Position
   const handleClosePosition = async (pos: Position) => {
     if (pos.isDemo) {
-      // Return margin + pnl to demo balance
       const totalReturned = pos.margin + pos.unrealizedPnL;
       setDemoBalance(prev => prev + totalReturned);
       setDemoPositions(prev => prev.filter(p => p.symbol !== pos.symbol || p.side !== pos.side));
@@ -687,7 +761,6 @@ export function FuturesTrading({ language }: { language: string }) {
       return;
     }
 
-    // Real API Close order
     try {
       const closePayload = {
         clientOid: Math.random().toString(36).substring(2, 15),
@@ -709,7 +782,7 @@ export function FuturesTrading({ language }: { language: string }) {
     }
   };
 
-  // Cancel Open Order (Real vs. Demo)
+  // Cancel Open Order
   const handleCancelOrder = async (ord: OpenOrder) => {
     if (ord.isDemo) {
       const estimatedMargin = (ord.size * (ord.price || 0)) / leverage;
@@ -719,7 +792,6 @@ export function FuturesTrading({ language }: { language: string }) {
       return;
     }
 
-    // Real API cancel
     try {
       const res = await axios.delete(`/api/kucoin/order/${ord.id}`);
       if (res.data && res.data.code === '200000') {
@@ -739,7 +811,13 @@ export function FuturesTrading({ language }: { language: string }) {
   const activeBalanceTotal = isDemoMode ? demoBalance : accountBalance.total;
   const activeBalanceAvailable = isDemoMode ? demoBalance : accountBalance.available;
 
-  // Render Symbols Table List
+  // Filtered symbols for contract table
+  const displayedSymbols = (searchQuery.trim() ? allContractsList : symbols).filter((c: any) => {
+    const symName = typeof c === 'string' ? c : c.symbol;
+    return symName.toLowerCase().includes(searchQuery.toLowerCase());
+  }).map((c: any) => typeof c === 'string' ? c : c.symbol);
+
+  // ------------------- VIEW A: Symbols List / Market Overview -------------------
   if (!selectedSymbol) {
     return (
       <Box sx={{ animation: 'fadeIn 0.4s ease-out', pb: 10 }}>
@@ -756,7 +834,7 @@ export function FuturesTrading({ language }: { language: string }) {
               Empire Futures
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Perpetual Contracts • Powered by KuCoin Live WebSocket
+              Perpetual Contracts • KuCoin Realtime Feed
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -784,15 +862,31 @@ export function FuturesTrading({ language }: { language: string }) {
             <Info color="#D4AF37" size={20} />
             <Box>
               <Typography variant="subtitle2" fontWeight="bold" color="#D4AF37">
-                Demo Trading Mode Active ($10,000 USDT)
+                Demo Trading Active ($10,000 USDT)
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Securely trade real-time live markets with simulated funds. API keys not fully configured or empty.
+                Trade real-time KuCoin live markets with virtual funds.
               </Typography>
             </Box>
           </Box>
         )}
 
+        {/* Search Bar */}
+        <Box sx={{ 
+          display: 'flex', alignItems: 'center', bgcolor: alpha('#121214', 0.9), 
+          borderRadius: '16px', p: 1, mb: 2, border: `1px solid ${alpha('#fff', 0.08)}` 
+        }}>
+          <Search size={18} color={alpha('#fff', 0.5)} style={{ marginLeft: 8 }} />
+          <InputBase 
+            fullWidth 
+            placeholder="Search perpetual contract (e.g., BTC, ETH, SOL, PEPE...)" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ color: '#fff', px: 1.5, fontSize: '0.9rem' }}
+          />
+        </Box>
+
+        {/* Contracts Table */}
         <Card sx={{ 
           bgcolor: alpha('#121214', 0.8),
           borderRadius: '24px',
@@ -800,7 +894,6 @@ export function FuturesTrading({ language }: { language: string }) {
           overflow: 'hidden',
           boxShadow: `0 8px 32px ${alpha('#000', 0.5)}`
         }}>
-          {/* Table Header */}
           <Stack direction="row" sx={{ p: 2, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2) }}>
             <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700 }}>Contract</Typography>
             <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700, textAlign: 'right' }}>Price</Typography>
@@ -813,9 +906,14 @@ export function FuturesTrading({ language }: { language: string }) {
             </Box>
           ) : (
             <Stack divider={<Divider sx={{ borderColor: alpha('#fff', 0.03) }} />}>
-              {symbols.map(symbol => {
-                const data = contracts[symbol];
-                if (!data) return null;
+              {displayedSymbols.slice(0, 50).map(symbol => {
+                const data = contracts[symbol] || {
+                  symbol,
+                  price: 0,
+                  priceChangeRate: 0,
+                  turnover24h: 0,
+                  markPrice: 0
+                };
 
                 const isUp = data.priceChangeRate >= 0;
                 const color = isUp ? '#00b894' : '#ff7675';
@@ -826,7 +924,9 @@ export function FuturesTrading({ language }: { language: string }) {
                     key={symbol} 
                     onClick={() => {
                       setSelectedSymbol(symbol);
-                      setPriceInput(data.price.toString());
+                      if (data.price > 0) {
+                        setPriceInput(data.price.toString());
+                      }
                     }}
                     sx={{ 
                       p: 2, 
@@ -849,7 +949,7 @@ export function FuturesTrading({ language }: { language: string }) {
                         </Box>
                       </Typography>
                       <Typography variant="caption" sx={{ color: alpha('#fff', 0.4) }}>
-                        Vol {(data.turnover24h / 1000000).toFixed(1)}M USDT
+                        Vol {((data.turnover24h || 0) / 1000000).toFixed(1)}M USDT
                       </Typography>
                     </Box>
                     
@@ -858,7 +958,7 @@ export function FuturesTrading({ language }: { language: string }) {
                         ${formatPrice(data.price)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: alpha('#fff', 0.4) }}>
-                        Mark: ${formatPrice(data.markPrice)}
+                        Mark: ${formatPrice(data.markPrice || data.price)}
                       </Typography>
                     </Box>
 
@@ -887,8 +987,7 @@ export function FuturesTrading({ language }: { language: string }) {
     );
   }
 
-  // Active Symbol Detailed Trading Screen
-  const activeContract = contracts[selectedSymbol];
+  // ------------------- VIEW B: Active Symbol Detailed Trading Screen -------------------
   const isUp = activeContract ? activeContract.priceChangeRate >= 0 : true;
   const priceColor = isUp ? '#00b894' : '#ff7675';
 
@@ -914,7 +1013,7 @@ export function FuturesTrading({ language }: { language: string }) {
         </IconButton>
         
         <Box sx={{ flex: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography variant="h5" fontWeight="900" color="#fff">
               {selectedSymbol.replace('USDTM', '')}
             </Typography>
@@ -936,7 +1035,7 @@ export function FuturesTrading({ language }: { language: string }) {
             )}
           </Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
-            KuCoin Live Order Book
+            KuCoin WebSocket Realtime
           </Typography>
         </Box>
 
@@ -950,15 +1049,43 @@ export function FuturesTrading({ language }: { language: string }) {
         </Box>
       </Box>
 
-      {/* 2. Market Stats Sub-header */}
-      <Stack direction="row" spacing={3} sx={{ mb: 3, p: 1.5, bgcolor: alpha('#000', 0.2), borderRadius: '12px', overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
+      {/* Symbol Switcher Quick Pills */}
+      <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+        {symbols.map(sym => (
+          <Button
+            key={sym}
+            size="small"
+            onClick={() => {
+              setSelectedSymbol(sym);
+              const p = contracts[sym]?.price;
+              if (p) setPriceInput(p.toString());
+            }}
+            sx={{
+              borderRadius: '20px',
+              px: 2,
+              py: 0.5,
+              fontSize: '0.75rem',
+              fontWeight: selectedSymbol === sym ? 'bold' : 'normal',
+              bgcolor: selectedSymbol === sym ? alpha('#D4AF37', 0.2) : alpha('#fff', 0.05),
+              color: selectedSymbol === sym ? '#D4AF37' : '#fff',
+              border: selectedSymbol === sym ? '1px solid #D4AF37' : '1px solid transparent',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {sym.replace('USDTM', '')}
+          </Button>
+        ))}
+      </Stack>
+
+      {/* Market Stats Sub-header */}
+      <Stack direction="row" spacing={3} sx={{ mb: 2, p: 1.5, bgcolor: alpha('#000', 0.2), borderRadius: '12px', overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
         <Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Index Price</Typography>
-          <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.indexPrice || 0)}</Typography>
+          <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.indexPrice || activeContract?.price || 0)}</Typography>
         </Box>
         <Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Mark Price</Typography>
-          <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.markPrice || 0)}</Typography>
+          <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.markPrice || activeContract?.price || 0)}</Typography>
         </Box>
         <Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Funding Rate</Typography>
@@ -970,15 +1097,44 @@ export function FuturesTrading({ language }: { language: string }) {
         </Box>
       </Stack>
 
-      {/* 3. Main Candlestick Chart (Lightweight Charts Native) */}
-      <Card sx={{ bgcolor: '#121214', border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px', overflow: 'hidden', mb: 3 }}>
+      {/* Main Candlestick Chart with Timeframe Selector */}
+      <Card sx={{ bgcolor: '#121214', border: `1px solid ${alpha('#fff', 0.08)}`, borderRadius: '16px', overflow: 'hidden', mb: 3 }}>
+        {/* Chart Timeframe Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2) }}>
+          <Typography variant="caption" fontWeight="bold" color={alpha('#fff', 0.6)}>
+            Candlestick Chart
+          </Typography>
+          <Stack direction="row" spacing={0.5}>
+            {TIMEFRAMES.map(tf => (
+              <Button
+                key={tf.value}
+                size="small"
+                onClick={() => setGranularity(tf.value)}
+                sx={{
+                  minWidth: 32,
+                  px: 1,
+                  py: 0.2,
+                  fontSize: '0.75rem',
+                  fontWeight: granularity === tf.value ? 'bold' : 'normal',
+                  bgcolor: granularity === tf.value ? alpha('#D4AF37', 0.2) : 'transparent',
+                  color: granularity === tf.value ? '#D4AF37' : alpha('#fff', 0.5),
+                  borderRadius: '6px',
+                  '&:hover': { bgcolor: alpha('#D4AF37', 0.1) }
+                }}
+              >
+                {tf.label}
+              </Button>
+            ))}
+          </Stack>
+        </Box>
+
         <Box 
           ref={chartContainerRef} 
           sx={{ width: '100%', height: '320px', position: 'relative' }} 
         />
       </Card>
 
-      {/* 4. Two-Column Layout (Order Book & Trade Entry) */}
+      {/* Two-Column Layout (Order Book & Trade Entry) */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1.3fr', sm: '1fr 1fr', md: '1.2fr 1fr' }, gap: { xs: 1.5, sm: 3 }, mb: 4 }}>
         
         {/* Left column: Live Order Book */}
@@ -991,10 +1147,22 @@ export function FuturesTrading({ language }: { language: string }) {
             {/* Asks (Sell Orders - Top) */}
             <Stack spacing={0.5} sx={{ mb: 1, direction: 'column-reverse', display: 'flex' }}>
               {orderBook.asks.slice(0, 5).reverse().map((ask, idx) => {
-                const percentage = Math.min((ask.size / Math.max(...orderBook.asks.map(a => a.size), 1)) * 100, 100);
+                const maxVol = Math.max(...orderBook.asks.map(a => a.size), 1);
+                const percentage = Math.min((ask.size / maxVol) * 100, 100);
                 return (
-                  <Box key={`ask-${idx}`} sx={{ display: 'flex', justifyContent: 'space-between', position: 'relative', py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden' }}>
-                    <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#ff7675', 0.1), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
+                  <Box 
+                    key={`ask-${idx}`} 
+                    onClick={() => {
+                      setPriceInput(ask.price.toString());
+                      setOrderType('limit');
+                    }}
+                    sx={{ 
+                      display: 'flex', justifyContent: 'space-between', position: 'relative', 
+                      py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden', cursor: 'pointer',
+                      '&:hover': { bgcolor: alpha('#ff7675', 0.15) }
+                    }}
+                  >
+                    <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#ff7675', 0.12), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
                     <Typography variant="caption" sx={{ color: '#ff7675', fontWeight: 'bold', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>${formatPrice(ask.price)}</Typography>
                     <Typography variant="caption" sx={{ color: '#fff', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>{ask.size.toFixed(3)}</Typography>
                   </Box>
@@ -1008,17 +1176,29 @@ export function FuturesTrading({ language }: { language: string }) {
                 ${formatPrice(activeContract?.price || 0)}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                Spread: $0.05
+                Realtime KuCoin WS
               </Typography>
             </Box>
 
             {/* Bids (Buy Orders - Bottom) */}
             <Stack spacing={0.5}>
               {orderBook.bids.slice(0, 5).map((bid, idx) => {
-                const percentage = Math.min((bid.size / Math.max(...orderBook.bids.map(b => b.size), 1)) * 100, 100);
+                const maxVol = Math.max(...orderBook.bids.map(b => b.size), 1);
+                const percentage = Math.min((bid.size / maxVol) * 100, 100);
                 return (
-                  <Box key={`bid-${idx}`} sx={{ display: 'flex', justifyContent: 'space-between', position: 'relative', py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden' }}>
-                    <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#00b894', 0.1), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
+                  <Box 
+                    key={`bid-${idx}`} 
+                    onClick={() => {
+                      setPriceInput(bid.price.toString());
+                      setOrderType('limit');
+                    }}
+                    sx={{ 
+                      display: 'flex', justifyContent: 'space-between', position: 'relative', 
+                      py: 0.5, px: 1, borderRadius: '4px', overflow: 'hidden', cursor: 'pointer',
+                      '&:hover': { bgcolor: alpha('#00b894', 0.15) }
+                    }}
+                  >
+                    <Box sx={{ position: 'absolute', right: 0, top: 0, bottom: 0, bgcolor: alpha('#00b894', 0.12), width: `${percentage}%`, zIndex: 0, transition: 'width 0.3s' }} />
                     <Typography variant="caption" sx={{ color: '#00b894', fontWeight: 'bold', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>${formatPrice(bid.price)}</Typography>
                     <Typography variant="caption" sx={{ color: '#fff', zIndex: 1, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>{bid.size.toFixed(3)}</Typography>
                   </Box>
@@ -1085,7 +1265,12 @@ export function FuturesTrading({ language }: { language: string }) {
               <Button 
                 fullWidth 
                 size="small"
-                onClick={() => setOrderType('limit')}
+                onClick={() => {
+                  setOrderType('limit');
+                  if (!priceInput && activeContract?.price) {
+                    setPriceInput(activeContract.price.toString());
+                  }
+                }}
                 sx={{ 
                   borderRadius: '6px',
                   bgcolor: orderType === 'limit' ? alpha('#fff', 0.1) : 'transparent',
@@ -1174,7 +1359,7 @@ export function FuturesTrading({ language }: { language: string }) {
               </Box>
             )}
 
-            {/* Order Size (Amount) Input */}
+            {/* Order Size Input */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), mb: 0.5, display: 'block', fontSize: '0.75rem' }}>
                 Size ({unit === 'USDT' ? 'USDT value' : 'Contracts'})
@@ -1207,7 +1392,7 @@ export function FuturesTrading({ language }: { language: string }) {
             {/* Leverage Slider */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Leverage Mode</Typography>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Leverage</Typography>
                 <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 800, fontSize: '0.75rem' }}>{leverage}x Cross</Typography>
               </Box>
               <Slider 
@@ -1244,7 +1429,7 @@ export function FuturesTrading({ language }: { language: string }) {
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Order Cost (Margin)</Typography>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '0.75rem' }}>Order Margin Cost</Typography>
                 <Typography variant="caption" color="#fff" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
                   ${(usdtValue / leverage).toFixed(2)} USDT
                 </Typography>
@@ -1273,10 +1458,8 @@ export function FuturesTrading({ language }: { language: string }) {
         </Box>
       </Box>
 
-      {/* 5. Positions, Active Orders, History Tab panel */}
+      {/* Positions, Active Orders, History Tab Panel */}
       <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '24px', overflow: 'hidden' }}>
-        
-        {/* Navigation tabs */}
         <Stack direction="row" spacing={1} sx={{ bgcolor: alpha('#000', 0.3), p: 1, borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
           {[
             { id: 'positions', label: `Positions (${activePositions.length})` },
@@ -1427,7 +1610,7 @@ export function FuturesTrading({ language }: { language: string }) {
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Contract</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Side</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Type</TableCell>
-                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Execution Price</TableCell>
+                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Price</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Size</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Status</TableCell>
                     </TableRow>
@@ -1452,7 +1635,7 @@ export function FuturesTrading({ language }: { language: string }) {
             </TableContainer>
           )}
 
-          {/* TAB 4: Assets (Detailed overview) */}
+          {/* TAB 4: Assets */}
           {currentTab === 'assets' && (
             <Stack spacing={3} sx={{ py: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
