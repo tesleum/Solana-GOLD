@@ -280,12 +280,13 @@ export function FuturesTrading({ language }: { language: string }) {
         
         // Data format: [ [time, open, close, high, low, volume, turnover], ... ]
         // lightweight-charts needs { time, open, high, low, close }
+        // lightweight-charts needs { time, open, high, low, close }
         const formattedData = response.data.data.map((item: any) => ({
           time: (item[0] / 1000) as any,
           open: parseFloat(item[1]),
-          high: parseFloat(item[3]),
-          low: parseFloat(item[4]),
-          close: parseFloat(item[2]),
+          high: parseFloat(item[2]),
+          low: parseFloat(item[3]),
+          close: parseFloat(item[4]),
         })).sort((a: any, b: any) => a.time - b.time);
 
         if (seriesRef.current) {
@@ -326,7 +327,7 @@ export function FuturesTrading({ language }: { language: string }) {
           ws.send(JSON.stringify({
             id: Date.now(),
             type: 'subscribe',
-            topic: `/contractMarket/tickerV2:${selectedSymbol}`,
+            topic: `/contractMarket/ticker:${selectedSymbol}`,
             privateChannel: false,
             response: true
           }));
@@ -382,7 +383,7 @@ export function FuturesTrading({ language }: { language: string }) {
           }
 
           // Real-time price update
-          if (message.type === 'message' && message.subject === 'tickerV2') {
+          if (message.type === 'message' && message.subject === 'ticker') {
             const data = message.data;
             const currentPrice = parseFloat(data.price);
             
@@ -459,7 +460,7 @@ export function FuturesTrading({ language }: { language: string }) {
           }
 
           // Real-time Level 2 Order Book update
-          if (message.type === 'message' && message.subject === 'level2Depth5') {
+          if (message.type === 'message' && message.subject === 'level2') {
             const data = message.data;
             if (data && (data.bids || data.asks)) {
               const mappedBids = (data.bids || []).map((b: any) => ({
