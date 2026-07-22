@@ -1,8 +1,12 @@
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
-import {nodePolyfills} from 'vite-plugin-node-polyfills';
+import { fileURLToPath } from 'url';
+import { defineConfig, loadEnv } from 'vite';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
@@ -67,18 +71,7 @@ export default defineConfig(({mode}) => {
       }
     },
     build: {
-      target: 'esnext',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-            solana: ['@solana/web3.js', '@solana/wallet-adapter-base', '@solana/wallet-adapter-react', '@solana/wallet-adapter-react-ui', '@solana/wallet-adapter-wallets', '@solana/spl-token'],
-            firebase: ['firebase/app', 'firebase/database'],
-            reown: ['@reown/appkit', '@reown/appkit-adapter-solana']
-          }
-        }
-      }
+      target: 'esnext'
     }
   };
 });
