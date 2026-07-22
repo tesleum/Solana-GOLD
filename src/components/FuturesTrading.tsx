@@ -445,7 +445,6 @@ export function FuturesTrading({ language }: { language: string }) {
 
                 // Also update contracts current price
                 setContracts(prev => {
-                  if (!selectedSymbol) return prev;
                   const existing = prev[selectedSymbol];
                   if (!existing) return prev;
                   return {
