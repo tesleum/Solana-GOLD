@@ -12,7 +12,9 @@ import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
 import { ref, onValue, update } from 'firebase/database';
-import { createChart, IChartApi, ISeriesApi } from 'lightweight-charts';
+import * as LightweightCharts from 'lightweight-charts';
+import { IChartApi, ISeriesApi } from 'lightweight-charts';
+const { createChart } = LightweightCharts;
 
 interface ContractData {
   symbol: string;
@@ -71,6 +73,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [orderType, setOrderType] = useState<'limit' | 'market'>('market');
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [isChartReady, setIsChartReady] = useState(false);
   const [leverage, setLeverage] = useState<number>(20);
   const [amount, setAmount] = useState<string>('');
   const [priceInput, setPriceInput] = useState<string>('');
@@ -89,7 +92,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
 
   // Demo / User Futures Trading Engine Balance
-  const [demoBalance, setDemoBalance] = useState<number>(10000);
+  const [demoBalance, setDemoBalance] = useState<number>(0);
   const [demoPositions, setDemoPositions] = useState<Position[]>([]);
   const [demoOrders, setDemoOrders] = useState<OpenOrder[]>([]);
   const [demoHistory, setDemoHistory] = useState<any[]>([]);
@@ -104,7 +107,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           if (val.futuresBalance !== undefined) {
             setDemoBalance(parseFloat(val.futuresBalance) || 0);
           } else {
-            const initBal = parseFloat(val.usGoldBalance || val.totalInvested || '1000') || 1000;
+            const initBal = parseFloat(val.usGoldBalance || val.totalInvested || '0') || 0;
             setDemoBalance(initBal);
           }
         }
@@ -249,7 +252,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: 'solid' as any, color: '#121214' },
+        background: { color: '#121214' },
         textColor: '#d1d4dc',
       },
       grid: {
@@ -262,19 +265,40 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
       },
     });
 
-    const series = (chart as any).addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
+    // Handle potential API changes or initialization issues
+    let series: any;
+    try {
+      if (typeof (chart as any).addCandlestickSeries === 'function') {
+        series = (chart as any).addCandlestickSeries({
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+      } else if (typeof (chart as any).addSeries === 'function') {
+        series = (chart as any).addSeries('Candlestick', {
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+      } else {
+        throw new Error('addCandlestickSeries not found on chart object');
+      }
+    } catch (e) {
+      console.error('Lightweight Charts Initialization Error:', e);
+      return;
+    }
 
     chartRef.current = chart;
-    seriesRef.current = series as any;
+    seriesRef.current = series;
+    setIsChartReady(true);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -288,11 +312,13 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      setIsChartReady(false);
     };
   }, [selectedSymbol]);
 
-  // Fetch Klines when symbol changes
+  // Fetch Klines when symbol changes or chart is ready
   useEffect(() => {
+    if (!isChartReady) return;
     let isMounted = true;
     const fetchKlines = async () => {
       let formattedData: any[] = [];

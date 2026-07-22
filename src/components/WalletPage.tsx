@@ -58,7 +58,7 @@ export function WalletPage({
   const [copied, setCopied] = useState(false);
 
   // Futures Wallet Balance state from Firebase
-  const [futuresBalance, setFuturesBalance] = useState<number>(1000);
+  const [futuresBalance, setFuturesBalance] = useState<number>(0);
   const [inPositionMargin, setInPositionMargin] = useState<number>(0);
   
   // Top Up Modal State
@@ -204,12 +204,12 @@ export function WalletPage({
           if (val.futuresBalance !== undefined) {
             setFuturesBalance(parseFloat(val.futuresBalance) || 0);
           } else {
-            // Default 1000 USDT futures wallet balance if first time
-            update(userRef, { futuresBalance: 1000 });
-            setFuturesBalance(1000);
+            // Default 0 USDT futures wallet balance if first time
+            update(userRef, { futuresBalance: 0 });
+            setFuturesBalance(0);
           }
         } else {
-          setFuturesBalance(1000);
+          setFuturesBalance(0);
         }
       });
       return () => unsub();
