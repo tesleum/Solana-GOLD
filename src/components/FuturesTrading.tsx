@@ -60,7 +60,7 @@ interface OpenOrder {
   isDemo?: boolean;
 }
 
-export function FuturesTrading({ language }: { language: string }) {
+export function FuturesTrading({ language, effectiveAddress }: { language: string; effectiveAddress?: string | null }) {
   const theme = useTheme();
   
   // App states
@@ -88,11 +88,27 @@ export function FuturesTrading({ language }: { language: string }) {
   const [openOrders, setOpenOrders] = useState<OpenOrder[]>([]);
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
 
-  // Demo Trading Engine Storage
+  // Demo / User Futures Trading Engine Balance
   const [demoBalance, setDemoBalance] = useState<number>(10000);
   const [demoPositions, setDemoPositions] = useState<Position[]>([]);
   const [demoOrders, setDemoOrders] = useState<OpenOrder[]>([]);
   const [demoHistory, setDemoHistory] = useState<any[]>([]);
+
+  // Sync user balance from Firebase
+  useEffect(() => {
+    if (effectiveAddress) {
+      const userRef = ref(database, `users/${effectiveAddress}`);
+      const unsub = onValue(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          if (val.futuresBalance !== undefined) {
+            setDemoBalance(parseFloat(val.futuresBalance) || 0);
+          }
+        }
+      });
+      return () => unsub();
+    }
+  }, [effectiveAddress]);
 
   // Refs for WebSockets
   const wsRef = useRef<WebSocket | null>(null);
@@ -278,11 +294,10 @@ export function FuturesTrading({ language }: { language: string }) {
         const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
         if (!isMounted || !response.data || !response.data.data) return;
         
-        // Data format: [ [time, open, close, high, low, volume, turnover], ... ]
-        // lightweight-charts needs { time, open, high, low, close }
+        // Data format: [ [time, open, high, low, close, volume, turnover], ... ]
         // lightweight-charts needs { time, open, high, low, close }
         const formattedData = response.data.data.map((item: any) => ({
-          time: (item[0] / 1000) as any,
+          time: Math.floor(item[0] / 1000) as any,
           open: parseFloat(item[1]),
           high: parseFloat(item[2]),
           low: parseFloat(item[3]),
@@ -300,6 +315,7 @@ export function FuturesTrading({ language }: { language: string }) {
     fetchKlines();
     return () => { isMounted = false; };
   }, [selectedSymbol]);
+
   // WebSocket Connection (Stream feeds dynamically based on symbol)
   useEffect(() => {
     if (!selectedSymbol) return;
@@ -332,6 +348,15 @@ export function FuturesTrading({ language }: { language: string }) {
             response: true
           }));
 
+          // Subscribe to Instrument Mark/Index Price
+          ws.send(JSON.stringify({
+            id: Date.now() + 1,
+            type: 'subscribe',
+            topic: `/contract/instrument:${selectedSymbol}`,
+            privateChannel: false,
+            response: true
+          }));
+
           // Subscribe to Klines (1min)
           ws.send(JSON.stringify({
             id: Date.now() + 2,
@@ -343,7 +368,7 @@ export function FuturesTrading({ language }: { language: string }) {
 
           // Subscribe to Order Book Level 2 Depth 5
           ws.send(JSON.stringify({
-            id: Date.now() + 1,
+            id: Date.now() + 3,
             type: 'subscribe',
             topic: `/contractMarket/level2Depth5:${selectedSymbol}`,
             privateChannel: false,
@@ -368,99 +393,121 @@ export function FuturesTrading({ language }: { language: string }) {
             if (data && data.candles && seriesRef.current) {
               const candle = data.candles;
               let t = parseInt(candle[0], 10);
-              // Dynamic guard: auto-convert millisecond timestamps to seconds
               if (t > 100000000000) {
                 t = Math.floor(t / 1000);
               }
               seriesRef.current.update({
                 time: t as any,
                 open: parseFloat(candle[1]),
-                high: parseFloat(candle[3]),
-                low: parseFloat(candle[4]),
-                close: parseFloat(candle[2]),
+                high: parseFloat(candle[2]),
+                low: parseFloat(candle[3]),
+                close: parseFloat(candle[4]),
               });
             }
           }
 
           // Real-time price update
-          if (message.type === 'message' && message.subject === 'ticker') {
+          if (message.type === 'message' && (message.subject === 'ticker' || message.subject === 'tickerV2')) {
             const data = message.data;
-            const currentPrice = parseFloat(data.price);
-            
-            setContracts(prev => {
-              const existing = prev[selectedSymbol];
-              if (!existing) return prev;
-              return {
-                ...prev,
-                [selectedSymbol]: {
-                  ...existing,
-                  price: currentPrice
-                }
-              };
-            });
-
-            // Update live demo position metrics in real-time
-            setDemoPositions(prev => prev.map(pos => {
-              if (pos.symbol !== selectedSymbol) return pos;
-              const pnl = pos.side === 'long' 
-                ? pos.size * (currentPrice - pos.entryPrice)
-                : pos.size * (pos.entryPrice - currentPrice);
-              const roe = (pnl / pos.margin) * 100;
-              return {
-                ...pos,
-                markPrice: currentPrice,
-                unrealizedPnL: pnl,
-                roe: roe
-              };
-            }));
-
-            // Check if limit orders can be triggered
-            setDemoOrders(prevOrders => {
-              const fillable = prevOrders.filter(ord => {
-                if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
-                if (ord.side === 'buy' && currentPrice <= ord.price) return true;
-                if (ord.side === 'sell' && currentPrice >= ord.price) return true;
-                return false;
+            if (data && data.price) {
+              const currentPrice = parseFloat(data.price);
+              
+              setContracts(prev => {
+                const existing = prev[selectedSymbol];
+                if (!existing) return prev;
+                return {
+                  ...prev,
+                  [selectedSymbol]: {
+                    ...existing,
+                    price: currentPrice
+                  }
+                };
               });
 
-              if (fillable.length > 0) {
-                fillable.forEach(ord => {
-                  const entry = ord.price || currentPrice;
-                  const margin = (ord.size * entry) / leverage;
-                  const newPos: Position = {
-                    symbol: ord.symbol,
-                    side: ord.side === 'buy' ? 'long' : 'short',
-                    size: ord.size,
-                    entryPrice: entry,
-                    markPrice: currentPrice,
-                    leverage: leverage,
-                    margin: margin,
-                    unrealizedPnL: 0,
-                    roe: 0,
-                    isDemo: true
-                  };
-                  
-                  setDemoPositions(prev => [...prev, newPos]);
-                  setDemoHistory(prev => [...prev, {
-                    id: ord.id,
-                    symbol: ord.symbol,
-                    side: ord.side,
-                    type: ord.type,
-                    price: entry,
-                    size: ord.size,
-                    time: new Date().toLocaleTimeString(),
-                    status: 'Filled'
-                  }]);
+              // Update live position metrics in real-time
+              setDemoPositions(prev => prev.map(pos => {
+                if (pos.symbol !== selectedSymbol) return pos;
+                const pnl = pos.side === 'long' 
+                  ? pos.size * (currentPrice - pos.entryPrice)
+                  : pos.size * (pos.entryPrice - currentPrice);
+                const roe = (pnl / pos.margin) * 100;
+                return {
+                  ...pos,
+                  markPrice: currentPrice,
+                  unrealizedPnL: pnl,
+                  roe: roe
+                };
+              }));
+
+              // Check if limit orders can be triggered
+              setDemoOrders(prevOrders => {
+                const fillable = prevOrders.filter(ord => {
+                  if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
+                  if (ord.side === 'buy' && currentPrice <= ord.price) return true;
+                  if (ord.side === 'sell' && currentPrice >= ord.price) return true;
+                  return false;
                 });
-                
-                return prevOrders.filter(ord => !fillable.some(f => f.id === ord.id));
-              }
-              return prevOrders;
-            });
+
+                if (fillable.length > 0) {
+                  fillable.forEach(ord => {
+                    const entry = ord.price || currentPrice;
+                    const margin = (ord.size * entry) / leverage;
+                    const newPos: Position = {
+                      symbol: ord.symbol,
+                      side: ord.side === 'buy' ? 'long' : 'short',
+                      size: ord.size,
+                      entryPrice: entry,
+                      markPrice: currentPrice,
+                      leverage: leverage,
+                      margin: margin,
+                      unrealizedPnL: 0,
+                      roe: 0,
+                      isDemo: true
+                    };
+                    
+                    setDemoPositions(prev => [...prev, newPos]);
+                    setDemoHistory(prev => [...prev, {
+                      id: ord.id,
+                      symbol: ord.symbol,
+                      side: ord.side,
+                      type: ord.type,
+                      price: entry,
+                      size: ord.size,
+                      time: new Date().toLocaleTimeString(),
+                      status: 'Filled'
+                    }]);
+                  });
+                  
+                  return prevOrders.filter(ord => !fillable.some(f => f.id === ord.id));
+                }
+                return prevOrders;
+              });
+            }
+          }
+
+          // Instrument Mark & Index Price Stream
+          if (message.type === 'message' && message.subject === 'mark.index.price') {
+            const data = message.data;
+            if (data) {
+              const mark = parseFloat(data.markPrice);
+              const index = parseFloat(data.indexPrice);
+              setContracts(prev => {
+                const existing = prev[selectedSymbol];
+                if (!existing) return prev;
+                return {
+                  ...prev,
+                  [selectedSymbol]: {
+                    ...existing,
+                    markPrice: mark || existing.markPrice,
+                    indexPrice: index || existing.indexPrice
+                  }
+                };
+              });
+            }
           }
 
           // Real-time Level 2 Order Book update
-          if (message.type === 'message' && message.subject === 'level2') {
+          if (message.type === 'message' && (message.subject === 'level2' || message.subject === 'level2Depth5')) {
             const data = message.data;
             if (data && (data.bids || data.asks)) {
               const mappedBids = (data.bids || []).map((b: any) => ({

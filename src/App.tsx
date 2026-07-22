@@ -2812,11 +2812,28 @@ function Dashboard() {
         )}
         
         {activeTab === 'futures' && (
-          <FuturesTrading language={language} />
+          <FuturesTrading language={language} effectiveAddress={effectiveAddress} />
         )}
         
         {activeTab === 'wallet' && (
-          <WalletPage language={language} userTotalInvested={userTotalInvested} />
+          <WalletPage 
+            language={language} 
+            userTotalInvested={userTotalInvested}
+            usGoldBalance={usGoldBalance}
+            effectiveAddress={effectiveAddress}
+            solanaPrice={solanaPrice}
+            tokenPrice={tokenPrice}
+            apyYield={apyYield}
+            transactions={transactions}
+            userEarnings={userEarnings}
+            investAmount={investAmount}
+            setInvestAmount={setInvestAmount}
+            handleInvest={handleInvestment}
+            handleClaimCommissions={handleClaimCommissions}
+            setActiveTab={setActiveTab}
+            isInvesting={isInvesting}
+            isClaiming={isClaiming}
+          />
         )}
       </Container>
 
