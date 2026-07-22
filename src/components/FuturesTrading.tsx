@@ -103,6 +103,9 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           const val = snapshot.val();
           if (val.futuresBalance !== undefined) {
             setDemoBalance(parseFloat(val.futuresBalance) || 0);
+          } else {
+            const initBal = parseFloat(val.usGoldBalance || val.totalInvested || '1000') || 1000;
+            setDemoBalance(initBal);
           }
         }
       });
@@ -242,7 +245,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
   // Initialize Chart
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!selectedSymbol || !chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -283,8 +286,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
     };
-  }, []);
+  }, [selectedSymbol]);
 
   // Fetch Klines when symbol changes
   useEffect(() => {
