@@ -436,7 +436,7 @@ export default function AdminPanel() {
           </List>
         </Box>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, pb: { xs: '96px', md: 3 } }}>
+      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, pb: { xs: '96px', md: 3 }, minWidth: 0, overflowX: "hidden" }}>
         <Toolbar />
         <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 2 } }}>
           <Routes>

@@ -1271,7 +1271,7 @@ function Dashboard() {
   return (
   <CacheProvider value={isRtl ? cacheRtl : cacheLtr}>
     <ThemeProvider theme={rtlTheme}>
-    <Box sx={{ pb: 9, minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ pb: 9, minHeight: '100vh', bgcolor: 'background.default', minWidth: 0, overflowX: 'hidden' }}>
       <OnboardingModal openExternal={isGuidanceOpen} onCloseExternal={() => setIsGuidanceOpen(false)} />
       {/* Header */}
       <AppBar 
@@ -1511,7 +1511,7 @@ function Dashboard() {
         </DialogActions>
       </Dialog>
 
-      <Container maxWidth="sm" sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth={activeTab === 'futures' ? 'md' : 'sm'} sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
         {activeTab === 'vault' && (
           <Stack spacing={3} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
             {/* Gold Bar Investment UI */}
