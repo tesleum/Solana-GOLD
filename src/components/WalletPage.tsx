@@ -194,7 +194,7 @@ export function WalletPage({
     }
   };
 
-  // Sync Futures Wallet balance from Firebase for effectiveAddress
+  // Sync Futures Wallet balance and positions from Firebase for effectiveAddress
   useEffect(() => {
     if (effectiveAddress) {
       const userRef = ref(database, `users/${effectiveAddress}`);
@@ -208,8 +208,18 @@ export function WalletPage({
             update(userRef, { futuresBalance: 0 });
             setFuturesBalance(0);
           }
+
+          // Calculate margin in positions
+          if (val.futuresPositions) {
+            const positions = Object.values(val.futuresPositions);
+            const totalMargin = positions.reduce((acc: number, pos: any) => acc + (parseFloat(pos.margin) || 0), 0);
+            setInPositionMargin(totalMargin);
+          } else {
+            setInPositionMargin(0);
+          }
         } else {
           setFuturesBalance(0);
+          setInPositionMargin(0);
         }
       });
       return () => unsub();

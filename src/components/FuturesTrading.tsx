@@ -11,7 +11,7 @@ import {
 import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue, update, push, remove, get } from 'firebase/database';
 import * as LightweightCharts from 'lightweight-charts';
 import { IChartApi, ISeriesApi } from 'lightweight-charts';
 const { createChart } = LightweightCharts;
@@ -97,7 +97,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const [demoOrders, setDemoOrders] = useState<OpenOrder[]>([]);
   const [demoHistory, setDemoHistory] = useState<any[]>([]);
 
-  // Sync user balance from Firebase
+  // Sync user data from Firebase (Balance, Positions, Orders, History)
   useEffect(() => {
     if (effectiveAddress) {
       const userRef = ref(database, `users/${effectiveAddress}`);
@@ -109,6 +109,24 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           } else {
             const initBal = parseFloat(val.usGoldBalance || val.totalInvested || '0') || 0;
             setDemoBalance(initBal);
+          }
+          
+          if (val.futuresPositions) {
+            setDemoPositions(Object.values(val.futuresPositions));
+          } else {
+            setDemoPositions([]);
+          }
+          
+          if (val.futuresOrders) {
+            setDemoOrders(Object.values(val.futuresOrders));
+          } else {
+            setDemoOrders([]);
+          }
+          
+          if (val.futuresHistory) {
+            setDemoHistory(Object.values(val.futuresHistory).sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0)));
+          } else {
+            setDemoHistory([]);
           }
         }
       });
@@ -318,7 +336,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
   // Fetch Klines when symbol changes or chart is ready
   useEffect(() => {
-    if (!isChartReady) return;
+    if (!isChartReady || !selectedSymbol) return;
     let isMounted = true;
     const fetchKlines = async () => {
       let formattedData: any[] = [];
@@ -346,7 +364,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       }
 
       // Fallback synthetic candles if API returns no data
-      if (formattedData.length === 0 && selectedSymbol) {
+      if (formattedData.length === 0) {
         const curPrice = contracts[selectedSymbol]?.price || 65000;
         const nowSec = Math.floor(Date.now() / 1000);
         let lastClose = curPrice * 0.98;
@@ -367,11 +385,9 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       }
     };
 
-    if (selectedSymbol) {
-      fetchKlines();
-    }
+    fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol, contracts]);
+  }, [selectedSymbol, isChartReady]);
 
   // WebSocket Connection (Stream feeds dynamically based on symbol)
   useEffect(() => {
@@ -445,14 +461,14 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           const message = JSON.parse(event.data);
           
           // Real-time kline update
-          if (message.type === 'message' && message.subject === 'candle.stick') {
-            const data = message.data;
-            if (data && data.candles && seriesRef.current) {
-              const candle = data.candles;
+          if (message.type === 'message' && (message.subject === 'candle.stick' || message.subject === 'kline')) {
+            const candleData = message.data;
+            if (candleData && candleData.candles && seriesRef.current) {
+              const candle = candleData.candles;
               let t = parseInt(candle[0], 10);
-              if (t > 100000000000) {
-                t = Math.floor(t / 1000);
-              }
+              // Handle milliseconds vs seconds
+              if (t > 10000000000) t = Math.floor(t / 1000);
+              
               seriesRef.current.update({
                 time: t as any,
                 open: parseFloat(candle[1]),
@@ -497,18 +513,19 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               }));
 
               // Check if limit orders can be triggered
-              setDemoOrders(prevOrders => {
-                const fillable = prevOrders.filter(ord => {
+              if (demoOrders.length > 0) {
+                const fillable = demoOrders.filter(ord => {
                   if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
                   if (ord.side === 'buy' && currentPrice <= ord.price) return true;
                   if (ord.side === 'sell' && currentPrice >= ord.price) return true;
                   return false;
                 });
 
-                if (fillable.length > 0) {
+                if (fillable.length > 0 && effectiveAddress) {
                   fillable.forEach(ord => {
                     const entry = ord.price || currentPrice;
                     const margin = (ord.size * entry) / leverage;
+                    const posId = Math.random().toString(36).substring(2, 10);
                     const newPos: Position = {
                       symbol: ord.symbol,
                       side: ord.side === 'buy' ? 'long' : 'short',
@@ -522,23 +539,23 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
                       isDemo: true
                     };
                     
-                    setDemoPositions(prev => [...prev, newPos]);
-                    setDemoHistory(prev => [...prev, {
+                    // Atomic-like update to Firebase
+                    update(ref(database, `users/${effectiveAddress}/futuresPositions/${posId}`), newPos);
+                    remove(ref(database, `users/${effectiveAddress}/futuresOrders/${ord.id}`));
+                    push(ref(database, `users/${effectiveAddress}/futuresHistory`), {
                       id: ord.id,
                       symbol: ord.symbol,
-                      side: ord.side,
-                      type: ord.type,
+                      side: ord.side === 'buy' ? 'Buy (Limit)' : 'Sell (Limit)',
+                      type: 'Limit Fill',
                       price: entry,
                       size: ord.size,
+                      timestamp: Date.now(),
                       time: new Date().toLocaleTimeString(),
                       status: 'Filled'
-                    }]);
+                    });
                   });
-                  
-                  return prevOrders.filter(ord => !fillable.some(f => f.id === ord.id));
                 }
-                return prevOrders;
-              });
+              }
             }
           }
 
@@ -696,6 +713,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
     if (orderType === 'market') {
       // Open Simulated Position immediately
+      const posId = Math.random().toString(36).substring(2, 10);
       const newPos: Position = {
         symbol: selectedSymbol!,
         side: side === 'buy' ? 'long' : 'short',
@@ -708,22 +726,28 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         roe: 0,
         isDemo: true
       };
-      setDemoPositions(prev => [...prev, newPos]);
-      setDemoHistory(prev => [...prev, {
-        id: Math.random().toString(36).substring(2, 10),
-        symbol: selectedSymbol,
-        side: side === 'buy' ? 'Buy (Long)' : 'Sell (Short)',
-        type: 'Market',
-        price: curPrice,
-        size: size,
-        time: new Date().toLocaleTimeString(),
-        status: 'Filled'
-      }]);
+      
+      if (effectiveAddress) {
+        update(ref(database, `users/${effectiveAddress}/futuresPositions/${posId}`), newPos);
+        push(ref(database, `users/${effectiveAddress}/futuresHistory`), {
+          id: posId,
+          symbol: selectedSymbol,
+          side: side === 'buy' ? 'Buy (Long)' : 'Sell (Short)',
+          type: 'Market',
+          price: curPrice,
+          size: size,
+          timestamp: Date.now(),
+          time: new Date().toLocaleTimeString(),
+          status: 'Filled'
+        });
+      }
+
       alert(`Position opened successfully (${marginMode} Margin)!`);
     } else {
       // Place in Open Orders list
+      const orderId = Math.random().toString(36).substring(2, 10);
       const newOrder: OpenOrder = {
-        id: Math.random().toString(36).substring(2, 10),
+        id: orderId,
         symbol: selectedSymbol!,
         side: side === 'buy' ? 'buy' : 'sell',
         type: 'limit',
@@ -731,7 +755,11 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         size: size,
         isDemo: true
       };
-      setDemoOrders(prev => [...prev, newOrder]);
+      
+      if (effectiveAddress) {
+        update(ref(database, `users/${effectiveAddress}/futuresOrders/${orderId}`), newOrder);
+      }
+
       alert(`Limit order placed successfully (${marginMode} Margin)!`);
     }
 
@@ -745,22 +773,40 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       // Return margin + pnl to demo balance
       const totalReturned = pos.margin + pos.unrealizedPnL;
       const newBal = demoBalance + totalReturned;
-      setDemoBalance(newBal);
+      
       if (effectiveAddress) {
         update(ref(database, `users/${effectiveAddress}`), { futuresBalance: newBal });
+        
+        // Find position ID in Firebase if it's stored as an object with IDs as keys
+        // We can just iterate or use a property. Since we're using onValue to set local demoPositions, 
+        // we might need to store the firebase key in the Position type.
+        // For now, let's assume we can match by symbol and side or just use a lookup.
+        const userRef = ref(database, `users/${effectiveAddress}/futuresPositions`);
+        get(userRef).then((snapshot) => {
+          if (snapshot.exists()) {
+            const positions = snapshot.val();
+            const key = Object.keys(positions).find(k => 
+              positions[k].symbol === pos.symbol && positions[k].side === pos.side
+            );
+            if (key) {
+              remove(ref(database, `users/${effectiveAddress}/futuresPositions/${key}`));
+            }
+          }
+        });
+
+        push(ref(database, `users/${effectiveAddress}/futuresHistory`), {
+          id: Math.random().toString(36).substring(2, 10),
+          symbol: pos.symbol,
+          side: pos.side === 'long' ? 'Close Long' : 'Close Short',
+          type: 'Market Close',
+          price: pos.markPrice,
+          size: pos.size,
+          timestamp: Date.now(),
+          time: new Date().toLocaleTimeString(),
+          status: 'Closed'
+        });
       }
 
-      setDemoPositions(prev => prev.filter(p => p.symbol !== pos.symbol || p.side !== pos.side));
-      setDemoHistory(prev => [...prev, {
-        id: Math.random().toString(36).substring(2, 10),
-        symbol: pos.symbol,
-        side: pos.side === 'long' ? 'Close Long' : 'Close Short',
-        type: 'Market Close',
-        price: pos.markPrice,
-        size: pos.size,
-        time: new Date().toLocaleTimeString(),
-        status: 'Closed'
-      }]);
       alert("Position closed successfully! Margin and profit returned to wallet.");
       return;
     }
@@ -791,8 +837,12 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const handleCancelOrder = async (ord: OpenOrder) => {
     if (ord.isDemo) {
       const estimatedMargin = (ord.size * (ord.price || 0)) / leverage;
-      setDemoBalance(prev => prev + estimatedMargin);
-      setDemoOrders(prev => prev.filter(o => o.id !== ord.id));
+      
+      if (effectiveAddress) {
+        update(ref(database, `users/${effectiveAddress}`), { futuresBalance: demoBalance + estimatedMargin });
+        remove(ref(database, `users/${effectiveAddress}/futuresOrders/${ord.id}`));
+      }
+      
       alert("Simulated order canceled!");
       return;
     }
@@ -862,10 +912,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             <Info color="#D4AF37" size={20} />
             <Box>
               <Typography variant="subtitle2" fontWeight="bold" color="#D4AF37">
-                Demo Trading Mode Active ($10,000 USDT)
+                Demo Trading Mode Active (${demoBalance.toLocaleString()} USDT)
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Securely trade real-time live markets with simulated funds. API keys not fully configured or empty.
+                Securely trade real-time live markets with simulated funds synced to your Treasury.
               </Typography>
             </Box>
           </Box>
