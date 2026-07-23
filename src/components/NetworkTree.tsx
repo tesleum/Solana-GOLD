@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Collapse, alpha, useTheme, Tabs, Tab, Chip, ToggleButton, ToggleButtonGroup, TextField, InputAdornment, Tooltip, Stack, Card, CardContent, CardActionArea, Avatar, LinearProgress, Grid } from '@mui/material';
 import { User, ChevronDown, ChevronRight, Users, Star, Filter, BarChart3, TrendingUp, Sparkles } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { database } from '../firebase';
@@ -497,46 +498,51 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
             {/* Small Bar Chart */}
             <Grid item xs={12} md={7}>
               <Box sx={{ height: { xs: 120, sm: 160 }, width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={analyticsData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <XAxis
-                      dataKey="name"
-                      stroke="#888888"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: '#121214',
-                        borderColor: 'rgba(212, 175, 55, 0.4)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontFamily: '"Inter", sans-serif',
-                      }}
-                      formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Volume']}
-                    />
-                    <Bar
-                      dataKey="volume"
-                      radius={[4, 4, 0, 0]}
-                    >
-                      {analyticsData.map((entry, index) => {
-                        const colors = ['#D4AF37', '#0288d1', '#9c27b0', '#e65100'];
-                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <Chart
+                  options={{
+                    chart: {
+                      type: 'bar',
+                      toolbar: { show: false },
+                      background: 'transparent',
+                      sparkline: { enabled: false }
+                    },
+                    plotOptions: {
+                      bar: {
+                        borderRadius: 4,
+                        columnWidth: '50%',
+                        distributed: true
+                      }
+                    },
+                    colors: ['#D4AF37', '#0288d1', '#9c27b0', '#e65100'],
+                    xaxis: {
+                      categories: analyticsData.map(d => d.name),
+                      labels: {
+                        style: { colors: theme.palette.text.secondary, fontSize: '10px' }
+                      },
+                      axisBorder: { show: false },
+                      axisTicks: { show: false }
+                    },
+                    yaxis: {
+                      labels: {
+                        formatter: (v) => `$${v}`,
+                        style: { colors: theme.palette.text.secondary, fontSize: '10px' }
+                      }
+                    },
+                    grid: {
+                      borderColor: 'rgba(255, 255, 255, 0.05)',
+                      yaxis: { lines: { show: true } },
+                      xaxis: { lines: { show: false } }
+                    },
+                    legend: { show: false },
+                    tooltip: { theme: 'dark' }
+                  } as ApexOptions}
+                  series={[{
+                    name: 'Volume',
+                    data: analyticsData.map(d => d.volume)
+                  }]}
+                  type="bar"
+                  height="100%"
+                />
               </Box>
             </Grid>
           </Grid>
