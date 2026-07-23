@@ -141,6 +141,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const chartInstanceRef = useRef<any>(null);
   const seriesRef = useRef<any>(null);
   const [isChartReady, setIsChartReady] = useState(false);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'1m' | '5m' | '15m' | '1H' | '4H' | '1D'>('1m');
   const [chartData, setChartData] = useState<any[]>([]);
   const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
 
@@ -310,14 +311,22 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Fetch Klines when symbol changes
+  // Fetch Klines when symbol or timeframe changes
   useEffect(() => {
     if (!isChartReady || !selectedSymbol) return;
     let isMounted = true;
     const fetchKlines = async () => {
+      let granularity = 1;
+      let stepSec = 60;
+      if (selectedTimeframe === '5m') { granularity = 5; stepSec = 300; }
+      else if (selectedTimeframe === '15m') { granularity = 15; stepSec = 900; }
+      else if (selectedTimeframe === '1H') { granularity = 60; stepSec = 3600; }
+      else if (selectedTimeframe === '4H') { granularity = 240; stepSec = 14400; }
+      else if (selectedTimeframe === '1D') { granularity = 1440; stepSec = 86400; }
+
       let formattedData: any[] = [];
       try {
-        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
+        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=${granularity}`);
         if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
           const mapByTime = new Map<number, any>();
           response.data.data.forEach((item: any) => {
@@ -341,16 +350,16 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
       // Fallback synthetic candles if API returns no data
       if (formattedData.length === 0) {
-        const curPrice = contracts[selectedSymbol]?.price || 65000;
+        const curPrice = contracts[selectedSymbol]?.price || (selectedSymbol.startsWith('XBT') ? 68000 : selectedSymbol.startsWith('ETH') ? 3500 : 150);
         const nowSec = Math.floor(Date.now() / 1000);
-        let lastClose = curPrice * 0.98;
-        for (let i = 100; i >= 0; i--) {
-          const time = nowSec - i * 60;
-          const delta = (Math.random() - 0.49) * (lastClose * 0.005);
+        let lastClose = curPrice * 0.97;
+        for (let i = 120; i >= 0; i--) {
+          const time = nowSec - (i * stepSec);
+          const delta = (Math.random() - 0.485) * (lastClose * 0.008);
           const open = lastClose;
           const close = open + delta;
-          const high = Math.max(open, close) + Math.abs(delta) * Math.random();
-          const low = Math.min(open, close) - Math.abs(delta) * Math.random();
+          const high = Math.max(open, close) + Math.abs(delta) * (0.2 + Math.random() * 0.8);
+          const low = Math.min(open, close) - Math.abs(delta) * (0.2 + Math.random() * 0.8);
           lastClose = close;
           formattedData.push({ time: time as any, open, high, low, close });
         }
@@ -358,12 +367,15 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
       if (isMounted && seriesRef.current && formattedData.length > 0) {
         seriesRef.current.setData(formattedData);
+        if (chartInstanceRef.current && chartInstanceRef.current.timeScale) {
+          chartInstanceRef.current.timeScale().fitContent();
+        }
       }
     };
 
     fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol, isChartReady]);
+  }, [selectedSymbol, selectedTimeframe, isChartReady]);
 
 
 
@@ -1096,25 +1108,32 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             <Typography variant="subtitle2" fontWeight="bold" color="#fff">PROFESSIONAL TRADING TERMINAL</Typography>
             <Badge badgeContent="LIVE" color="success" sx={{ '& .MuiBadge-badge': { fontSize: 8, height: 14, minWidth: 28 } }} />
           </Stack>
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={0.5}>
             {['1m', '5m', '15m', '1H', '4H', '1D'].map(tf => (
               <Button 
                 key={tf} 
                 size="small" 
+                onClick={() => setSelectedTimeframe(tf as any)}
                 sx={{ 
-                  minWidth: 40, 
-                  fontSize: '0.7rem',
-                  color: tf === '1m' ? '#D4AF37' : alpha('#fff', 0.5),
-                  bgcolor: tf === '1m' ? alpha('#D4AF37', 0.1) : 'transparent',
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: alpha('#fff', 0.05) }
+                  minWidth: 38, 
+                  fontSize: '0.75rem',
+                  fontWeight: selectedTimeframe === tf ? 'bold' : 'normal',
+                  color: selectedTimeframe === tf ? '#D4AF37' : alpha('#fff', 0.6),
+                  bgcolor: selectedTimeframe === tf ? alpha('#D4AF37', 0.15) : 'transparent',
+                  border: `1px solid ${selectedTimeframe === tf ? alpha('#D4AF37', 0.3) : 'transparent'}`,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: alpha('#D4AF37', 0.1) }
                 }}
               >
                 {tf}
               </Button>
             ))}
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, bgcolor: alpha('#fff', 0.1) }} />
-            <IconButton size="small" sx={{ color: alpha('#fff', 0.5) }}><Maximize2 size={16} /></IconButton>
+            <IconButton size="small" onClick={() => {
+              if (chartInstanceRef.current && chartInstanceRef.current.timeScale) {
+                chartInstanceRef.current.timeScale().fitContent();
+              }
+            }} sx={{ color: alpha('#fff', 0.6) }} title="Fit Content"><Maximize2 size={16} /></IconButton>
           </Stack>
         </Box>
 

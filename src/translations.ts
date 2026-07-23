@@ -168,7 +168,17 @@ export const translations: Record<Lang, Record<string, string>> = {
     "maxDepthReached": "Maximum display depth reached.",
     "noMembersInLine": "No members in this line yet.",
     "connectWalletViewNet": "Connect wallet or enter address to view network tree.",
-    "loadingNetwork": "Loading network..."
+    "loadingNetwork": "Loading network...",
+    "staking": "Staking",
+    "futures": "Futures",
+    "wallet": "Wallet",
+    "stakingVault": "usGOLD Staking Vault",
+    "stakeUsGoldReserve": "Stake usGOLD Reserve",
+    "openStakingVault": "Go to Staking Page",
+    "activeStakingVaults": "Active Staking Vaults",
+    "enterStakingAmount": "Enter Staking Amount (usGOLD)",
+    "selectDuration": "Select Staking Duration & Return",
+    "guaranteedReturn": "Guaranteed Monthly Fixed Return"
   },
   "ES": {
     "investInUsGold": "Invertir en GOLD",
@@ -901,7 +911,17 @@ export const translations: Record<Lang, Record<string, string>> = {
     "maxDepthReached": "به حداکثر عمق نمایش رسیده است.",
     "noMembersInLine": "هنوز عضوی در این خط وجود ندارد.",
     "connectWalletViewNet": "برای مشاهده درخت شبکه، کیف پول را متصل کنید یا آدرس را وارد کنید.",
-    "loadingNetwork": "در حال بارگذاری شبکه..."
+    "loadingNetwork": "در حال بارگذاری شبکه...",
+    "staking": "استیکینگ",
+    "futures": "معاملات فیوچرز",
+    "wallet": "کیف پول",
+    "stakingVault": "خزانه استیکینگ usGOLD",
+    "stakeUsGoldReserve": "استیکینگ ذخیره usGOLD",
+    "openStakingVault": "ورود به صفحه استیکینگ",
+    "activeStakingVaults": "خزانه‌های فعال استیکینگ",
+    "enterStakingAmount": "ورود مقدار استیک (usGOLD)",
+    "selectDuration": "انتخاب مدت زمان و سود استیکینگ",
+    "guaranteedReturn": "سود ثابت ماهانه تضمین شده"
   },
   "RU": {
     "investInUsGold": "Инвестировать в GOLD",

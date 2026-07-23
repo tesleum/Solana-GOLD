@@ -17,6 +17,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { AIPage } from './AIPage';
 import { FuturesTrading } from './components/FuturesTrading';
 import { WalletPage } from './components/WalletPage';
+import { StakingPage } from './components/StakingPage';
 import { t } from './translations';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
@@ -2814,6 +2815,18 @@ function Dashboard() {
         {activeTab === 'futures' && (
           <FuturesTrading language={language} effectiveAddress={effectiveAddress} />
         )}
+
+        {activeTab === 'staking' && (
+          <StakingPage 
+            language={language} 
+            usGoldBalance={usGoldBalance}
+            effectiveAddress={effectiveAddress}
+            solanaPrice={solanaPrice}
+            tokenPrice={tokenPrice}
+            apyYield={apyYield}
+            setActiveTab={setActiveTab}
+          />
+        )}
         
         {activeTab === 'wallet' && (
           <WalletPage 
@@ -2897,7 +2910,7 @@ function Dashboard() {
             } 
           />
           <BottomNavigationAction 
-            label="Futures" 
+            label={t('futures', language) || "Futures"} 
             value="futures" 
             icon={
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2907,7 +2920,17 @@ function Dashboard() {
             } 
           />
           <BottomNavigationAction 
-            label="Wallet" 
+            label={t('staking', language) || "Staking"} 
+            value="staking" 
+            icon={
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
+                 <Coins size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
+              </Box>
+            } 
+          />
+          <BottomNavigationAction 
+            label={t('wallet', language) || "Wallet"} 
             value="wallet" 
             icon={
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
