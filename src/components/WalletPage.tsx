@@ -563,26 +563,34 @@ export function WalletPage({
                         }}
                       />
                       
-                      {/* Quick Presets */}
-                      <Stack direction="row" spacing={1} mt={1.5} flexWrap="wrap" gap={1}>
-                        {[50, 100, 250, 500, 1000, 5000].map((preset) => (
-                          <Button
-                            key={preset}
-                            size="small"
-                            variant={parseFloat(customStakeAmount) === preset ? "contained" : "outlined"}
-                            onClick={() => setCustomStakeAmount(preset.toString())}
-                            sx={{
-                              bgcolor: parseFloat(customStakeAmount) === preset ? '#D4AF37' : 'transparent',
-                              color: parseFloat(customStakeAmount) === preset ? '#000' : '#D4AF37',
-                              borderColor: alpha('#D4AF37', 0.4),
-                              fontWeight: 'bold',
-                              borderRadius: '10px'
-                            }}
-                          >
-                            {preset} usGOLD
-                          </Button>
-                        ))}
-                      </Stack>
+                      {/* Amount Slider */}
+                      <Box sx={{ px: 1, mt: 3, mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">Select Staking Amount via Slider</Typography>
+                          <Typography variant="caption" color="#D4AF37" fontWeight="bold">{customStakeAmount || 0} usGOLD</Typography>
+                        </Box>
+                        <Slider
+                          value={parseFloat(customStakeAmount) || 0}
+                          onChange={(_, val) => setCustomStakeAmount(val.toString())}
+                          min={10}
+                          max={10000}
+                          step={10}
+                          marks={[
+                            { value: 10, label: '10' },
+                            { value: 2500, label: '2.5k' },
+                            { value: 5000, label: '5k' },
+                            { value: 7500, label: '7.5k' },
+                            { value: 10000, label: '10k' }
+                          ]}
+                          valueLabelDisplay="auto"
+                          sx={{
+                            color: '#D4AF37',
+                            '& .MuiSlider-thumb': { bgcolor: '#D4AF37' },
+                            '& .MuiSlider-rail': { bgcolor: alpha('#fff', 0.2) },
+                            '& .MuiSlider-markLabel': { color: 'text.secondary', fontSize: '0.75rem' }
+                          }}
+                        />
+                      </Box>
                     </Box>
 
                     {/* Duration Options */}
@@ -837,20 +845,22 @@ export function WalletPage({
                   </Box>
                 </Box>
 
-                {/* usGOLD Digital Reserve */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderRadius: '16px', bgcolor: alpha('#fff', 0.02), '&:hover': { bgcolor: alpha('#fff', 0.05) } }}>
+                {/* usGOLD Solana Token Contract */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, borderRadius: '16px', bgcolor: alpha('#D4AF37', 0.05), border: `1px solid ${alpha('#D4AF37', 0.2)}`, '&:hover': { bgcolor: alpha('#D4AF37', 0.08) } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box sx={{ width: 42, height: 42, bgcolor: alpha('#D4AF37', 0.15), borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Box sx={{ width: 42, height: 42, bgcolor: alpha('#D4AF37', 0.2), borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Coins color="#D4AF37" size={22} />
                     </Box>
                     <Box>
-                      <Typography fontWeight="bold" color="#fff">usGOLD (Digital Gold)</Typography>
-                      <Typography variant="caption" color="text.secondary">Staked Physical Reserve</Typography>
+                      <Typography fontWeight="bold" color="#fff">usGOLD ($1.00 Stablecoin)</Typography>
+                      <Typography variant="caption" color="#D4AF37" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                        Mint: CwFp9y4hpDDbiGAHPvHRNrCpiTtGm5C4xafwCYDSGoLd
+                      </Typography>
                     </Box>
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
-                    <Typography fontWeight="bold" color="#D4AF37">{usGoldBalance.toFixed(2)} GOLD</Typography>
-                    <Typography variant="caption" color="text.secondary">~${usGoldUsdValue.toFixed(2)}</Typography>
+                    <Typography fontWeight="bold" color="#D4AF37">{usGoldBalance.toFixed(2)} usGOLD</Typography>
+                    <Typography variant="caption" color="text.secondary">Price: $1.00 USD</Typography>
                   </Box>
                 </Box>
 
