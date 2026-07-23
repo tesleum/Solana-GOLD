@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
-  Box, Typography, Stack, Card, CardContent, CircularProgress, 
+  Box, Typography, Stack, Card, CardContent, Skeleton,
   alpha, useTheme, Button, Divider, Slider, IconButton, InputBase, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Badge
 } from '@mui/material';
@@ -459,16 +459,28 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
               
-              const open = parseFloat(candle[1]);
-              const high = parseFloat(candle[2]);
-              const low = parseFloat(candle[3]);
-              const close = parseFloat(candle[4]);
+              const newCandle = {
+                x: new Date(t * 1000),
+                y: [
+                  parseFloat(candle[1]),
+                  parseFloat(candle[2]),
+                  parseFloat(candle[3]),
+                  parseFloat(candle[4])
+                ]
+              };
 
-              if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
-                if (seriesRef.current) {
-                  seriesRef.current.update({ time: t, open, high, low, close });
+              setChartData(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.x.getTime() === newCandle.x.getTime()) {
+                  // Update current candle
+                  const updated = [...prev];
+                  updated[updated.length - 1] = newCandle;
+                  return updated;
+                } else {
+                  // Add new candle
+                  return [...prev, newCandle].slice(-200); // Keep last 200
                 }
-              }
+              });
             }
           }
 
@@ -929,9 +941,15 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           </Stack>
 
           {loading && Object.keys(contracts).length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress sx={{ color: '#D4AF37' }} />
-            </Box>
+            <Stack spacing={1.5} sx={{ p: 2 }}>
+              {[1, 2, 3, 4, 5].map((item) => (
+                <Box key={item} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Skeleton variant="rectangular" width="30%" height={36} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '8px' }} />
+                  <Skeleton variant="rectangular" width="25%" height={36} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '8px' }} />
+                  <Skeleton variant="rectangular" width="20%" height={36} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '8px' }} />
+                </Box>
+              ))}
+            </Stack>
           ) : (
             <Stack divider={<Divider sx={{ borderColor: alpha('#fff', 0.03) }} />}>
               {symbols.map(symbol => {
@@ -1127,17 +1145,14 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
         <Box sx={{ p: 1, minHeight: 400, position: 'relative' }}>
           {!isChartReady && (
-            <Stack 
-              direction="column" 
-              alignItems="center" 
-              justifyContent="center" 
-              sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, bgcolor: '#121214' }}
-            >
-              <CircularProgress size={32} sx={{ color: '#D4AF37', mb: 2 }} />
-              <Typography variant="caption" color="text.secondary">INITIALIZING TRADINGVIEW CHART...</Typography>
-            </Stack>
+            <Skeleton 
+              variant="rectangular" 
+              width="100%" 
+              height={400} 
+              sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '12px', position: 'absolute', top: 8, left: 8, right: 8, bottom: 8 }} 
+            />
           )}
-          <Box ref={chartContainerRef} sx={{ width: '100%', height: 400 }} />
+          <Box ref={chartContainerRef} sx={{ width: '100%', height: 400, opacity: isChartReady ? 1 : 0, transition: 'opacity 0.2s' }} />
         </Box>
       </Card>
 

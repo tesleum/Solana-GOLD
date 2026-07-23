@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { ThemeProvider, createTheme, CssBaseline, alpha, Box, CircularProgress } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, alpha, Box, Skeleton, Stack } from '@mui/material';
 
 const App = lazy(() => import('./App'));
 const AdminPanel = lazy(() => import('./AdminPanel'));
@@ -145,8 +145,12 @@ export default function Root() {
       <ErrorBoundary>
         <BrowserRouter>
           <Suspense fallback={
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#000' }}>
-              <CircularProgress sx={{ color: '#D4AF37' }} />
+            <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto', minHeight: '100vh', bgcolor: '#000' }}>
+              <Skeleton variant="rectangular" width="100%" height={70} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '16px', mb: 3 }} />
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+                <Skeleton variant="rectangular" width="100%" height={350} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '24px' }} />
+                <Skeleton variant="rectangular" width="100%" height={350} sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '24px' }} />
+              </Stack>
             </Box>
           }>
             <Routes>
