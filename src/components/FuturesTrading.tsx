@@ -140,8 +140,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<any>(null);
   const seriesRef = useRef<any>(null);
+  const lastCandleRef = useRef<{ time: number; open: number; high: number; low: number; close: number } | null>(null);
   const [isChartReady, setIsChartReady] = useState(false);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState<string>('1m');
+  const [isKlineLoading, setIsKlineLoading] = useState<boolean>(true);
   const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
 
   useEffect(() => {
@@ -310,14 +312,26 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Fetch Klines when symbol changes
+  // Fetch Klines when symbol or timeframe changes
   useEffect(() => {
     if (!isChartReady || !selectedSymbol) return;
     let isMounted = true;
+    setIsKlineLoading(true);
+
+    const tfGranularityMap: Record<string, number> = {
+      '1m': 1,
+      '5m': 5,
+      '15m': 15,
+      '1H': 60,
+      '4H': 240,
+      '1D': 1440
+    };
+    const granularity = tfGranularityMap[timeframe] || 1;
+
     const fetchKlines = async () => {
       let formattedData: any[] = [];
       try {
-        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
+        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=${granularity}`);
         if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
           const mapByTime = new Map<number, any>();
           response.data.data.forEach((item: any) => {
@@ -343,9 +357,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       if (formattedData.length === 0) {
         const curPrice = contracts[selectedSymbol]?.price || 65000;
         const nowSec = Math.floor(Date.now() / 1000);
+        const stepSec = granularity * 60;
         let lastClose = curPrice * 0.98;
-        for (let i = 100; i >= 0; i--) {
-          const time = nowSec - i * 60;
+        for (let i = 120; i >= 0; i--) {
+          const time = nowSec - i * stepSec;
           const delta = (Math.random() - 0.49) * (lastClose * 0.005);
           const open = lastClose;
           const close = open + delta;
@@ -358,12 +373,17 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
       if (isMounted && seriesRef.current && formattedData.length > 0) {
         seriesRef.current.setData(formattedData);
+        lastCandleRef.current = formattedData[formattedData.length - 1];
+        if (chartInstanceRef.current) {
+          chartInstanceRef.current.timeScale().fitContent();
+        }
+        setIsKlineLoading(false);
       }
     };
 
     fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol, isChartReady]);
+  }, [selectedSymbol, timeframe, isChartReady]);
 
 
 
@@ -444,31 +464,21 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             if (candleData && candleData.candles) {
               const candle = candleData.candles;
               let t = parseInt(candle[0], 10);
-              // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
+              const open = parseFloat(candle[1]);
+              const high = parseFloat(candle[2]);
+              const low = parseFloat(candle[3]);
+              const close = parseFloat(candle[4]);
               
-              const newCandle = {
-                x: new Date(t * 1000),
-                y: [
-                  parseFloat(candle[1]),
-                  parseFloat(candle[2]),
-                  parseFloat(candle[3]),
-                  parseFloat(candle[4])
-                ]
-              };
-
-              setChartData(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.x.getTime() === newCandle.x.getTime()) {
-                  // Update current candle
-                  const updated = [...prev];
-                  updated[updated.length - 1] = newCandle;
-                  return updated;
-                } else {
-                  // Add new candle
-                  return [...prev, newCandle].slice(-200); // Keep last 200
+              if (seriesRef.current) {
+                const cObj = { time: t as any, open, high, low, close };
+                lastCandleRef.current = cObj;
+                try {
+                  seriesRef.current.update(cObj);
+                } catch (e) {
+                  // Ignore timestamp update out of order errors
                 }
-              });
+              }
             }
           }
 
@@ -478,6 +488,23 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             if (data && data.price) {
               const currentPrice = parseFloat(data.price);
               
+              // Smoothly animate current candle on price tick
+              if (seriesRef.current && lastCandleRef.current) {
+                const prev = lastCandleRef.current;
+                const updated = {
+                  ...prev,
+                  high: Math.max(prev.high, currentPrice),
+                  low: Math.min(prev.low, currentPrice),
+                  close: currentPrice
+                };
+                lastCandleRef.current = updated;
+                try {
+                  seriesRef.current.update(updated);
+                } catch (e) {
+                  // Ignore timestamp update out of order errors
+                }
+              }
+
               setContracts(prev => {
                 const existing = prev[selectedSymbol];
                 if (!existing) return prev;
@@ -1101,11 +1128,14 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               <Button 
                 key={tf} 
                 size="small" 
+                onClick={() => setTimeframe(tf)}
                 sx={{ 
                   minWidth: 40, 
                   fontSize: '0.7rem',
-                  color: tf === '1m' ? '#D4AF37' : alpha('#fff', 0.5),
-                  bgcolor: tf === '1m' ? alpha('#D4AF37', 0.1) : 'transparent',
+                  fontWeight: tf === timeframe ? 'bold' : 'normal',
+                  color: tf === timeframe ? '#D4AF37' : alpha('#fff', 0.5),
+                  bgcolor: tf === timeframe ? alpha('#D4AF37', 0.15) : 'transparent',
+                  border: tf === timeframe ? `1px solid ${alpha('#D4AF37', 0.4)}` : '1px solid transparent',
                   borderRadius: '6px',
                   '&:hover': { bgcolor: alpha('#fff', 0.05) }
                 }}
@@ -1119,15 +1149,24 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         </Box>
 
         <Box sx={{ p: 1, minHeight: 400, position: 'relative' }}>
-          {!isChartReady && (
+          {(!isChartReady || isKlineLoading) && (
             <Stack 
               direction="column" 
               alignItems="center" 
               justifyContent="center" 
-              sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, bgcolor: '#121214' }}
+              sx={{ 
+                position: 'absolute', 
+                top: 0, left: 0, right: 0, bottom: 0, 
+                zIndex: 2, 
+                bgcolor: alpha('#121214', 0.85),
+                backdropFilter: 'blur(4px)',
+                transition: 'all 0.3s'
+              }}
             >
-              <CircularProgress size={32} sx={{ color: '#D4AF37', mb: 2 }} />
-              <Typography variant="caption" color="text.secondary">INITIALIZING TRADINGVIEW CHART...</Typography>
+              <CircularProgress size={36} sx={{ color: '#D4AF37', mb: 2 }} />
+              <Typography variant="caption" fontWeight="bold" color="#D4AF37" sx={{ letterSpacing: 1.2 }}>
+                {!isChartReady ? 'INITIALIZING TERMINAL...' : 'LOADING CANDLESTICK CHART DATA...'}
+              </Typography>
             </Stack>
           )}
           <Box ref={chartContainerRef} sx={{ width: '100%', height: 400 }} />
