@@ -459,28 +459,16 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
               
-              const newCandle = {
-                x: new Date(t * 1000),
-                y: [
-                  parseFloat(candle[1]),
-                  parseFloat(candle[2]),
-                  parseFloat(candle[3]),
-                  parseFloat(candle[4])
-                ]
-              };
+              const open = parseFloat(candle[1]);
+              const high = parseFloat(candle[2]);
+              const low = parseFloat(candle[3]);
+              const close = parseFloat(candle[4]);
 
-              setChartData(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.x.getTime() === newCandle.x.getTime()) {
-                  // Update current candle
-                  const updated = [...prev];
-                  updated[updated.length - 1] = newCandle;
-                  return updated;
-                } else {
-                  // Add new candle
-                  return [...prev, newCandle].slice(-200); // Keep last 200
+              if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+                if (seriesRef.current) {
+                  seriesRef.current.update({ time: t, open, high, low, close });
                 }
-              });
+              }
             }
           }
 
