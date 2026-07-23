@@ -67,6 +67,8 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import axios from 'axios';
 import { database } from './firebase';
 import { ref, get, push, onValue, set, update } from 'firebase/database';
+import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'error' = 'light') => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -1897,47 +1899,61 @@ function Dashboard() {
                          <Typography variant="body2" color="text.secondary">{t('loadingChartData', language)}</Typography>
                      </Box>
                   ) : chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={alpha(theme.palette.divider, 0.4)} />
-                        <XAxis 
-                          dataKey="time" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 10, fill: theme.palette.text.secondary }} 
-                          dy={10} 
-                          minTickGap={30}
-                        />
-                        <YAxis 
-                          domain={['auto', 'auto']} 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 10, fill: theme.palette.text.secondary }} 
-                          tickFormatter={(val) => `$${val.toFixed(0)}`}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: theme.palette.background.paper, borderRadius: 8, border: `1px solid ${theme.palette.divider}`, boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
-                          itemStyle={{ color: theme.palette.primary.main, fontWeight: 'bold' }}
-                          formatter={(value: any) => [`$${parseFloat(value).toFixed(2)}`, 'Price']}
-                          labelStyle={{ color: theme.palette.text.secondary, marginBottom: 4 }}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="price" 
-                          stroke={theme.palette.primary.main} 
-                          strokeWidth={2}
-                          fillOpacity={1} 
-                          fill="url(#colorPrice)" 
-                          animationDuration={1500}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <Chart
+                      options={{
+                        chart: {
+                          type: 'area',
+                          toolbar: { show: false },
+                          sparkline: { enabled: false },
+                          background: 'transparent',
+                          animations: { enabled: true, easing: 'easeinout', speed: 800 }
+                        },
+                        colors: [theme.palette.primary.main],
+                        fill: {
+                          type: 'gradient',
+                          gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.45,
+                            opacityTo: 0.05,
+                            stops: [20, 100]
+                          }
+                        },
+                        stroke: {
+                          curve: 'smooth',
+                          width: 3
+                        },
+                        xaxis: {
+                          type: 'category',
+                          categories: chartData.map(d => d.time),
+                          labels: { show: false },
+                          axisBorder: { show: false },
+                          axisTicks: { show: false }
+                        },
+                        yaxis: {
+                          show: false
+                        },
+                        grid: {
+                          show: false
+                        },
+                        tooltip: {
+                          theme: 'dark',
+                          x: { show: true },
+                          y: {
+                            formatter: (val) => `$${val.toFixed(2)}`
+                          }
+                        },
+                        markers: {
+                          size: 0,
+                          hover: { size: 5 }
+                        }
+                      } as ApexOptions}
+                      series={[{
+                        name: 'Price',
+                        data: chartData.map(d => d.price)
+                      }]}
+                      type="area"
+                      height="100%"
+                    />
                   ) : (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', bgcolor: alpha('#fff', 0.02), borderRadius: 2 }}>
                        <Typography variant="body2" color="text.secondary">{t('noChartData', language)}</Typography>
