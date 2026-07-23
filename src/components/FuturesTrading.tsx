@@ -145,10 +145,72 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const [chartData, setChartData] = useState<any[]>([]);
   const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
 
+  // Helper to fetch and set kline data
+  const loadKlines = async (symbol: string, timeframe: string) => {
+    if (!seriesRef.current) return;
+    let granularity = 1;
+    let stepSec = 60;
+    if (timeframe === '5m') { granularity = 5; stepSec = 300; }
+    else if (timeframe === '15m') { granularity = 15; stepSec = 900; }
+    else if (timeframe === '1H') { granularity = 60; stepSec = 3600; }
+    else if (timeframe === '4H') { granularity = 240; stepSec = 14400; }
+    else if (timeframe === '1D') { granularity = 1440; stepSec = 86400; }
+
+    let formattedData: any[] = [];
+    try {
+      const response = await axios.get(`/api/kucoin/kline?symbol=${symbol}&granularity=${granularity}`);
+      if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        const mapByTime = new Map<number, any>();
+        response.data.data.forEach((item: any) => {
+          let t = parseInt(item[0], 10);
+          if (t > 10000000000) t = Math.floor(t / 1000);
+          const open = parseFloat(item[1]);
+          const high = parseFloat(item[2]);
+          const low = parseFloat(item[3]);
+          const close = parseFloat(item[4]);
+
+          if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+            mapByTime.set(t, { time: t as any, open, high, low, close });
+          }
+        });
+
+        formattedData = Array.from(mapByTime.values()).sort((a, b) => a.time - b.time);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch API klines, generating fallback candlestick data:", err);
+    }
+
+    // Fallback synthetic candles if API returns no data
+    if (formattedData.length === 0) {
+      const curPrice = contracts[symbol]?.price || (symbol.startsWith('XBT') ? 68000 : symbol.startsWith('ETH') ? 3500 : 150);
+      const nowSec = Math.floor(Date.now() / 1000);
+      let lastClose = curPrice * 0.97;
+      for (let i = 120; i >= 0; i--) {
+        const time = nowSec - (i * stepSec);
+        const delta = (Math.random() - 0.485) * (lastClose * 0.008);
+        const open = lastClose;
+        const close = open + delta;
+        const high = Math.max(open, close) + Math.abs(delta) * (0.2 + Math.random() * 0.8);
+        const low = Math.min(open, close) - Math.abs(delta) * (0.2 + Math.random() * 0.8);
+        lastClose = close;
+        formattedData.push({ time: time as any, open, high, low, close });
+      }
+    }
+
+    if (seriesRef.current && formattedData.length > 0) {
+      seriesRef.current.setData(formattedData);
+      if (chartInstanceRef.current && chartInstanceRef.current.timeScale) {
+        chartInstanceRef.current.timeScale().fitContent();
+      }
+    }
+  };
+
   useEffect(() => {
     if (!chartContainerRef.current) return;
     try {
       const container = chartContainerRef.current;
+      container.innerHTML = '';
+
       const chart = createChart(container, {
         layout: {
           background: { type: ColorType.Solid, color: '#121214' },
@@ -188,14 +250,23 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       });
       resizeObserver.observe(container);
 
+      if (selectedSymbol) {
+        loadKlines(selectedSymbol, selectedTimeframe);
+      }
+
       return () => {
         resizeObserver.disconnect();
-        chart.remove();
+        try {
+          chart.remove();
+        } catch (e) {}
+        chartInstanceRef.current = null;
+        seriesRef.current = null;
+        setIsChartReady(false);
       };
     } catch (e) {
       console.error("Failed to initialize TradingView chart:", e);
     }
-  }, []);
+  }, [selectedSymbol, selectedTimeframe]);
 
   // Fetch settings from Firebase
   useEffect(() => {
@@ -316,71 +387,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Fetch Klines when symbol or timeframe changes
-  useEffect(() => {
-    if (!isChartReady || !selectedSymbol) return;
-    let isMounted = true;
-    const fetchKlines = async () => {
-      let granularity = 1;
-      let stepSec = 60;
-      if (selectedTimeframe === '5m') { granularity = 5; stepSec = 300; }
-      else if (selectedTimeframe === '15m') { granularity = 15; stepSec = 900; }
-      else if (selectedTimeframe === '1H') { granularity = 60; stepSec = 3600; }
-      else if (selectedTimeframe === '4H') { granularity = 240; stepSec = 14400; }
-      else if (selectedTimeframe === '1D') { granularity = 1440; stepSec = 86400; }
 
-      let formattedData: any[] = [];
-      try {
-        const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=${granularity}`);
-        if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-          const mapByTime = new Map<number, any>();
-          response.data.data.forEach((item: any) => {
-            let t = parseInt(item[0], 10);
-            if (t > 10000000000) t = Math.floor(t / 1000);
-            const open = parseFloat(item[1]);
-            const high = parseFloat(item[2]);
-            const low = parseFloat(item[3]);
-            const close = parseFloat(item[4]);
-
-            if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
-              mapByTime.set(t, { time: t as any, open, high, low, close });
-            }
-          });
-
-          formattedData = Array.from(mapByTime.values()).sort((a, b) => a.time - b.time);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch API klines, generating fallback candlestick data:", err);
-      }
-
-      // Fallback synthetic candles if API returns no data
-      if (formattedData.length === 0) {
-        const curPrice = contracts[selectedSymbol]?.price || (selectedSymbol.startsWith('XBT') ? 68000 : selectedSymbol.startsWith('ETH') ? 3500 : 150);
-        const nowSec = Math.floor(Date.now() / 1000);
-        let lastClose = curPrice * 0.97;
-        for (let i = 120; i >= 0; i--) {
-          const time = nowSec - (i * stepSec);
-          const delta = (Math.random() - 0.485) * (lastClose * 0.008);
-          const open = lastClose;
-          const close = open + delta;
-          const high = Math.max(open, close) + Math.abs(delta) * (0.2 + Math.random() * 0.8);
-          const low = Math.min(open, close) - Math.abs(delta) * (0.2 + Math.random() * 0.8);
-          lastClose = close;
-          formattedData.push({ time: time as any, open, high, low, close });
-        }
-      }
-
-      if (isMounted && seriesRef.current && formattedData.length > 0) {
-        seriesRef.current.setData(formattedData);
-        if (chartInstanceRef.current && chartInstanceRef.current.timeScale) {
-          chartInstanceRef.current.timeScale().fitContent();
-        }
-      }
-    };
-
-    fetchKlines();
-    return () => { isMounted = false; };
-  }, [selectedSymbol, selectedTimeframe, isChartReady]);
 
 
 
@@ -464,28 +471,16 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
               
-              const newCandle = {
-                x: new Date(t * 1000),
-                y: [
-                  parseFloat(candle[1]),
-                  parseFloat(candle[2]),
-                  parseFloat(candle[3]),
-                  parseFloat(candle[4])
-                ]
-              };
+              const open = parseFloat(candle[1]);
+              const high = parseFloat(candle[2]);
+              const low = parseFloat(candle[3]);
+              const close = parseFloat(candle[4]);
 
-              setChartData(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.x.getTime() === newCandle.x.getTime()) {
-                  // Update current candle
-                  const updated = [...prev];
-                  updated[updated.length - 1] = newCandle;
-                  return updated;
-                } else {
-                  // Add new candle
-                  return [...prev, newCandle].slice(-200); // Keep last 200
+              if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+                if (seriesRef.current) {
+                  seriesRef.current.update({ time: t, open, high, low, close });
                 }
-              });
+              }
             }
           }
 
