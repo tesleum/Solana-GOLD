@@ -17,7 +17,6 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { AIPage } from './AIPage';
 import { FuturesTrading } from './components/FuturesTrading';
 import { WalletPage } from './components/WalletPage';
-import { StakingPage } from './components/StakingPage';
 import { t } from './translations';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
@@ -2836,17 +2835,6 @@ function Dashboard() {
             isClaiming={isClaiming}
           />
         )}
-
-        {activeTab === 'staking' && (
-          <StakingPage 
-            language={language}
-            effectiveAddress={effectiveAddress}
-            usGoldBalance={usGoldBalance}
-            solBalance={balance}
-            tokenPrice={tokenPrice}
-            setActiveTab={setActiveTab}
-          />
-        )}
       </Container>
 
       {/* Bottom Navigation */}
@@ -2925,16 +2913,6 @@ function Dashboard() {
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
                  <Wallet size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
-              </Box>
-            } 
-          />
-          <BottomNavigationAction 
-            label="Staking" 
-            value="staking" 
-            icon={
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
-                 <Coins size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
               </Box>
             } 
           />
