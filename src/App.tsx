@@ -67,7 +67,8 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import axios from 'axios';
 import { database } from './firebase';
 import { ref, get, push, onValue, set, update } from 'firebase/database';
-import { createChart, ColorType, IChartApi, ISeriesApi, AreaSeries } from 'lightweight-charts';
+import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'error' = 'light') => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -88,70 +89,6 @@ const geckoApiGet = (url: string) => {
   } : {};
   return axios.get(url, config);
 };
-
-function DashboardPriceChart({ data, theme }: { data: any[], theme: any }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const chart = createChart(containerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: theme.palette.text.secondary,
-      },
-      grid: {
-        vertLines: { visible: false },
-        horzLines: { visible: false },
-      },
-      rightPriceScale: {
-        visible: false,
-      },
-      timeScale: {
-        visible: false,
-      },
-      crosshair: {
-        mode: 0,
-      },
-      handleScale: false,
-      handleScroll: false,
-      width: containerRef.current.clientWidth,
-      height: 200,
-    });
-
-    const series = chart.addSeries(AreaSeries, {
-      lineColor: theme.palette.primary.main,
-      topColor: alpha(theme.palette.primary.main, 0.2),
-      bottomColor: alpha(theme.palette.primary.main, 0),
-      lineWidth: 2,
-    });
-
-    series.setData(data.map(d => ({
-      time: d.time as any,
-      value: d.price
-    })));
-
-    chartRef.current = chart;
-
-    const handleResize = () => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ 
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight 
-        });
-      }
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [data, theme]);
-
-  return <Box ref={containerRef} sx={{ width: '100%', height: '100%' }} />;
-}
 
 function Dashboard() {
   const showAIMenu = false;
@@ -515,9 +452,8 @@ function Dashboard() {
             const mockChart = Array.from({length: 30}).map((_, i) => {
               const dayOffset = 30 - i;
               const randomTrend = 1 + (Math.random() * 0.1 - 0.05);
-              const date = new Date(now - dayOffset * 24 * 3600 * 1000);
               return {
-                time: date.toISOString().split('T')[0],
+                time: new Date(now - dayOffset * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
                 val: price * randomTrend
               };
             });
@@ -1963,7 +1899,61 @@ function Dashboard() {
                          <Typography variant="body2" color="text.secondary">{t('loadingChartData', language)}</Typography>
                      </Box>
                   ) : chartData.length > 0 ? (
-                    <DashboardPriceChart data={chartData} theme={theme} />
+                    <Chart
+                      options={{
+                        chart: {
+                          type: 'area',
+                          toolbar: { show: false },
+                          sparkline: { enabled: false },
+                          background: 'transparent',
+                          animations: { enabled: true, easing: 'easeinout', speed: 800 }
+                        },
+                        colors: [theme.palette.primary.main],
+                        fill: {
+                          type: 'gradient',
+                          gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.45,
+                            opacityTo: 0.05,
+                            stops: [20, 100]
+                          }
+                        },
+                        stroke: {
+                          curve: 'smooth',
+                          width: 3
+                        },
+                        xaxis: {
+                          type: 'category',
+                          categories: chartData.map(d => d.time),
+                          labels: { show: false },
+                          axisBorder: { show: false },
+                          axisTicks: { show: false }
+                        },
+                        yaxis: {
+                          show: false
+                        },
+                        grid: {
+                          show: false
+                        },
+                        tooltip: {
+                          theme: 'dark',
+                          x: { show: true },
+                          y: {
+                            formatter: (val) => `$${val.toFixed(2)}`
+                          }
+                        },
+                        markers: {
+                          size: 0,
+                          hover: { size: 5 }
+                        }
+                      } as ApexOptions}
+                      series={[{
+                        name: 'Price',
+                        data: chartData.map(d => d.price)
+                      }]}
+                      type="area"
+                      height="100%"
+                    />
                   ) : (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', bgcolor: alpha('#fff', 0.02), borderRadius: 2 }}>
                        <Typography variant="body2" color="text.secondary">{t('noChartData', language)}</Typography>

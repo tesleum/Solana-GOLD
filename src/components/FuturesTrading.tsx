@@ -13,7 +13,8 @@ import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
 import { ref, onValue, update, push, remove, get } from 'firebase/database';
-import { createChart, IChartApi, ISeriesApi, ColorType, CandlestickSeries } from 'lightweight-charts';
+import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 
 interface ContractData {
   symbol: string;
@@ -138,11 +139,8 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const connectId = useRef<string>(Math.random().toString(36).substring(2, 10));
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
   
+  const [chartData, setChartData] = useState<any[]>([]);
   const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
-
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
 
   // Fetch settings from Firebase
   useEffect(() => {
@@ -263,62 +261,9 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Initialize Chart
-  useEffect(() => {
-    if (!selectedSymbol || !chartContainerRef.current) return;
-
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: '#121214' },
-        textColor: '#d1d4dc',
-      },
-      grid: {
-        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
-        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
-      },
-      crosshair: {
-        mode: 0, // Normal
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-      },
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
-    });
-
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    });
-
-    chartRef.current = chart;
-    seriesRef.current = series;
-    setIsChartReady(true);
-
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
-      }
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-      chartRef.current = null;
-      seriesRef.current = null;
-      setIsChartReady(false);
-    };
-  }, [selectedSymbol]);
-
   // Fetch Klines when symbol changes
   useEffect(() => {
-    if (!isChartReady || !selectedSymbol || !seriesRef.current) return;
+    if (!selectedSymbol) return;
     let isMounted = true;
     const fetchKlines = async () => {
       let formattedData: any[] = [];
@@ -329,11 +274,13 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             let t = parseInt(item[0], 10);
             if (t > 10000000000) t = Math.floor(t / 1000); // kucoin sometimes returns ms
             return {
-              time: t as any,
-              open: parseFloat(item[1]),
-              high: parseFloat(item[2]),
-              low: parseFloat(item[3]),
-              close: parseFloat(item[4])
+              x: new Date(t * 1000),
+              y: [
+                parseFloat(item[1]),
+                parseFloat(item[2]),
+                parseFloat(item[3]),
+                parseFloat(item[4])
+              ]
             };
           }).reverse(); // Kucoin returns newest first
         }
@@ -346,7 +293,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         const curPrice = contracts[selectedSymbol]?.price || 65000;
         const nowSec = Math.floor(Date.now() / 1000);
         let lastClose = curPrice * 0.98;
-        for (let i = 200; i >= 0; i--) {
+        for (let i = 100; i >= 0; i--) {
           const time = nowSec - i * 60;
           const delta = (Math.random() - 0.49) * (lastClose * 0.005);
           const open = lastClose;
@@ -355,21 +302,113 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           const low = Math.min(open, close) - Math.abs(delta) * Math.random();
           lastClose = close;
           formattedData.push({ 
-            time: time as any,
-            open, high, low, close
+            x: new Date(time * 1000), 
+            y: [open, high, low, close] 
           });
         }
       }
 
-      if (isMounted && seriesRef.current && formattedData.length > 0) {
-        seriesRef.current.setData(formattedData);
+      if (isMounted && formattedData.length > 0) {
+        setChartData(formattedData);
         setIsChartReady(true);
       }
     };
 
     fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol, isChartReady]);
+  }, [selectedSymbol]);
+
+  // ApexCharts Options
+  const chartOptions: ApexOptions = useMemo(() => ({
+    chart: {
+      type: 'candlestick',
+      height: 450,
+      id: 'futures-chart',
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          selection: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true
+        },
+        autoSelected: 'pan'
+      },
+      background: 'transparent',
+      animations: {
+        enabled: false // Performance
+      },
+      foreColor: '#d1d4dc'
+    },
+    title: {
+      text: `${selectedSymbol} Real-time Chart`,
+      align: 'left',
+      style: {
+        fontSize: '16px',
+        color: '#D4AF37'
+      }
+    },
+    xaxis: {
+      type: 'datetime',
+      labels: {
+        datetimeUTC: false,
+        style: {
+          colors: '#d1d4dc'
+        }
+      },
+      axisBorder: {
+        show: false
+      },
+      axisTicks: {
+        show: false
+      }
+    },
+    yaxis: {
+      tooltip: {
+        enabled: true
+      },
+      labels: {
+        formatter: (val: number) => val.toLocaleString(),
+        style: {
+          colors: '#d1d4dc'
+        }
+      },
+      opposite: true
+    },
+    grid: {
+      borderColor: 'rgba(255, 255, 255, 0.05)',
+      xaxis: {
+        lines: {
+          show: true
+        }
+      },
+      yaxis: {
+        lines: {
+          show: true
+        }
+      }
+    },
+    plotOptions: {
+      candlestick: {
+        colors: {
+          upward: '#26a69a',
+          downward: '#ef5350'
+        },
+        wick: {
+          useFillColor: true
+        }
+      }
+    },
+    tooltip: {
+      theme: 'dark',
+      x: {
+        format: 'dd MMM HH:mm'
+      }
+    }
+  }), [selectedSymbol]);
 
   // WebSocket Connection (Stream feeds dynamically based on symbol)
   useEffect(() => {
@@ -445,18 +484,33 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           // Real-time kline update
           if (message.type === 'message' && (message.subject === 'candle.stick' || message.subject === 'kline')) {
             const candleData = message.data;
-            if (candleData && candleData.candles && seriesRef.current) {
+            if (candleData && candleData.candles) {
               const candle = candleData.candles;
               let t = parseInt(candle[0], 10);
               // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
               
-              seriesRef.current.update({
-                time: t as any,
-                open: parseFloat(candle[1]),
-                high: parseFloat(candle[2]),
-                low: parseFloat(candle[3]),
-                close: parseFloat(candle[4]),
+              const newCandle = {
+                x: new Date(t * 1000),
+                y: [
+                  parseFloat(candle[1]),
+                  parseFloat(candle[2]),
+                  parseFloat(candle[3]),
+                  parseFloat(candle[4])
+                ]
+              };
+
+              setChartData(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.x.getTime() === newCandle.x.getTime()) {
+                  // Update current candle
+                  const updated = [...prev];
+                  updated[updated.length - 1] = newCandle;
+                  return updated;
+                } else {
+                  // Add new candle
+                  return [...prev, newCandle].slice(-200); // Keep last 200
+                }
               });
             }
           }
@@ -1108,7 +1162,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         </Box>
 
         <Box sx={{ p: 1, minHeight: 400, position: 'relative' }}>
-          {(!isChartReady) && (
+          {(!isChartReady || chartData.length === 0) ? (
             <Stack 
               direction="column" 
               alignItems="center" 
@@ -1118,11 +1172,15 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               <CircularProgress size={32} sx={{ color: '#D4AF37', mb: 2 }} />
               <Typography variant="caption" color="text.secondary">SYNCING WITH KUCOIN NETWORK...</Typography>
             </Stack>
+          ) : (
+            <Chart
+              options={chartOptions}
+              series={[{ data: chartData }]}
+              type="candlestick"
+              height={400}
+              width="100%"
+            />
           )}
-          <Box 
-            ref={chartContainerRef} 
-            sx={{ width: '100%', height: '400px', position: 'relative' }} 
-          />
         </Box>
       </Card>
 
