@@ -414,36 +414,45 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         ws.onopen = () => {
           if (!isMounted) return;
           
-          // Subscribe to Ticker
-          ws.send(JSON.stringify({
-            id: Date.now(),
-            type: 'subscribe',
-            topic: `/contractMarket/ticker:${selectedSymbol}`,
-            privateChannel: false,
-            response: true
-          }));
+          let candleInterval = '1min';
+          if (selectedTimeframe === '5m') candleInterval = '5min';
+          if (selectedTimeframe === '15m') candleInterval = '15min';
+          if (selectedTimeframe === '1H') candleInterval = '1hour';
+          if (selectedTimeframe === '4H') candleInterval = '4hour';
+          if (selectedTimeframe === '1D') candleInterval = '1day';
 
-          // Subscribe to Instrument Mark/Index Price
-          ws.send(JSON.stringify({
-            id: Date.now() + 1,
-            type: 'subscribe',
-            topic: `/contract/instrument:${selectedSymbol}`,
-            privateChannel: false,
-            response: true
-          }));
+          symbols.forEach((sym, idx) => {
+            // Subscribe to TickerV2 for all symbols
+            ws.send(JSON.stringify({
+              id: Date.now() + idx * 10,
+              type: 'subscribe',
+              topic: `/contractMarket/tickerV2:${sym}`,
+              privateChannel: false,
+              response: true
+            }));
 
-          // Subscribe to Klines (1min)
+            // Subscribe to Snapshot for all symbols (24h change, volume)
+            ws.send(JSON.stringify({
+              id: Date.now() + idx * 10 + 1,
+              type: 'subscribe',
+              topic: `/contractMarket/snapshot:${sym}`,
+              privateChannel: false,
+              response: true
+            }));
+          });
+
+          // Subscribe to Klines for selected symbol
           ws.send(JSON.stringify({
-            id: Date.now() + 2,
+            id: Date.now() + 100,
             type: 'subscribe',
-            topic: `/contractMarket/limitCandle:${selectedSymbol}_1min`,
+            topic: `/contractMarket/limitCandle:${selectedSymbol}_${candleInterval}`,
             privateChannel: false,
             response: true
           }));
 
           // Subscribe to Order Book Level 2 Depth 5
           ws.send(JSON.stringify({
-            id: Date.now() + 3,
+            id: Date.now() + 101,
             type: 'subscribe',
             topic: `/contractMarket/level2Depth5:${selectedSymbol}`,
             privateChannel: false,
@@ -478,24 +487,52 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
               if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
                 if (seriesRef.current) {
-                  seriesRef.current.update({ time: t, open, high, low, close });
+                  seriesRef.current.update({ time: t as any, open, high, low, close });
                 }
               }
+            }
+          }
+
+          // Real-time 24h snapshot update
+          if (message.type === 'message' && (message.subject === 'snapshot.24h' || message.topic?.startsWith('/contractMarket/snapshot:'))) {
+            const data = message.data;
+            if (data && data.symbol) {
+              setContracts(prev => {
+                const existing = prev[data.symbol];
+                if (!existing) return prev;
+                return {
+                  ...prev,
+                  [data.symbol]: {
+                    ...existing,
+                    priceChangeRate: data.priceChgPct !== undefined ? parseFloat(data.priceChgPct) : existing.priceChangeRate,
+                    volume24h: data.volume !== undefined ? parseFloat(data.volume) : existing.volume24h,
+                    turnover24h: data.turnover !== undefined ? parseFloat(data.turnover) : existing.turnover24h,
+                    price: data.lastPrice !== undefined ? parseFloat(data.lastPrice) : existing.price
+                  }
+                };
+              });
             }
           }
 
           // Real-time price update
           if (message.type === 'message' && (message.subject === 'ticker' || message.subject === 'tickerV2')) {
             const data = message.data;
-            if (data && data.price) {
-              const currentPrice = parseFloat(data.price);
+            if (data && data.symbol) {
+              let currentPrice = NaN;
+              if (data.price !== undefined) {
+                currentPrice = parseFloat(data.price);
+              } else if (data.bestAskPrice !== undefined && data.bestBidPrice !== undefined) {
+                currentPrice = (parseFloat(data.bestAskPrice) + parseFloat(data.bestBidPrice)) / 2;
+              }
+              
+              if (isNaN(currentPrice)) return;
               
               setContracts(prev => {
-                const existing = prev[selectedSymbol];
+                const existing = prev[data.symbol];
                 if (!existing) return prev;
                 return {
                   ...prev,
-                  [selectedSymbol]: {
+                  [data.symbol]: {
                     ...existing,
                     price: currentPrice
                   }
@@ -504,7 +541,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
               // Update live position metrics in real-time
               setDemoPositions(prev => prev.map(pos => {
-                if (pos.symbol !== selectedSymbol) return pos;
+                if (pos.symbol !== data.symbol) return pos;
                 const pnl = pos.side === 'long' 
                   ? pos.size * (currentPrice - pos.entryPrice)
                   : pos.size * (pos.entryPrice - currentPrice);
@@ -520,7 +557,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               // Check if limit orders can be triggered
               if (demoOrders.length > 0) {
                 const fillable = demoOrders.filter(ord => {
-                  if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
+                  if (ord.symbol !== data.symbol || ord.type !== 'limit' || !ord.price) return false;
                   if (ord.side === 'buy' && currentPrice <= ord.price) return true;
                   if (ord.side === 'sell' && currentPrice >= ord.price) return true;
                   return false;
@@ -1079,6 +1116,13 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
       {/* 2. Market Stats Sub-header */}
       <Stack direction="row" spacing={3} sx={{ mb: 3, p: 1.5, bgcolor: alpha('#000', 0.2), borderRadius: '12px', overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
         <Box>
+          <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Total PnL</Typography>
+          <Typography variant="body2" fontWeight="bold" sx={{ color: activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0) >= 0 ? '#00b894' : '#ff7675' }}>
+            {activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0) >= 0 ? '+' : ''}
+            {activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0).toFixed(2)} USDT
+          </Typography>
+        </Box>
+        <Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Index Price</Typography>
           <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.indexPrice || 0)}</Typography>
         </Box>
@@ -1365,6 +1409,46 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
                 />
                 <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold', ml: 1 }}>{unit}</Typography>
               </Box>
+
+              {/* Quick Size Percentage Buttons */}
+              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                {[10, 25, 50, 75, 100].map(pct => (
+                  <Button 
+                    key={pct}
+                    size="small"
+                    onClick={() => {
+                      const available = activeBalanceAvailable;
+                      if (available <= 0) return;
+                      const marginToUse = available * (pct / 100);
+                      
+                      if (unit === 'USDT') {
+                        setAmount((marginToUse * leverage).toFixed(2).toString());
+                      } else {
+                        const contractPrice = orderType === 'limit' ? parseFloat(priceInput) || activeContract?.price || 1 : activeContract?.price || 1;
+                        const mult = activeContract?.multiplier || 1;
+                        const lSize = activeContract?.lotSize || 1;
+                        const positionUsdt = marginToUse * leverage;
+                        const rawLots = positionUsdt / (contractPrice * mult);
+                        const lots = Math.floor(rawLots / lSize) * lSize;
+                        setAmount(lots.toFixed(3).toString());
+                      }
+                    }}
+                    sx={{ 
+                      minWidth: 0,
+                      flex: 1,
+                      p: 0,
+                      py: 0.25,
+                      borderRadius: '4px',
+                      bgcolor: alpha('#fff', 0.05),
+                      color: alpha('#fff', 0.6),
+                      fontSize: '0.65rem',
+                      '&:hover': { bgcolor: alpha('#D4AF37', 0.2), color: '#D4AF37' }
+                    }}
+                  >
+                    {pct}%
+                  </Button>
+                ))}
+              </Stack>
               
               {/* Show equivalent converted value if USDT is selected */}
               {unit === 'USDT' && activeContract && (
@@ -1528,7 +1612,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
                         <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>${formatPrice(pos.markPrice)}</TableCell>
                         <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
                           <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
-                            ${pos.unrealizedPnL.toFixed(2)} ({pos.roe.toFixed(2)}%)
+                            {pos.unrealizedPnL >= 0 ? '+' : ''}{pos.unrealizedPnL.toFixed(2)} USDT ({pos.roe >= 0 ? '+' : ''}{pos.roe.toFixed(2)}%)
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
