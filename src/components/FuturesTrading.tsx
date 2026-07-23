@@ -13,8 +13,9 @@ import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
 import { ref, onValue, update, push, remove, get } from 'firebase/database';
-import Chart from 'react-apexcharts';
-import { ApexOptions } from 'apexcharts';
+import * as LightweightCharts from 'lightweight-charts';
+import { IChartApi, ISeriesApi } from 'lightweight-charts';
+const { createChart } = LightweightCharts;
 
 interface ContractData {
   symbol: string;
@@ -139,7 +140,10 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const connectId = useRef<string>(Math.random().toString(36).substring(2, 10));
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
   
-  const [chartData, setChartData] = useState<any[]>([]);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+
   const [symbols, setSymbols] = useState<string[]>(['XBTUSDTM', 'ETHUSDTM', 'SOLUSDTM', 'XRPUSDTM', 'ADAUSDTM']);
 
   // Fetch settings from Firebase
@@ -261,28 +265,100 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
     fetchPrivateData();
   }, [selectedSymbol]);
 
-  // Fetch Klines when symbol changes
+  // Initialize Chart
   useEffect(() => {
-    if (!selectedSymbol) return;
+    if (!selectedSymbol || !chartContainerRef.current) return;
+
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { color: '#121214' },
+        textColor: '#d1d4dc',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+      },
+      crosshair: {
+        mode: 0,
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+      },
+    });
+
+    // Handle potential API changes or initialization issues
+    let series: any;
+    try {
+      if (typeof (chart as any).addCandlestickSeries === 'function') {
+        series = (chart as any).addCandlestickSeries({
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+      } else if (typeof (chart as any).addSeries === 'function') {
+        series = (chart as any).addSeries('Candlestick', {
+          upColor: '#26a69a',
+          downColor: '#ef5350',
+          borderVisible: false,
+          wickUpColor: '#26a69a',
+          wickDownColor: '#ef5350',
+        });
+      } else {
+        throw new Error('addCandlestickSeries not found on chart object');
+      }
+    } catch (e) {
+      console.error('Lightweight Charts Initialization Error:', e);
+      return;
+    }
+
+    chartRef.current = chart;
+    seriesRef.current = series;
+    setIsChartReady(true);
+
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+      setIsChartReady(false);
+    };
+  }, [selectedSymbol]);
+
+  // Fetch Klines when symbol changes or chart is ready
+  useEffect(() => {
+    if (!isChartReady || !selectedSymbol) return;
     let isMounted = true;
     const fetchKlines = async () => {
       let formattedData: any[] = [];
       try {
         const response = await axios.get(`/api/kucoin/kline?symbol=${selectedSymbol}&granularity=1`);
         if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
-          formattedData = response.data.data.map((item: any) => {
+          const mapByTime = new Map<number, any>();
+          response.data.data.forEach((item: any) => {
             let t = parseInt(item[0], 10);
-            if (t > 10000000000) t = Math.floor(t / 1000); // kucoin sometimes returns ms
-            return {
-              x: new Date(t * 1000),
-              y: [
-                parseFloat(item[1]),
-                parseFloat(item[2]),
-                parseFloat(item[3]),
-                parseFloat(item[4])
-              ]
-            };
-          }).reverse(); // Kucoin returns newest first
+            if (t > 10000000000) t = Math.floor(t / 1000);
+            const open = parseFloat(item[1]);
+            const high = parseFloat(item[2]);
+            const low = parseFloat(item[3]);
+            const close = parseFloat(item[4]);
+
+            if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
+              mapByTime.set(t, { time: t as any, open, high, low, close });
+            }
+          });
+
+          formattedData = Array.from(mapByTime.values()).sort((a, b) => a.time - b.time);
         }
       } catch (err) {
         console.warn("Failed to fetch API klines, generating fallback candlestick data:", err);
@@ -301,114 +377,18 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           const high = Math.max(open, close) + Math.abs(delta) * Math.random();
           const low = Math.min(open, close) - Math.abs(delta) * Math.random();
           lastClose = close;
-          formattedData.push({ 
-            x: new Date(time * 1000), 
-            y: [open, high, low, close] 
-          });
+          formattedData.push({ time: time as any, open, high, low, close });
         }
       }
 
-      if (isMounted && formattedData.length > 0) {
-        setChartData(formattedData);
-        setIsChartReady(true);
+      if (isMounted && seriesRef.current && formattedData.length > 0) {
+        seriesRef.current.setData(formattedData);
       }
     };
 
     fetchKlines();
     return () => { isMounted = false; };
-  }, [selectedSymbol]);
-
-  // ApexCharts Options
-  const chartOptions: ApexOptions = useMemo(() => ({
-    chart: {
-      type: 'candlestick',
-      height: 450,
-      id: 'futures-chart',
-      toolbar: {
-        show: true,
-        tools: {
-          download: true,
-          selection: true,
-          zoom: true,
-          zoomin: true,
-          zoomout: true,
-          pan: true,
-          reset: true
-        },
-        autoSelected: 'pan'
-      },
-      background: 'transparent',
-      animations: {
-        enabled: false // Performance
-      },
-      foreColor: '#d1d4dc'
-    },
-    title: {
-      text: `${selectedSymbol} Real-time Chart`,
-      align: 'left',
-      style: {
-        fontSize: '16px',
-        color: '#D4AF37'
-      }
-    },
-    xaxis: {
-      type: 'datetime',
-      labels: {
-        datetimeUTC: false,
-        style: {
-          colors: '#d1d4dc'
-        }
-      },
-      axisBorder: {
-        show: false
-      },
-      axisTicks: {
-        show: false
-      }
-    },
-    yaxis: {
-      tooltip: {
-        enabled: true
-      },
-      labels: {
-        formatter: (val: number) => val.toLocaleString(),
-        style: {
-          colors: '#d1d4dc'
-        }
-      },
-      opposite: true
-    },
-    grid: {
-      borderColor: 'rgba(255, 255, 255, 0.05)',
-      xaxis: {
-        lines: {
-          show: true
-        }
-      },
-      yaxis: {
-        lines: {
-          show: true
-        }
-      }
-    },
-    plotOptions: {
-      candlestick: {
-        colors: {
-          upward: '#26a69a',
-          downward: '#ef5350'
-        },
-        wick: {
-          useFillColor: true
-        }
-      }
-    },
-    tooltip: {
-      theme: 'dark',
-      x: {
-        format: 'dd MMM HH:mm'
-      }
-    }
-  }), [selectedSymbol]);
+  }, [selectedSymbol, isChartReady]);
 
   // WebSocket Connection (Stream feeds dynamically based on symbol)
   useEffect(() => {
@@ -484,33 +464,18 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           // Real-time kline update
           if (message.type === 'message' && (message.subject === 'candle.stick' || message.subject === 'kline')) {
             const candleData = message.data;
-            if (candleData && candleData.candles) {
+            if (candleData && candleData.candles && seriesRef.current) {
               const candle = candleData.candles;
               let t = parseInt(candle[0], 10);
               // Handle milliseconds vs seconds
               if (t > 10000000000) t = Math.floor(t / 1000);
               
-              const newCandle = {
-                x: new Date(t * 1000),
-                y: [
-                  parseFloat(candle[1]),
-                  parseFloat(candle[2]),
-                  parseFloat(candle[3]),
-                  parseFloat(candle[4])
-                ]
-              };
-
-              setChartData(prev => {
-                const last = prev[prev.length - 1];
-                if (last && last.x.getTime() === newCandle.x.getTime()) {
-                  // Update current candle
-                  const updated = [...prev];
-                  updated[updated.length - 1] = newCandle;
-                  return updated;
-                } else {
-                  // Add new candle
-                  return [...prev, newCandle].slice(-200); // Keep last 200
-                }
+              seriesRef.current.update({
+                time: t as any,
+                open: parseFloat(candle[1]),
+                high: parseFloat(candle[2]),
+                low: parseFloat(candle[3]),
+                close: parseFloat(candle[4]),
               });
             }
           }
@@ -1121,67 +1086,12 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         </Box>
       </Stack>
 
-      {/* 3. Main Candlestick Chart (ApexCharts Rich Version) */}
-      <Card 
-        sx={{ 
-          bgcolor: '#121214', 
-          border: `1px solid ${alpha('#fff', 0.05)}`, 
-          borderRadius: '24px', 
-          overflow: 'hidden', 
-          mb: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          position: 'relative'
-        }}
-      >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <BarChart2 size={20} color="#D4AF37" />
-            <Typography variant="subtitle2" fontWeight="bold" color="#fff">PROFESSIONAL TRADING TERMINAL</Typography>
-            <Badge badgeContent="LIVE" color="success" sx={{ '& .MuiBadge-badge': { fontSize: 8, height: 14, minWidth: 28 } }} />
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            {['1m', '5m', '15m', '1H', '4H', '1D'].map(tf => (
-              <Button 
-                key={tf} 
-                size="small" 
-                sx={{ 
-                  minWidth: 40, 
-                  fontSize: '0.7rem',
-                  color: tf === '1m' ? '#D4AF37' : alpha('#fff', 0.5),
-                  bgcolor: tf === '1m' ? alpha('#D4AF37', 0.1) : 'transparent',
-                  borderRadius: '6px',
-                  '&:hover': { bgcolor: alpha('#fff', 0.05) }
-                }}
-              >
-                {tf}
-              </Button>
-            ))}
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, bgcolor: alpha('#fff', 0.1) }} />
-            <IconButton size="small" sx={{ color: alpha('#fff', 0.5) }}><Maximize2 size={16} /></IconButton>
-          </Stack>
-        </Box>
-
-        <Box sx={{ p: 1, minHeight: 400, position: 'relative' }}>
-          {(!isChartReady || chartData.length === 0) ? (
-            <Stack 
-              direction="column" 
-              alignItems="center" 
-              justifyContent="center" 
-              sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, bgcolor: '#121214' }}
-            >
-              <CircularProgress size={32} sx={{ color: '#D4AF37', mb: 2 }} />
-              <Typography variant="caption" color="text.secondary">SYNCING WITH KUCOIN NETWORK...</Typography>
-            </Stack>
-          ) : (
-            <Chart
-              options={chartOptions}
-              series={[{ data: chartData }]}
-              type="candlestick"
-              height={400}
-              width="100%"
-            />
-          )}
-        </Box>
+      {/* 3. Main Candlestick Chart (Lightweight Charts Native) */}
+      <Card sx={{ bgcolor: '#121214', border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px', overflow: 'hidden', mb: 3 }}>
+        <Box 
+          ref={chartContainerRef} 
+          sx={{ width: '100%', height: '400px', position: 'relative' }} 
+        />
       </Card>
 
       {/* 4. Two-Column Layout (Order Book & Trade Entry) */}
