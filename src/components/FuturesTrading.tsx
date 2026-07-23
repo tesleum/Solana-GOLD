@@ -13,7 +13,7 @@ import { t } from '../translations';
 import axios from 'axios';
 import { database } from '../firebase';
 import { ref, onValue, update, push, remove, get } from 'firebase/database';
-import { createChart, ColorType } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 
 interface ContractData {
   symbol: string;
@@ -148,7 +148,8 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   useEffect(() => {
     if (!chartContainerRef.current) return;
     try {
-      const chart = createChart(chartContainerRef.current, {
+      const container = chartContainerRef.current;
+      const chart = createChart(container, {
         layout: {
           background: { type: ColorType.Solid, color: '#121214' },
           textColor: '#d1d4dc',
@@ -157,34 +158,38 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
           horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
         },
-        width: chartContainerRef.current.clientWidth || 600,
+        width: container.clientWidth || 600,
         height: 400,
       });
 
-      const candlestickSeries = (chart as any).addCandlestickSeries({
+      const seriesOptions = {
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderVisible: false,
         wickUpColor: '#26a69a',
         wickDownColor: '#ef5350',
-      });
+      };
+
+      const candlestickSeries = typeof (chart as any).addCandlestickSeries === 'function'
+        ? (chart as any).addCandlestickSeries(seriesOptions)
+        : chart.addSeries(CandlestickSeries, seriesOptions);
 
       chartInstanceRef.current = chart;
       seriesRef.current = candlestickSeries;
       setIsChartReady(true);
 
-      const handleResize = () => {
-        if (chartContainerRef.current && chartInstanceRef.current) {
-          chartInstanceRef.current.applyOptions({
-            width: chartContainerRef.current.clientWidth,
-          });
+      const resizeObserver = new ResizeObserver(entries => {
+        if (entries[0] && chartInstanceRef.current) {
+          const { width } = entries[0].contentRect;
+          if (width > 0) {
+            chartInstanceRef.current.applyOptions({ width });
+          }
         }
-      };
-
-      window.addEventListener('resize', handleResize);
+      });
+      resizeObserver.observe(container);
 
       return () => {
-        window.removeEventListener('resize', handleResize);
+        resizeObserver.disconnect();
         chart.remove();
       };
     } catch (e) {
