@@ -22,8 +22,18 @@ import {
   Calculator,
   ArrowRight,
 } from 'lucide-react';
-import Chart from 'react-apexcharts';
-import { ApexOptions } from 'apexcharts';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer, 
+  Cell,
+  LineChart,
+  Line,
+  CartesianGrid,
+} from 'recharts';
 import { t } from '../translations';
 
 interface ROIAnalyzerProps {
@@ -260,55 +270,20 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
 
               {/* Chart */}
               <Box sx={{ height: { xs: 220, sm: 220 }, width: '100%', mt: 2 }}>
-                <Chart
-                  options={{
-                    chart: {
-                      type: 'line',
-                      toolbar: { show: false },
-                      background: 'transparent',
-                      animations: { enabled: true }
-                    },
-                    colors: ['#4caf50', '#2196f3', '#D4AF37'],
-                    stroke: {
-                      curve: 'smooth',
-                      width: [2, 2, 4],
-                      dashArray: [5, 5, 0]
-                    },
-                    xaxis: {
-                      categories: chartData.map(d => d.time),
-                      labels: {
-                        style: { colors: theme.palette.text.secondary, fontSize: '10px' }
-                      },
-                      axisBorder: { show: false },
-                      axisTicks: { show: false }
-                    },
-                    yaxis: {
-                      labels: {
-                        formatter: (v) => `$${v.toFixed(0)}`,
-                        style: { colors: theme.palette.text.secondary, fontSize: '10px' }
-                      }
-                    },
-                    grid: {
-                      borderColor: 'rgba(255, 255, 255, 0.05)',
-                      yaxis: { lines: { show: true } },
-                      xaxis: { lines: { show: false } }
-                    },
-                    legend: {
-                      show: true,
-                      position: 'top',
-                      horizontalAlign: 'right',
-                      labels: { colors: '#fff' }
-                    },
-                    tooltip: { theme: 'dark' }
-                  } as ApexOptions}
-                  series={[
-                    { name: 'Personal', data: chartData.map(d => d.Personal) },
-                    { name: 'Network', data: chartData.map(d => d.Network) },
-                    { name: 'Total', data: chartData.map(d => d.Total) }
-                  ]}
-                  type="line"
-                  height="100%"
-                />
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={alpha('#fff', 0.05)} vertical={false} />
+                    <XAxis dataKey="time" stroke={theme.palette.text.secondary} fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis stroke={theme.palette.text.secondary} fontSize={10} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#121214', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: '10px' }}
+                      itemStyle={{ fontWeight: 'bold', padding: '2px 0' }}
+                    />
+                    <Line type="monotone" dataKey="Personal" stroke="#4caf50" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="Network" stroke="#2196f3" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    <Line type="monotone" dataKey="Total" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} />
+                  </LineChart>
+                </ResponsiveContainer>
               </Box>
             </Stack>
           </Grid>
@@ -330,50 +305,23 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
             </Stack>
             
             <Box sx={{ height: 140, width: '100%' }}>
-              <Chart
-                options={{
-                  chart: {
-                    type: 'bar',
-                    toolbar: { show: false },
-                    background: 'transparent'
-                  },
-                  plotOptions: {
-                    bar: {
-                      horizontal: true,
-                      barHeight: '60%',
-                      distributed: true,
-                      borderRadius: 4
-                    }
-                  },
-                  colors: userPositionData.map(d => d.isUser ? '#D4AF37' : alpha(d.color, 0.4) as string),
-                  xaxis: {
-                    labels: { show: false },
-                    axisBorder: { show: false },
-                    axisTicks: { show: false }
-                  },
-                  yaxis: {
-                    labels: {
-                      style: { colors: '#fff', fontSize: '10px' }
-                    }
-                  },
-                  grid: { show: false },
-                  dataLabels: {
-                    enabled: true,
-                    formatter: (val: number) => val.toString(),
-                    style: { fontSize: '10px' }
-                  },
-                  legend: { show: false },
-                  tooltip: { theme: 'dark' }
-                } as ApexOptions}
-                series={[{
-                  data: userPositionData.map(d => ({
-                    x: d.name,
-                    y: d.count
-                  }))
-                }]}
-                type="bar"
-                height="100%"
-              />
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={userPositionData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" stroke={theme.palette.text.secondary} fontSize={10} width={65} axisLine={false} tickLine={false} />
+                  <RechartsTooltip cursor={{fill: alpha('#fff', 0.05)}} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={12}>
+                    {userPositionData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.isUser ? theme.palette.primary.main : alpha(entry.color, 0.2)}
+                        stroke={entry.isUser ? '#fff' : 'none'}
+                        strokeWidth={entry.isUser ? 1 : 0}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center', fontSize: '0.7rem', px: 2 }}>
               {totalMembers < 5 ? 
