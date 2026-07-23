@@ -2813,7 +2813,7 @@ function Dashboard() {
         )}
         
         {activeTab === 'futures' && (
-          <FuturesTrading language={language} effectiveAddress={effectiveAddress} />
+          <FuturesTrading language={language} effectiveAddress={effectiveAddress} onBack={() => setActiveTab('vault')} />
         )}
 
         {activeTab === 'staking' && (
@@ -2851,7 +2851,8 @@ function Dashboard() {
       </Container>
 
       {/* Bottom Navigation */}
-       <Box 
+       {activeTab !== 'futures' && (
+      <Box 
         sx={{ 
           position: 'fixed', 
           bottom: { xs: 16, sm: 24 }, 
@@ -2954,6 +2955,7 @@ function Dashboard() {
           )}
         </BottomNavigation>
       </Box>
+      )}
 
       <Dialog 
         open={qrOpen} 

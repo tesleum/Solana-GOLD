@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
   Box, Typography, Stack, Card, CardContent, Skeleton,
   alpha, useTheme, Button, Divider, Slider, IconButton, InputBase, 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Badge
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Badge,
+  Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { 
-  Activity, ChevronLeft, BarChart2, Info, ArrowUpRight, ArrowDownRight, 
+  Activity, ChevronLeft, ChevronDown, BarChart2, Info, ArrowUpRight, ArrowDownRight, 
   Settings, RefreshCw, AlertTriangle, Play, Square, User, Wallet, Check, X,
   Maximize2, ZoomIn, ZoomOut
 } from 'lucide-react';
@@ -61,7 +62,7 @@ interface OpenOrder {
   isDemo?: boolean;
 }
 
-export function FuturesTrading({ language, effectiveAddress }: { language: string; effectiveAddress?: string | null }) {
+export function FuturesTrading({ language, effectiveAddress, onBack }: { language: string; effectiveAddress?: string | null; onBack?: () => void }) {
   const theme = useTheme();
   
   // App states
@@ -221,7 +222,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
         },
         width: container.clientWidth || 600,
-        height: 400,
+        height: 360,
       });
 
       const seriesOptions = {
@@ -414,45 +415,36 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         ws.onopen = () => {
           if (!isMounted) return;
           
-          let candleInterval = '1min';
-          if (selectedTimeframe === '5m') candleInterval = '5min';
-          if (selectedTimeframe === '15m') candleInterval = '15min';
-          if (selectedTimeframe === '1H') candleInterval = '1hour';
-          if (selectedTimeframe === '4H') candleInterval = '4hour';
-          if (selectedTimeframe === '1D') candleInterval = '1day';
-
-          symbols.forEach((sym, idx) => {
-            // Subscribe to TickerV2 for all symbols
-            ws.send(JSON.stringify({
-              id: Date.now() + idx * 10,
-              type: 'subscribe',
-              topic: `/contractMarket/tickerV2:${sym}`,
-              privateChannel: false,
-              response: true
-            }));
-
-            // Subscribe to Snapshot for all symbols (24h change, volume)
-            ws.send(JSON.stringify({
-              id: Date.now() + idx * 10 + 1,
-              type: 'subscribe',
-              topic: `/contractMarket/snapshot:${sym}`,
-              privateChannel: false,
-              response: true
-            }));
-          });
-
-          // Subscribe to Klines for selected symbol
+          // Subscribe to Ticker
           ws.send(JSON.stringify({
-            id: Date.now() + 100,
+            id: Date.now(),
             type: 'subscribe',
-            topic: `/contractMarket/limitCandle:${selectedSymbol}_${candleInterval}`,
+            topic: `/contractMarket/ticker:${selectedSymbol}`,
+            privateChannel: false,
+            response: true
+          }));
+
+          // Subscribe to Instrument Mark/Index Price
+          ws.send(JSON.stringify({
+            id: Date.now() + 1,
+            type: 'subscribe',
+            topic: `/contract/instrument:${selectedSymbol}`,
+            privateChannel: false,
+            response: true
+          }));
+
+          // Subscribe to Klines (1min)
+          ws.send(JSON.stringify({
+            id: Date.now() + 2,
+            type: 'subscribe',
+            topic: `/contractMarket/limitCandle:${selectedSymbol}_1min`,
             privateChannel: false,
             response: true
           }));
 
           // Subscribe to Order Book Level 2 Depth 5
           ws.send(JSON.stringify({
-            id: Date.now() + 101,
+            id: Date.now() + 3,
             type: 'subscribe',
             topic: `/contractMarket/level2Depth5:${selectedSymbol}`,
             privateChannel: false,
@@ -487,52 +479,24 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
               if (!isNaN(t) && !isNaN(open) && !isNaN(high) && !isNaN(low) && !isNaN(close)) {
                 if (seriesRef.current) {
-                  seriesRef.current.update({ time: t as any, open, high, low, close });
+                  seriesRef.current.update({ time: t, open, high, low, close });
                 }
               }
-            }
-          }
-
-          // Real-time 24h snapshot update
-          if (message.type === 'message' && (message.subject === 'snapshot.24h' || message.topic?.startsWith('/contractMarket/snapshot:'))) {
-            const data = message.data;
-            if (data && data.symbol) {
-              setContracts(prev => {
-                const existing = prev[data.symbol];
-                if (!existing) return prev;
-                return {
-                  ...prev,
-                  [data.symbol]: {
-                    ...existing,
-                    priceChangeRate: data.priceChgPct !== undefined ? parseFloat(data.priceChgPct) : existing.priceChangeRate,
-                    volume24h: data.volume !== undefined ? parseFloat(data.volume) : existing.volume24h,
-                    turnover24h: data.turnover !== undefined ? parseFloat(data.turnover) : existing.turnover24h,
-                    price: data.lastPrice !== undefined ? parseFloat(data.lastPrice) : existing.price
-                  }
-                };
-              });
             }
           }
 
           // Real-time price update
           if (message.type === 'message' && (message.subject === 'ticker' || message.subject === 'tickerV2')) {
             const data = message.data;
-            if (data && data.symbol) {
-              let currentPrice = NaN;
-              if (data.price !== undefined) {
-                currentPrice = parseFloat(data.price);
-              } else if (data.bestAskPrice !== undefined && data.bestBidPrice !== undefined) {
-                currentPrice = (parseFloat(data.bestAskPrice) + parseFloat(data.bestBidPrice)) / 2;
-              }
-              
-              if (isNaN(currentPrice)) return;
+            if (data && data.price) {
+              const currentPrice = parseFloat(data.price);
               
               setContracts(prev => {
-                const existing = prev[data.symbol];
+                const existing = prev[selectedSymbol];
                 if (!existing) return prev;
                 return {
                   ...prev,
-                  [data.symbol]: {
+                  [selectedSymbol]: {
                     ...existing,
                     price: currentPrice
                   }
@@ -541,7 +505,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
               // Update live position metrics in real-time
               setDemoPositions(prev => prev.map(pos => {
-                if (pos.symbol !== data.symbol) return pos;
+                if (pos.symbol !== selectedSymbol) return pos;
                 const pnl = pos.side === 'long' 
                   ? pos.size * (currentPrice - pos.entryPrice)
                   : pos.size * (pos.entryPrice - currentPrice);
@@ -557,7 +521,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
               // Check if limit orders can be triggered
               if (demoOrders.length > 0) {
                 const fillable = demoOrders.filter(ord => {
-                  if (ord.symbol !== data.symbol || ord.type !== 'limit' || !ord.price) return false;
+                  if (ord.symbol !== selectedSymbol || ord.type !== 'limit' || !ord.price) return false;
                   if (ord.side === 'buy' && currentPrice <= ord.price) return true;
                   if (ord.side === 'sell' && currentPrice >= ord.price) return true;
                   return false;
@@ -909,28 +873,95 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const activeBalanceTotal = isDemoMode ? demoBalance : accountBalance.total;
   const activeBalanceAvailable = isDemoMode ? demoBalance : accountBalance.available;
 
+  const renderStickyPositions = () => {
+    if (activePositions.length === 0) return null;
+    const totalPnl = activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0);
+    return (
+      <Box sx={{ position: 'sticky', top: 0, zIndex: 1200, mb: 2, mx: { xs: -2, sm: 0 } }}>
+        <Accordion sx={{ 
+          bgcolor: alpha('#121214', 0.95), 
+          backdropFilter: 'blur(20px)', 
+          border: `1px solid ${alpha('#D4AF37', 0.4)}`, 
+          borderRadius: { xs: '0 0 16px 16px', sm: '16px' }, 
+          overflow: 'hidden',
+          boxShadow: `0 8px 32px ${alpha('#000', 0.6)}`,
+          '&:before': { display: 'none' }
+        }}>
+          <AccordionSummary expandIcon={<ChevronDown color="#D4AF37" />} sx={{ minHeight: 60 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Activity size={18} color="#D4AF37" />
+                <Typography fontWeight="bold" color="#fff">Current Positions</Typography>
+                <Badge badgeContent={activePositions.length} color="primary" sx={{ ml: 1.5, '& .MuiBadge-badge': { color: '#000', fontWeight: 'bold' } }} />
+              </Box>
+              <Typography fontWeight="900" sx={{ color: totalPnl >= 0 ? '#00b894' : '#ff7675' }}>
+                {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)} USDT
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 0, maxHeight: '40vh', overflowY: 'auto' }}>
+            {activePositions.map((pos, idx) => (
+              <Box key={idx} sx={{ p: 2, borderTop: `1px solid ${alpha('#fff', 0.05)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography fontWeight="bold" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {pos.symbol} 
+                    <Box sx={{ px: 1, py: 0.2, borderRadius: '4px', fontSize: '10px', bgcolor: pos.side === 'long' ? alpha('#00b894', 0.15) : alpha('#ff7675', 0.15), color: pos.side === 'long' ? '#00b894' : '#ff7675' }}>
+                      {pos.side.toUpperCase()} {pos.leverage}x
+                    </Box>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
+                    Size: {pos.size} • Entry: ${formatPrice(pos.entryPrice)}
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
+                    {pos.unrealizedPnL >= 0 ? '+' : ''}{pos.unrealizedPnL.toFixed(2)}
+                  </Typography>
+                  <Button 
+                    size="small" 
+                    onClick={(e) => { e.stopPropagation(); handleClosePosition(pos); }}
+                    sx={{ mt: 0.5, py: 0.1, px: 1, minWidth: 0, fontSize: '10px', bgcolor: alpha('#ff7675', 0.1), color: '#ff7675', '&:hover': { bgcolor: alpha('#ff7675', 0.3) } }}
+                  >
+                    Close
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    );
+  };
+
   // Render Symbols Table List
   if (!selectedSymbol) {
     return (
       <Box sx={{ animation: 'fadeIn 0.4s ease-out', pb: 10 }}>
+        {renderStickyPositions()}
         {/* Dynamic header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="900" sx={{ 
-              fontFamily: '"Cinzel", serif', 
-              background: 'linear-gradient(to bottom, #FFDF73, #D4AF37)', 
-              WebkitBackgroundClip: 'text', 
-              WebkitTextFillColor: 'transparent',
-              textShadow: `0 2px 10px ${alpha('#D4AF37', 0.2)}`
-            }}>
-              Empire Futures
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Perpetual Contracts • Powered by FOREX Live Stream
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {apiStatus === 'connected' ? (
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
+          {onBack && (
+            <IconButton onClick={onBack} sx={{ color: '#fff', mr: 2, bgcolor: alpha('#fff', 0.05) }}>
+              <ChevronLeft />
+            </IconButton>
+          )}
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h4" fontWeight="900" sx={{ 
+                fontFamily: '"Cinzel", serif', 
+                background: 'linear-gradient(to bottom, #FFDF73, #D4AF37)', 
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent',
+                textShadow: `0 2px 10px ${alpha('#D4AF37', 0.2)}`
+              }}>
+                Empire Futures
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Perpetual Contracts • Powered by FOREX Live Stream
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {apiStatus === 'connected' ? (
               <Badge variant="dot" color="success" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
                 <IconButton size="small" sx={{ color: '#4caf50', bgcolor: alpha('#4caf50', 0.1) }}>
                   <User size={18} />
@@ -943,6 +974,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
             )}
           </Box>
         </Box>
+      </Box>
 
         {/* Demo Mode Notice */}
         {isDemoMode && (
@@ -1069,7 +1101,8 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
   const priceColor = isUp ? '#00b894' : '#ff7675';
 
   return (
-    <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
+    <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 8 }}>
+      {renderStickyPositions()}
       {/* 1. Header Row */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, p: 1, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, pb: 2 }}>
         <IconButton onClick={() => setSelectedSymbol(null)} sx={{ color: '#fff', mr: 1, bgcolor: alpha('#fff', 0.05) }}>
@@ -1115,13 +1148,6 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
       {/* 2. Market Stats Sub-header */}
       <Stack direction="row" spacing={3} sx={{ mb: 3, p: 1.5, bgcolor: alpha('#000', 0.2), borderRadius: '12px', overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' } }}>
-        <Box>
-          <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Total PnL</Typography>
-          <Typography variant="body2" fontWeight="bold" sx={{ color: activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0) >= 0 ? '#00b894' : '#ff7675' }}>
-            {activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0) >= 0 ? '+' : ''}
-            {activePositions.reduce((acc, pos) => acc + pos.unrealizedPnL, 0).toFixed(2)} USDT
-          </Typography>
-        </Box>
         <Box>
           <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), display: 'block' }}>Index Price</Typography>
           <Typography variant="body2" fontWeight="bold" color="#fff">${formatPrice(activeContract?.indexPrice || 0)}</Typography>
@@ -1187,16 +1213,16 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
           </Stack>
         </Box>
 
-        <Box sx={{ p: 1, minHeight: 400, position: 'relative' }}>
+        <Box sx={{ p: 1, minHeight: 380, position: 'relative' }}>
           {!isChartReady && (
             <Skeleton 
               variant="rectangular" 
               width="100%" 
-              height={400} 
+              height={360} 
               sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '12px', position: 'absolute', top: 8, left: 8, right: 8, bottom: 8 }} 
             />
           )}
-          <Box ref={chartContainerRef} sx={{ width: '100%', height: 400, opacity: isChartReady ? 1 : 0, transition: 'opacity 0.2s' }} />
+          <Box ref={chartContainerRef} sx={{ width: '100%', height: 360, opacity: isChartReady ? 1 : 0, transition: 'opacity 0.2s' }} />
         </Box>
       </Card>
 
@@ -1205,7 +1231,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
         
         {/* Left column: Live Order Book */}
         <Box sx={{ order: { xs: 2, md: 1 } }}>
-          <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '20px', p: 2 }}>
+          <Card sx={{ bgcolor: alpha('#121214', 0.8), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '20px', p: 2, height: '100%' }}>
             <Typography variant="subtitle2" fontWeight="bold" color="#fff" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Activity size={16} color="#D4AF37" /> Live Order Book
             </Typography>
@@ -1252,8 +1278,17 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
 
         {/* Right column: Trade Form Panel */}
         <Box sx={{ order: { xs: 1, md: 2 } }}>
-          <Card sx={{ bgcolor: alpha('#121214', 0.95), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px', p: 2 }}>
-            
+          <Card sx={{ 
+            bgcolor: alpha('#121214', 0.8), 
+            border: `1px solid ${alpha('#D4AF37', 0.2)}`, 
+            borderRadius: '20px', 
+            p: 2.5,
+            boxShadow: `0 8px 32px ${alpha('#000', 0.4)}`
+          }}>
+            <Typography variant="subtitle2" fontWeight="bold" color="#fff" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Settings size={16} color="#D4AF37" /> Place Perpetual Order
+            </Typography>
+
             {/* Long vs Short Toggle Buttons */}
             <Stack direction="row" spacing={1} sx={{ mb: 2, p: 0.5, bgcolor: alpha('#000', 0.4), borderRadius: '12px' }}>
               <Button 
@@ -1409,46 +1444,6 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
                 />
                 <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold', ml: 1 }}>{unit}</Typography>
               </Box>
-
-              {/* Quick Size Percentage Buttons */}
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                {[10, 25, 50, 75, 100].map(pct => (
-                  <Button 
-                    key={pct}
-                    size="small"
-                    onClick={() => {
-                      const available = activeBalanceAvailable;
-                      if (available <= 0) return;
-                      const marginToUse = available * (pct / 100);
-                      
-                      if (unit === 'USDT') {
-                        setAmount((marginToUse * leverage).toFixed(2).toString());
-                      } else {
-                        const contractPrice = orderType === 'limit' ? parseFloat(priceInput) || activeContract?.price || 1 : activeContract?.price || 1;
-                        const mult = activeContract?.multiplier || 1;
-                        const lSize = activeContract?.lotSize || 1;
-                        const positionUsdt = marginToUse * leverage;
-                        const rawLots = positionUsdt / (contractPrice * mult);
-                        const lots = Math.floor(rawLots / lSize) * lSize;
-                        setAmount(lots.toFixed(3).toString());
-                      }
-                    }}
-                    sx={{ 
-                      minWidth: 0,
-                      flex: 1,
-                      p: 0,
-                      py: 0.25,
-                      borderRadius: '4px',
-                      bgcolor: alpha('#fff', 0.05),
-                      color: alpha('#fff', 0.6),
-                      fontSize: '0.65rem',
-                      '&:hover': { bgcolor: alpha('#D4AF37', 0.2), color: '#D4AF37' }
-                    }}
-                  >
-                    {pct}%
-                  </Button>
-                ))}
-              </Stack>
               
               {/* Show equivalent converted value if USDT is selected */}
               {unit === 'USDT' && activeContract && (
@@ -1612,7 +1607,7 @@ export function FuturesTrading({ language, effectiveAddress }: { language: strin
                         <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>${formatPrice(pos.markPrice)}</TableCell>
                         <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
                           <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
-                            {pos.unrealizedPnL >= 0 ? '+' : ''}{pos.unrealizedPnL.toFixed(2)} USDT ({pos.roe >= 0 ? '+' : ''}{pos.roe.toFixed(2)}%)
+                            ${pos.unrealizedPnL.toFixed(2)} ({pos.roe.toFixed(2)}%)
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
