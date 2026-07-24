@@ -62,6 +62,69 @@ interface OpenOrder {
   isDemo?: boolean;
 }
 
+function Sparkline({ data, width = 80, height = 24, positive = true }: { data: number[], width?: number, height?: number, positive?: boolean }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((val - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const strokeColor = positive ? '#00b894' : '#ff7675';
+  const gradientId = `grad-${Math.random()}`;
+
+  return (
+    <svg width={width} height={height} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity={0.2} />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <polyline
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+function PositionProgress({ side, entryPrice, markPrice, leverage }: { side: 'long' | 'short', entryPrice: number, markPrice: number, leverage: number }) {
+  const liqPrice = side === 'long' ? entryPrice * (1 - 0.9 / leverage) : entryPrice * (1 + 0.9 / leverage);
+  const totalRange = Math.abs(entryPrice - liqPrice) || 1;
+  const currentDiff = Math.abs(markPrice - liqPrice);
+  const safetyPercent = Math.min(100, Math.max(0, (currentDiff / totalRange) * 100));
+  
+  let barColor = '#00b894';
+  if (safetyPercent < 25) {
+    barColor = '#ff7675';
+  } else if (safetyPercent < 50) {
+    barColor = '#e1b12c';
+  }
+
+  return (
+    <Box sx={{ width: '100%', mt: 0.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.2 }}>
+        <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontSize: '9px' }}>
+          LIQ: ${liqPrice.toFixed(2)}
+        </Typography>
+        <Typography variant="caption" sx={{ color: barColor, fontSize: '9px', fontWeight: 'bold' }}>
+          Safety: {safetyPercent.toFixed(0)}%
+        </Typography>
+      </Box>
+      <Box sx={{ width: '100%', height: '4px', bgcolor: alpha('#fff', 0.08), borderRadius: '2px', overflow: 'hidden' }}>
+        <Box sx={{ width: `${safetyPercent}%`, height: '100%', bgcolor: barColor, borderRadius: '2px', transition: 'width 0.3s' }} />
+      </Box>
+    </Box>
+  );
+}
+
 export function FuturesTrading({ language, effectiveAddress, onBack }: { language: string; effectiveAddress?: string | null; onBack?: () => void }) {
   const theme = useTheme();
   
@@ -81,6 +144,10 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
   
   const [orderBook, setOrderBook] = useState<OrderBook>({ bids: [], asks: [] });
   const [currentTab, setCurrentTab] = useState<'positions' | 'orders' | 'history' | 'assets'>('positions');
+  
+  // Enhanced Futures Trading UX custom states
+  const [tickerHistory, setTickerHistory] = useState<Record<string, number[]>>({});
+  const [isTradeDrawerOpen, setIsTradeDrawerOpen] = useState<boolean>(false);
   
   // API vs Demo Mode States
   const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
@@ -295,26 +362,35 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
         
         const activeContracts = res.data.data;
         const initialData: Record<string, ContractData> = {};
+        const initialTrends: Record<string, number[]> = {};
         
         symbols.forEach(sym => {
           const contract = activeContracts.find((c: any) => c.symbol === sym);
           if (contract) {
+            const price = parseFloat(contract.lastTradePrice || '0');
             initialData[sym] = {
               symbol: sym,
-              price: parseFloat(contract.lastTradePrice || '0'),
+              price: price,
               indexPrice: parseFloat(contract.indexPrice || '0'),
               markPrice: parseFloat(contract.markPrice || '0'),
-              priceChangeRate: parseFloat(contract.priceChangeRate || '0'),
+              priceChangeRate: parseFloat(contract.priceChgPct || contract.priceChangeRate || '0'),
               volume24h: parseFloat(contract.volume24h || '0'),
               turnover24h: parseFloat(contract.turnover24h || '0'),
               fundingRate: parseFloat(contract.fundingFeeRate || '0'),
               multiplier: parseFloat(contract.multiplier || '1'),
               lotSize: parseFloat(contract.lotSize || '1')
             };
+            
+            // Seed trends
+            initialTrends[sym] = Array.from({ length: 15 }, (_, i) => {
+              const changeFactor = (Math.sin(i) * 0.003) + (Math.cos(i * 1.5) * 0.001);
+              return price * (1 + changeFactor);
+            });
           }
         });
         
         setContracts(initialData);
+        setTickerHistory(initialTrends);
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch initial contracts', err);
@@ -490,6 +566,16 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
             const data = message.data;
             if (data && data.price) {
               const currentPrice = parseFloat(data.price);
+              
+              setTickerHistory(prev => {
+                if (!selectedSymbol) return prev;
+                const history = prev[selectedSymbol] || [];
+                const updated = [...history, currentPrice].slice(-25);
+                return {
+                  ...prev,
+                  [selectedSymbol]: updated
+                };
+              });
               
               setContracts(prev => {
                 const existing = prev[selectedSymbol];
@@ -900,33 +986,55 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0, maxHeight: '40vh', overflowY: 'auto' }}>
-            {activePositions.map((pos, idx) => (
-              <Box key={idx} sx={{ p: 2, borderTop: `1px solid ${alpha('#fff', 0.05)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography fontWeight="bold" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {pos.symbol} 
-                    <Box sx={{ px: 1, py: 0.2, borderRadius: '4px', fontSize: '10px', bgcolor: pos.side === 'long' ? alpha('#00b894', 0.15) : alpha('#ff7675', 0.15), color: pos.side === 'long' ? '#00b894' : '#ff7675' }}>
-                      {pos.side.toUpperCase()} {pos.leverage}x
+            {activePositions.map((pos, idx) => {
+              const trend = tickerHistory[pos.symbol] || [];
+              const isPositiveTrend = trend.length > 1 ? trend[trend.length - 1] >= trend[trend.length - 2] : true;
+              return (
+                <Box key={idx} sx={{ p: 2, borderTop: `1px solid ${alpha('#fff', 0.05)}` }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box>
+                      <Typography fontWeight="bold" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {pos.symbol} 
+                        <Box sx={{ px: 1, py: 0.2, borderRadius: '4px', fontSize: '10px', bgcolor: pos.side === 'long' ? alpha('#00b894', 0.15) : alpha('#ff7675', 0.15), color: pos.side === 'long' ? '#00b894' : '#ff7675' }}>
+                          {pos.side.toUpperCase()} {pos.leverage}x
+                        </Box>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
+                        Size: {pos.size} • Entry: ${formatPrice(pos.entryPrice)}
+                      </Typography>
                     </Box>
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
-                    Size: {pos.size} • Entry: ${formatPrice(pos.entryPrice)}
-                  </Typography>
+
+                    {/* Compact Inline Sparkline representing active trend */}
+                    {trend.length > 1 && (
+                      <Box sx={{ display: { xs: 'none', sm: 'block' }, mx: 2 }}>
+                        <Sparkline data={trend} width={70} height={20} positive={isPositiveTrend} />
+                      </Box>
+                    )}
+
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
+                        {pos.unrealizedPnL >= 0 ? '+' : ''}{pos.unrealizedPnL.toFixed(2)} USDT
+                      </Typography>
+                      <Button 
+                        size="small" 
+                        onClick={(e) => { e.stopPropagation(); handleClosePosition(pos); }}
+                        sx={{ mt: 0.5, py: 0.1, px: 1, minWidth: 0, fontSize: '10px', bgcolor: alpha('#ff7675', 0.1), color: '#ff7675', '&:hover': { bgcolor: alpha('#ff7675', 0.3) } }}
+                      >
+                        Close Position
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {/* Leverage Risk & Liquidation Progress Meter */}
+                  <PositionProgress 
+                    side={pos.side} 
+                    entryPrice={pos.entryPrice} 
+                    markPrice={pos.markPrice} 
+                    leverage={pos.leverage} 
+                  />
                 </Box>
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
-                    {pos.unrealizedPnL >= 0 ? '+' : ''}{pos.unrealizedPnL.toFixed(2)}
-                  </Typography>
-                  <Button 
-                    size="small" 
-                    onClick={(e) => { e.stopPropagation(); handleClosePosition(pos); }}
-                    sx={{ mt: 0.5, py: 0.1, px: 1, minWidth: 0, fontSize: '10px', bgcolor: alpha('#ff7675', 0.1), color: '#ff7675', '&:hover': { bgcolor: alpha('#ff7675', 0.3) } }}
-                  >
-                    Close
-                  </Button>
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </AccordionDetails>
         </Accordion>
       </Box>
@@ -1577,52 +1685,75 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
                   No active perpetual positions
                 </Box>
               ) : (
-                <Table size="small" sx={{ minWidth: 600 }}>
+                <Table size="small" sx={{ minWidth: 700 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Contract</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Side</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Size</TableCell>
-                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Entry Price</TableCell>
-                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Mark Price</TableCell>
+                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Entry & Mark</TableCell>
+                      <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Trend & Risk Monitor</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Unrealized PnL</TableCell>
                       <TableCell sx={{ color: alpha('#fff', 0.4), borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>Action</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {activePositions.map((pos, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>{pos.symbol}</TableCell>
-                        <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
-                          <Box sx={{ 
-                            px: 1, py: 0.25, borderRadius: '4px', display: 'inline-block',
-                            bgcolor: pos.side === 'long' ? alpha('#00b894', 0.15) : alpha('#ff7675', 0.15),
-                            color: pos.side === 'long' ? '#00b894' : '#ff7675', fontWeight: 'bold', fontSize: '12px'
-                          }}>
-                            {pos.side.toUpperCase()}
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>{pos.size}</TableCell>
-                        <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>${formatPrice(pos.entryPrice)}</TableCell>
-                        <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>${formatPrice(pos.markPrice)}</TableCell>
-                        <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
-                          <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
-                            ${pos.unrealizedPnL.toFixed(2)} ({pos.roe.toFixed(2)}%)
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
-                          <Button 
-                            variant="outlined" 
-                            color="error" 
-                            size="small" 
-                            onClick={() => handleClosePosition(pos)}
-                            sx={{ textTransform: 'none', py: 0.25 }}
-                          >
-                            Close Market
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {activePositions.map((pos, idx) => {
+                      const trend = tickerHistory[pos.symbol] || [];
+                      const isPositiveTrend = trend.length > 1 ? trend[trend.length - 1] >= trend[trend.length - 2] : true;
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>{pos.symbol}</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
+                            <Box sx={{ 
+                              px: 1, py: 0.25, borderRadius: '4px', display: 'inline-block',
+                              bgcolor: pos.side === 'long' ? alpha('#00b894', 0.15) : alpha('#ff7675', 0.15),
+                              color: pos.side === 'long' ? '#00b894' : '#ff7675', fontWeight: 'bold', fontSize: '12px'
+                            }}>
+                              {pos.side.toUpperCase()}
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>{pos.size}</TableCell>
+                          <TableCell sx={{ color: '#fff', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
+                            <Typography variant="body2" color="#fff" fontWeight="bold">
+                              Entry: ${formatPrice(pos.entryPrice)}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: alpha('#fff', 0.5) }}>
+                              Mark: ${formatPrice(pos.markPrice)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}`, minWidth: 140 }}>
+                            {trend.length > 1 && (
+                              <Box sx={{ mb: 1 }}>
+                                <Sparkline data={trend} width={100} height={20} positive={isPositiveTrend} />
+                              </Box>
+                            )}
+                            <PositionProgress 
+                              side={pos.side} 
+                              entryPrice={pos.entryPrice} 
+                              markPrice={pos.markPrice} 
+                              leverage={pos.leverage} 
+                            />
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
+                            <Typography fontWeight="bold" sx={{ color: pos.unrealizedPnL >= 0 ? '#00b894' : '#ff7675' }}>
+                              ${pos.unrealizedPnL.toFixed(2)} ({pos.roe.toFixed(2)}%)
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
+                            <Button 
+                              variant="outlined" 
+                              color="error" 
+                              size="small" 
+                              onClick={() => handleClosePosition(pos)}
+                              sx={{ textTransform: 'none', py: 0.25 }}
+                            >
+                              Close Market
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
