@@ -419,202 +419,224 @@ export function StakingPage({
               
               {/* STAKING INTERFACE */}
               {actionTab === 'stake' && (
-                <Stack spacing={3.5}>
+                <Stack spacing={4}>
+                  {/* Step 1: Amount */}
                   <Box>
-                    <Typography variant="subtitle2" color="#D4AF37" fontWeight="800" sx={{ mb: 1.5, letterSpacing: 1 }}>
-                      ENTER STAKING AMOUNT
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      value={customStakeAmount}
-                      onChange={(e) => setCustomStakeAmount(e.target.value)}
-                      placeholder="e.g. 500"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Coins size={20} color="#D4AF37" />
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <Typography variant="body2" color="#D4AF37" fontWeight="bold">usGOLD</Typography>
-                          </InputAdornment>
-                        ),
-                        sx: { 
-                          bgcolor: alpha('#ffffff', 0.03), 
-                          borderRadius: '14px', 
-                          color: '#fff', 
-                          fontSize: '1.2rem', 
-                          fontWeight: 'bold',
-                          border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-                          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' }
-                        }
-                      }}
-                    />
-                    
-                    {/* Amount Quick-Preset Buttons */}
-                    <Box sx={{ display: 'flex', gap: 1.5, mt: 1.5 }}>
-                      {[100, 500, 1000, 5000].map((preset) => (
-                        <Button 
-                          key={preset}
-                          size="small"
-                          onClick={() => setCustomStakeAmount(preset.toString())}
-                          sx={{ 
-                            flexGrow: 1, 
-                            bgcolor: alpha('#D4AF37', 0.06), 
-                            color: '#FFDF73', 
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            border: `1px solid ${alpha('#D4AF37', 0.15)}`,
-                            '&:hover': { bgcolor: alpha('#D4AF37', 0.15) }
-                          }}
-                        >
-                          +{preset}
-                        </Button>
-                      ))}
-                      <Button 
-                        size="small"
-                        onClick={() => setCustomStakeAmount(usGoldBalance.toString())}
-                        sx={{ 
-                          flexGrow: 1, 
-                          bgcolor: alpha('#4caf50', 0.08), 
-                          color: '#4caf50', 
-                          borderRadius: '8px',
-                          fontWeight: '900',
-                          border: `1px solid ${alpha('#4caf50', 0.25)}`,
-                          '&:hover': { bgcolor: alpha('#4caf50', 0.18) }
-                        }}
-                      >
-                        MAX ({usGoldBalance.toFixed(0)})
-                      </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#D4AF37', color: '#000', fontWeight: 'bold', fontSize: '14px' }}>1</Avatar>
+                      <Typography variant="h6" color="#D4AF37" fontWeight="800">
+                        Select Staking Amount
+                      </Typography>
                     </Box>
-
-                    {/* Slider Control */}
-                    <Box sx={{ px: 1, mt: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="caption" color="text.secondary">Use Slider to Select Amount</Typography>
-                        <Typography variant="caption" color="#D4AF37" fontWeight="bold">{customStakeAmount || 0} usGOLD</Typography>
-                      </Box>
-                      <Slider
-                        value={parseFloat(customStakeAmount) || 0}
-                        onChange={(_, val) => setCustomStakeAmount(val.toString())}
-                        min={10}
-                        max={Math.max(10000, usGoldBalance)}
-                        step={10}
-                        valueLabelDisplay="auto"
-                        sx={{
-                          color: '#D4AF37',
-                          height: 6,
-                          '& .MuiSlider-thumb': { bgcolor: '#D4AF37', width: 14, height: 14 },
-                          '& .MuiSlider-rail': { bgcolor: alpha('#fff', 0.1) },
-                          '& .MuiSlider-track': { bgcolor: '#D4AF37' }
+                    <Card sx={{ p: 2.5, bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px' }}>
+                      <TextField
+                        fullWidth
+                        variant="outlined"
+                        value={customStakeAmount}
+                        onChange={(e) => setCustomStakeAmount(e.target.value)}
+                        placeholder="e.g. 500"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Coins size={20} color="#D4AF37" />
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Typography variant="body2" color="#D4AF37" fontWeight="bold">usGOLD</Typography>
+                            </InputAdornment>
+                          ),
+                          sx: { 
+                            bgcolor: alpha('#ffffff', 0.03), 
+                            borderRadius: '14px', 
+                            color: '#fff', 
+                            fontSize: '1.2rem', 
+                            fontWeight: 'bold',
+                            border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' }
+                          }
                         }}
                       />
-                    </Box>
+                      
+                      {/* Amount Quick-Preset Buttons */}
+                      <Box sx={{ display: 'flex', gap: 1.5, mt: 1.5 }}>
+                        {[100, 500, 1000, 5000].map((preset) => (
+                          <Button 
+                            key={preset}
+                            size="small"
+                            onClick={() => setCustomStakeAmount(preset.toString())}
+                            sx={{ 
+                              flexGrow: 1, 
+                              bgcolor: alpha('#D4AF37', 0.06), 
+                              color: '#FFDF73', 
+                              borderRadius: '8px',
+                              fontWeight: 'bold',
+                              border: `1px solid ${alpha('#D4AF37', 0.15)}`,
+                              '&:hover': { bgcolor: alpha('#D4AF37', 0.15) }
+                            }}
+                          >
+                            +{preset}
+                          </Button>
+                        ))}
+                        <Button 
+                          size="small"
+                          onClick={() => setCustomStakeAmount(usGoldBalance.toString())}
+                          sx={{ 
+                            flexGrow: 1, 
+                            bgcolor: alpha('#4caf50', 0.08), 
+                            color: '#4caf50', 
+                            borderRadius: '8px',
+                            fontWeight: '900',
+                            border: `1px solid ${alpha('#4caf50', 0.25)}`,
+                            '&:hover': { bgcolor: alpha('#4caf50', 0.18) }
+                          }}
+                        >
+                          MAX ({usGoldBalance.toFixed(0)})
+                        </Button>
+                      </Box>
+
+                      {/* Slider Control */}
+                      <Box sx={{ px: 1, mt: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">Use Slider to Select Amount</Typography>
+                          <Typography variant="caption" color="#D4AF37" fontWeight="bold">{customStakeAmount || 0} usGOLD</Typography>
+                        </Box>
+                        <Slider
+                          value={parseFloat(customStakeAmount) || 0}
+                          onChange={(_, val) => setCustomStakeAmount(val.toString())}
+                          min={10}
+                          max={Math.max(10000, usGoldBalance)}
+                          step={10}
+                          valueLabelDisplay="auto"
+                          sx={{
+                            color: '#D4AF37',
+                            height: 6,
+                            '& .MuiSlider-thumb': { bgcolor: '#D4AF37', width: 14, height: 14 },
+                            '& .MuiSlider-rail': { bgcolor: alpha('#fff', 0.1) },
+                            '& .MuiSlider-track': { bgcolor: '#D4AF37' }
+                          }}
+                        />
+                      </Box>
+                    </Card>
                   </Box>
 
+                  {/* Step 2: Duration */}
                   <Box>
-                    <Typography variant="subtitle2" color="#D4AF37" fontWeight="800" sx={{ mb: 1.5, letterSpacing: 1 }}>
-                      SELECT VAULT PERIOD
-                    </Typography>
-                    
-                    <Grid container spacing={2}>
-                      {[
-                        { months: 1, rate: 0.02, label: `1 Month`, profit: "2% Yield" },
-                        { months: 3, rate: 0.06, label: `3 Months`, profit: "6% Yield" },
-                        { months: 6, rate: 0.12, label: `6 Months`, profit: "12% Yield" },
-                        { months: 12, rate: 0.24, label: `12 Months`, profit: "24% Yield" },
-                      ].map((plan) => {
-                        const isSelected = stakingDurationMonths === plan.months;
-                        const amt = parseFloat(customStakeAmount) || 0;
-                        const estProfit = amt * plan.rate;
-                        return (
-                          <Grid item xs={6} key={plan.months}>
-                            <Box 
-                              onClick={() => setStakingDurationMonths(plan.months as any)}
-                              sx={{
-                                cursor: 'pointer',
-                                bgcolor: isSelected ? alpha('#D4AF37', 0.1) : alpha('#ffffff', 0.02),
-                                border: `1.5px solid ${isSelected ? '#D4AF37' : alpha('#ffffff', 0.08)}`,
-                                borderRadius: '16px',
-                                p: 2,
-                                textAlign: 'center',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#D4AF37',
-                                  bgcolor: alpha('#D4AF37', 0.05)
-                                }
-                              }}
-                            >
-                              <Typography variant="body1" fontWeight="800" color={isSelected ? '#FFDF73' : '#fff'}>
-                                {plan.label}
-                              </Typography>
-                              <Chip 
-                                label={plan.profit} 
-                                size="small" 
-                                sx={{ 
-                                  my: 1, 
-                                  bgcolor: isSelected ? '#D4AF37' : alpha('#4caf50', 0.12), 
-                                  color: isSelected ? '#000' : '#4caf50',
-                                  fontWeight: '900',
-                                  fontSize: '11px',
-                                  height: '20px'
-                                }} 
-                              />
-                              <Typography variant="caption" display="block" color="text.secondary">
-                                Profit: +${estProfit.toFixed(2)} USD
-                              </Typography>
-                            </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#D4AF37', color: '#000', fontWeight: 'bold', fontSize: '14px' }}>2</Avatar>
+                      <Typography variant="h6" color="#D4AF37" fontWeight="800">
+                        Choose Lockup Period
+                      </Typography>
+                    </Box>
+                    <Card sx={{ p: 2.5, bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px' }}>
+                      <Grid container spacing={2}>
+                        {[
+                          { months: 1, rate: 0.02, label: `1 Month`, profit: "2% Yield" },
+                          { months: 3, rate: 0.06, label: `3 Months`, profit: "6% Yield" },
+                          { months: 6, rate: 0.12, label: `6 Months`, profit: "12% Yield" },
+                          { months: 12, rate: 0.24, label: `12 Months`, profit: "24% Yield" },
+                        ].map((plan) => {
+                          const isSelected = stakingDurationMonths === plan.months;
+                          const amt = parseFloat(customStakeAmount) || 0;
+                          const estProfit = amt * plan.rate;
+                          return (
+                            <Grid item xs={6} key={plan.months}>
+                              <Box 
+                                onClick={() => setStakingDurationMonths(plan.months as any)}
+                                sx={{
+                                  cursor: 'pointer',
+                                  bgcolor: isSelected ? alpha('#D4AF37', 0.1) : alpha('#ffffff', 0.02),
+                                  border: `1.5px solid ${isSelected ? '#D4AF37' : alpha('#ffffff', 0.08)}`,
+                                  borderRadius: '16px',
+                                  p: 2,
+                                  textAlign: 'center',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    borderColor: '#D4AF37',
+                                    bgcolor: alpha('#D4AF37', 0.05)
+                                  }
+                                }}
+                              >
+                                <Typography variant="body1" fontWeight="800" color={isSelected ? '#FFDF73' : '#fff'}>
+                                  {plan.label}
+                                </Typography>
+                                <Chip 
+                                  label={plan.profit} 
+                                  size="small" 
+                                  sx={{ 
+                                    my: 1, 
+                                    bgcolor: isSelected ? '#D4AF37' : alpha('#4caf50', 0.12), 
+                                    color: isSelected ? '#000' : '#4caf50',
+                                    fontWeight: '900',
+                                    fontSize: '11px',
+                                    height: '20px'
+                                  }} 
+                                />
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  Profit: +${estProfit.toFixed(2)} USD
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    </Card>
+                  </Box>
+
+                  {/* Step 3: Confirm */}
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: '#D4AF37', color: '#000', fontWeight: 'bold', fontSize: '14px' }}>3</Avatar>
+                      <Typography variant="h6" color="#D4AF37" fontWeight="800">
+                        Confirm & Stake
+                      </Typography>
+                    </Box>
+                    <Card sx={{ p: 2.5, bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '16px' }}>
+                      <Box sx={{ 
+                        p: 2.5, 
+                        borderRadius: '12px', 
+                        bgcolor: alpha('#D4AF37', 0.05), 
+                        border: `1px dashed ${alpha('#D4AF37', 0.3)}`,
+                        mb: 3
+                      }}>
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary" display="block">Locked Capital</Typography>
+                            <Typography variant="body1" fontWeight="bold" color="#fff">
+                              {parseFloat(customStakeAmount) || 0} usGOLD
+                            </Typography>
                           </Grid>
-                        );
-                      })}
-                    </Grid>
-                  </Box>
+                          <Grid item xs={6} sx={{ textAlign: 'right' }}>
+                            <Typography variant="caption" color="text.secondary" display="block">Guaranteed Payout</Typography>
+                            <Typography variant="body1" fontWeight="900" color="#4caf50">
+                              +${((parseFloat(customStakeAmount) || 0) * (stakingDurationMonths * 0.02)).toFixed(2)} USD
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
 
-                  {/* Summary Box */}
-                  <Box sx={{ 
-                    p: 2.5, 
-                    borderRadius: '16px', 
-                    bgcolor: alpha('#D4AF37', 0.05), 
-                    border: `1px dashed ${alpha('#D4AF37', 0.3)}` 
-                  }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="caption" color="text.secondary" display="block">Locked Capital</Typography>
-                        <Typography variant="body1" fontWeight="bold" color="#fff">
-                          {parseFloat(customStakeAmount) || 0} usGOLD
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6} sx={{ textAlign: 'right' }}>
-                        <Typography variant="caption" color="text.secondary" display="block">Guaranteed Payout</Typography>
-                        <Typography variant="body1" fontWeight="900" color="#4caf50">
-                          +${((parseFloat(customStakeAmount) || 0) * (stakingDurationMonths * 0.02)).toFixed(2)} USD
-                        </Typography>
-                      </Grid>
-                    </Grid>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        disabled={isCreatingStake}
+                        onClick={handleCreateCustomStake}
+                        endIcon={<ArrowRight size={18} />}
+                        sx={{
+                          bgcolor: '#D4AF37',
+                          color: '#000',
+                          fontWeight: '900',
+                          fontSize: '1rem',
+                          py: 1.8,
+                          borderRadius: '14px',
+                          '&:hover': { bgcolor: '#FFDF73' },
+                          boxShadow: '0 8px 30px rgba(212,175,55,0.3)'
+                        }}
+                      >
+                        {isCreatingStake ? 'LOCKING STAKE...' : `STAKE ${parseFloat(customStakeAmount) || 0} usGOLD NOW`}
+                      </Button>
+                    </Card>
                   </Box>
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    disabled={isCreatingStake}
-                    onClick={handleCreateCustomStake}
-                    endIcon={<ArrowRight size={18} />}
-                    sx={{
-                      bgcolor: '#D4AF37',
-                      color: '#000',
-                      fontWeight: '900',
-                      fontSize: '1rem',
-                      py: 1.8,
-                      borderRadius: '14px',
-                      '&:hover': { bgcolor: '#FFDF73' },
-                      boxShadow: '0 8px 30px rgba(212,175,55,0.3)'
-                    }}
-                  >
-                    {isCreatingStake ? 'LOCKING STAKE...' : `STAKE ${parseFloat(customStakeAmount) || 0} usGOLD NOW`}
-                  </Button>
                 </Stack>
               )}
 
