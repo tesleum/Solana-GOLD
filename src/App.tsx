@@ -2825,6 +2825,10 @@ function Dashboard() {
             tokenPrice={tokenPrice}
             apyYield={apyYield}
             setActiveTab={setActiveTab}
+            investAmount={investAmount}
+            setInvestAmount={setInvestAmount}
+            handleInvest={handleInvestment}
+            isInvesting={isInvesting}
           />
         )}
         
