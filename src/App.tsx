@@ -541,8 +541,16 @@ function Dashboard() {
       }
       const solPrice = currentSolPrice || 150;
 
-      if (investAmount < 1) {
-        throw new Error("Investment amount must be at least $1.00");
+      // On the MLM Vault page, investment is bounded between $10 and $100.
+      // On the pure Staking Page, buying usGOLD is unlimited (Min $1.00).
+      if (activeTab === 'vault') {
+        if (investAmount < 10 || investAmount > 100) {
+          throw new Error("On the Gold Mint page, investment must be between $10.00 and $100.00");
+        }
+      } else {
+        if (investAmount < 1) {
+          throw new Error("Investment amount must be at least $1.00");
+        }
       }
 
       // Calculate Solana amount for requested $usGOLD
