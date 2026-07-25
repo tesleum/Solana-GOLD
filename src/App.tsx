@@ -103,6 +103,7 @@ function Dashboard() {
   const [totalMembers, setTotalMembers] = useState(0);
   const [apyYield, setApyYield] = useState('8');
   const [activeTab, setActiveTab] = useState('vault');
+  const [isFuturesDetailedSelected, setIsFuturesDetailedSelected] = useState(false);
   const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity' | 'performance'>('structure');
   const [txFilterType, setTxFilterType] = useState('all');
   const [txDateRange, setTxDateRange] = useState('all');
@@ -1301,7 +1302,24 @@ function Dashboard() {
         <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1.5, sm: 2.5 }, minHeight: { xs: '56px !important', sm: '64px !important' } }}>
           <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
             <Box sx={{ position: 'relative' }}>
-              <Avatar src="https://xminer.space/icon.svg" sx={{ width: { xs: 32, sm: 36 }, height: { xs: 32, sm: 36 }, bgcolor: 'transparent' }} />
+              <Box 
+                sx={{ 
+                  width: { xs: 32, sm: 36 }, 
+                  height: { xs: 32, sm: 36 }, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #FFDF73, #D4AF37)',
+                  borderRadius: '50%',
+                  boxShadow: `0 0 12px ${alpha('#D4AF37', 0.4)}`,
+                  p: '6px'
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.5))' }}>
+                  <path d="M12 2L15 8L21 6L18 14H6L3 6L9 8L12 2Z" fill="#121214" stroke="#121214" strokeWidth="1" strokeLinejoin="round" />
+                  <circle cx="12" cy="18" r="2" fill="#121214" />
+                </svg>
+              </Box>
               <Box sx={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `1px solid ${alpha('#D4AF37', 0.3)}`, animation: 'pulse 2s infinite' }} />
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -2809,7 +2827,13 @@ function Dashboard() {
         )}
         
         {activeTab === 'futures' && (
-          <FuturesTrading language={language} effectiveAddress={effectiveAddress} onBack={() => setActiveTab('vault')} onTopUp={() => setActiveTab('wallet')} />
+          <FuturesTrading 
+            language={language} 
+            effectiveAddress={effectiveAddress} 
+            onBack={() => setActiveTab('vault')} 
+            onTopUp={() => setActiveTab('wallet')} 
+            onSymbolSelectionChange={(isSelected) => setIsFuturesDetailedSelected(isSelected)}
+          />
         )}
 
         {activeTab === 'staking' && (
@@ -2851,7 +2875,7 @@ function Dashboard() {
       </Container>
 
       {/* Bottom Navigation */}
-       {activeTab !== 'futures' && (
+       {!isFuturesDetailedSelected && (
       <Box 
         sx={{ 
           position: 'fixed', 

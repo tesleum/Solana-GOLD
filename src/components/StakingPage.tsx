@@ -13,6 +13,8 @@ import { useAppKit } from '@reown/appkit/react';
 import { t } from '../translations';
 import { database } from '../firebase';
 import { ref, onValue, update, push } from 'firebase/database';
+import { TokenIcon } from './TokenIcon';
+import { triggerHaptic } from '../lib/haptic';
 
 interface StakingPageProps {
   language: string;
@@ -249,12 +251,17 @@ export function StakingPage({
                   <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>
                     LIQUID BALANCE
                   </Typography>
-                  <Coins size={18} color="#D4AF37" />
+                  <TokenIcon symbol="usGOLD" size={24} />
                 </Box>
                 <Box>
-                  <Typography variant="h4" fontWeight="900" color="#fff">
-                    {usGoldBalance.toFixed(2)} <span style={{ fontSize: '1.1rem', fontWeight: '500', color: '#D4AF37' }}>usGOLD</span>
-                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="h4" fontWeight="900" color="#fff">
+                      {usGoldBalance.toFixed(2)}
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold" color="#D4AF37">
+                      usGOLD
+                    </Typography>
+                  </Stack>
                   <Typography variant="caption" color="text.secondary">
                     Reserve Value: ${(usGoldBalance * 80).toFixed(2)} USD
                   </Typography>
@@ -320,12 +327,17 @@ export function StakingPage({
                   <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>
                     ACTIVE LOCKUP
                   </Typography>
-                  <ShieldCheck size={18} color="#4caf50" />
+                  <TokenIcon symbol="usGOLD" size={24} />
                 </Box>
                 <Box>
-                  <Typography variant="h4" fontWeight="900" color="#fff">
-                    {totalStaked.toFixed(2)} <span style={{ fontSize: '1.1rem', fontWeight: '500', color: '#4caf50' }}>usGOLD</span>
-                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="h4" fontWeight="900" color="#fff">
+                      {totalStaked.toFixed(2)}
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold" color="#4caf50">
+                      usGOLD
+                    </Typography>
+                  </Stack>
                   <Typography variant="caption" color="text.secondary">
                     Total active vaults locked: {activeStakedList.length}
                   </Typography>

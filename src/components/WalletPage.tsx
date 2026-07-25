@@ -12,6 +12,8 @@ import { t } from '../translations';
 import { database } from '../firebase';
 import { ref, onValue, update, push } from 'firebase/database';
 import { useAppKit } from '@reown/appkit/react';
+import { TokenIcon } from './TokenIcon';
+import { triggerHaptic } from '../lib/haptic';
 
 interface WalletPageProps {
   language: string;
@@ -232,12 +234,12 @@ export function WalletPage({
         <Grid item xs={12} md={6}>
           <Card sx={{ bgcolor: '#121316', border: `1px solid ${alpha('#D4AF37', 0.25)}`, borderRadius: '20px' }}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37', width: 48, height: 48 }}>
-                <Coins size={24} />
-              </Avatar>
+              <TokenIcon symbol="usGOLD" size={48} />
               <Box>
                 <Typography variant="caption" color="text.secondary">Staking Balance</Typography>
-                <Typography variant="h5" fontWeight="900" color="#fff">{usGoldBalance.toFixed(2)} usGOLD</Typography>
+                <Typography variant="h5" fontWeight="900" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  {usGoldBalance.toFixed(2)} usGOLD
+                </Typography>
               </Box>
             </CardContent>
           </Card>
@@ -245,12 +247,12 @@ export function WalletPage({
         <Grid item xs={12} md={6}>
           <Card sx={{ bgcolor: '#121316', border: `1px solid ${alpha('#26a69a', 0.25)}`, borderRadius: '20px' }}>
             <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: alpha('#26a69a', 0.1), color: '#26a69a', width: 48, height: 48 }}>
-                <DollarSign size={24} />
-              </Avatar>
+              <TokenIcon symbol="USDT" size={48} />
               <Box>
                 <Typography variant="caption" color="text.secondary">Futures Margin</Typography>
-                <Typography variant="h5" fontWeight="900" color="#fff">{futuresBalance.toFixed(2)} USDT</Typography>
+                <Typography variant="h5" fontWeight="900" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  {futuresBalance.toFixed(2)} USDT
+                </Typography>
               </Box>
             </CardContent>
           </Card>
@@ -268,7 +270,7 @@ export function WalletPage({
             <Button
               fullWidth
               variant={purchaseAsset === 'usGOLD' ? 'contained' : 'outlined'}
-              onClick={() => setPurchaseAsset('usGOLD')}
+              onClick={() => { triggerHaptic(); setPurchaseAsset('usGOLD'); }}
               sx={{
                 bgcolor: purchaseAsset === 'usGOLD' ? '#D4AF37' : 'transparent',
                 color: purchaseAsset === 'usGOLD' ? '#000' : '#D4AF37',
@@ -284,7 +286,7 @@ export function WalletPage({
             <Button
               fullWidth
               variant={purchaseAsset === 'USDT' ? 'contained' : 'outlined'}
-              onClick={() => setPurchaseAsset('USDT')}
+              onClick={() => { triggerHaptic(); setPurchaseAsset('USDT'); }}
               sx={{
                 bgcolor: purchaseAsset === 'USDT' ? '#26a69a' : 'transparent',
                 color: purchaseAsset === 'USDT' ? '#000' : '#26a69a',
@@ -341,7 +343,7 @@ export function WalletPage({
                 <Chip 
                   key={preset}
                   label={`$${preset}`}
-                  onClick={() => setCustomPurchaseAmount(preset)}
+                  onClick={() => { triggerHaptic(); setCustomPurchaseAmount(preset); }}
                   sx={{ 
                     bgcolor: alpha(purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a', 0.1),
                     color: purchaseAsset === 'usGOLD' ? '#FFDF73' : '#33c9bb',
@@ -356,15 +358,21 @@ export function WalletPage({
             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '12px' }}>
               <Box>
                 <Typography variant="caption" color="text.secondary" display="block">Estimated Cost</Typography>
-                <Typography variant="h6" color="#fff" fontWeight="900">
-                  ~{solNeeded} SOL
-                </Typography>
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <Typography variant="h6" color="#fff" fontWeight="900">
+                    ~{solNeeded} SOL
+                  </Typography>
+                  <TokenIcon symbol="SOL" size={16} />
+                </Stack>
               </Box>
               <Box sx={{ textAlign: 'right' }}>
                 <Typography variant="caption" color="text.secondary" display="block">You Will Receive</Typography>
-                <Typography variant="h6" color={purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a'} fontWeight="900">
-                  +{customPurchaseAmount} {purchaseAsset}
-                </Typography>
+                <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end">
+                  <Typography variant="h6" color={purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a'} fontWeight="900">
+                    +{customPurchaseAmount} {purchaseAsset}
+                  </Typography>
+                  <TokenIcon symbol={purchaseAsset} size={16} />
+                </Stack>
               </Box>
             </Box>
 
@@ -372,7 +380,7 @@ export function WalletPage({
               fullWidth
               variant="contained"
               disabled={isInvesting || isProcessingUsdtBuy || customPurchaseAmount <= 0}
-              onClick={handleExecutePurchase}
+              onClick={() => { triggerHaptic(30); handleExecutePurchase(); }}
               sx={{
                 mt: 3,
                 bgcolor: purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a',
