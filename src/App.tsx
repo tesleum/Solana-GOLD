@@ -2813,7 +2813,7 @@ function Dashboard() {
         )}
         
         {activeTab === 'futures' && (
-          <FuturesTrading language={language} effectiveAddress={effectiveAddress} onBack={() => setActiveTab('vault')} />
+          <FuturesTrading language={language} effectiveAddress={effectiveAddress} onBack={() => setActiveTab('vault')} onTopUp={() => setActiveTab('wallet')} />
         )}
 
         {activeTab === 'staking' && (

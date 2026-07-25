@@ -125,7 +125,7 @@ function PositionProgress({ side, entryPrice, markPrice, leverage }: { side: 'lo
   );
 }
 
-export function FuturesTrading({ language, effectiveAddress, onBack }: { language: string; effectiveAddress?: string | null; onBack?: () => void }) {
+export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp }: { language: string; effectiveAddress?: string | null; onBack?: () => void; onTopUp?: () => void }) {
   const theme = useTheme();
   
   // App states
@@ -1851,9 +1851,22 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
           )}
 
           {/* TAB 4: Assets (Detailed overview) */}
+          
           {currentTab === 'assets' && (
             <Stack spacing={3} sx={{ py: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+              <Card sx={{ p: 3, bgcolor: alpha('#26a69a', 0.05), border: `1px solid ${alpha('#26a69a', 0.3)}`, borderRadius: '16px' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight="900" color="#fff">USDT Margin Account</Typography>
+                    <Typography variant="body2" color="text.secondary">Deposit SOL to top up your Futures USDT margin balance instantly.</Typography>
+                  </Box>
+                  <Button variant="contained" onClick={onTopUp} sx={{ bgcolor: '#26a69a', color: '#000', fontWeight: '900', borderRadius: '12px', '&:hover': { bgcolor: '#33c9bb' } }}>
+                    TOP UP MARGIN
+                  </Button>
+                </Box>
+              </Card>
+
+              <Card sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Wallet color="#D4AF37" size={32} />
                   <Box>
@@ -1864,9 +1877,9 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
                 <Typography variant="h5" fontWeight="900" color="#fff">
                   ${activeBalanceTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                 </Typography>
-              </Box>
+              </Card>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+              <Card sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: alpha('#000', 0.3), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Info color="#D4AF37" size={32} />
                   <Box>
@@ -1877,7 +1890,7 @@ export function FuturesTrading({ language, effectiveAddress, onBack }: { languag
                 <Typography variant="h5" fontWeight="900" sx={{ color: '#4caf50' }}>
                   ${activeBalanceAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
                 </Typography>
-              </Box>
+              </Card>
             </Stack>
           )}
         </Box>

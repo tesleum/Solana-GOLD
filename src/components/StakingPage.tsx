@@ -650,10 +650,10 @@ export function StakingPage({
               {actionTab === 'buy' && (
                 <Stack spacing={3.5}>
                   
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                      <Typography variant="subtitle2" color="#D4AF37" fontWeight="800" sx={{ letterSpacing: 1 }}>
-                        TOP UP usGOLD FOR STAKING
+                  <Card sx={{ p: 2.5, bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Typography variant="h6" color="#D4AF37" fontWeight="800">
+                        Top Up usGOLD
                       </Typography>
                       <Chip label={`1 usGOLD = $1.00`} size="small" sx={{ bgcolor: alpha('#D4AF37', 0.12), color: '#D4AF37', fontWeight: 'bold' }} />
                     </Box>
@@ -726,7 +726,7 @@ export function StakingPage({
                         1 SOL = ${solPrice.toFixed(2)} USD
                       </Typography>
                     </Box>
-                  </Box>
+                  </Card>
 
                   {/* Transaction Cost Breakdown */}
                   <Box sx={{ 
