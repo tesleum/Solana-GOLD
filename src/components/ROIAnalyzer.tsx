@@ -147,7 +147,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Controls */}
           <Grid item xs={12} md={5}>
             <Card sx={{ 
