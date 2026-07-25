@@ -541,8 +541,8 @@ function Dashboard() {
       }
       const solPrice = currentSolPrice || 150;
 
-      if (investAmount < 10 || investAmount > 100) {
-        throw new Error("Investment amount must be between $10 and $100");
+      if (investAmount < 1) {
+        throw new Error("Investment amount must be at least $1.00");
       }
 
       // Calculate Solana amount for requested $usGOLD

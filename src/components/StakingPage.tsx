@@ -46,12 +46,13 @@ export function StakingPage({
   const { open } = useAppKit();
 
   // Internal Tabs for Staking Page actions
-  const [actionTab, setActionTab] = useState<'stake' | 'buy'>('stake');
+  const [actionTab, setActionTab] = useState<'stake' | 'buy'>('buy');
 
   // Custom Staking & Flexible Vault State
   const [customStakeAmount, setCustomStakeAmount] = useState<string>('100');
   const [stakingDurationMonths, setStakingDurationMonths] = useState<1 | 3 | 6 | 12>(3);
   const [isCreatingStake, setIsCreatingStake] = useState(false);
+  const [autoStakeAfterBuy, setAutoStakeAfterBuy] = useState<boolean>(true);
 
   // Active Stakes from Firebase
   const [activeStakes, setActiveStakes] = useState<any[]>([]);
@@ -428,8 +429,8 @@ export function StakingPage({
                   '& .Mui-selected': { color: '#D4AF37' }
                 }}
               >
-                <Tab label="1. Stake usGOLD Vault" value="stake" icon={<Coins size={16} />} iconPosition="start" />
-                <Tab label="2. Buy usGOLD with SOL" value="buy" icon={<Wallet size={16} />} iconPosition="start" />
+                <Tab label="1. Buy usGOLD with SOL" value="buy" icon={<Wallet size={16} />} iconPosition="start" />
+                <Tab label="2. Stake usGOLD Vault" value="stake" icon={<Coins size={16} />} iconPosition="start" />
               </Tabs>
             </Box>
 
@@ -663,80 +664,130 @@ export function StakingPage({
                 <Stack spacing={3.5}>
                   
                   <Card sx={{ p: 2.5, bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.05)}`, borderRadius: '16px' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" color="#D4AF37" fontWeight="800">
-                        Top Up usGOLD
-                      </Typography>
-                      <Chip label={`1 usGOLD = $1.00`} size="small" sx={{ bgcolor: alpha('#D4AF37', 0.12), color: '#D4AF37', fontWeight: 'bold' }} />
-                    </Box>
+                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                       <Typography variant="h6" color="#D4AF37" fontWeight="800">
+                         Top Up usGOLD
+                       </Typography>
+                       <Chip label={`1 usGOLD = $1.00`} size="small" sx={{ bgcolor: alpha('#D4AF37', 0.12), color: '#D4AF37', fontWeight: 'bold' }} />
+                     </Box>
 
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      value={investAmount}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setInvestAmount(val);
-                      }}
-                      type="number"
-                      placeholder="Enter amount from 10 to 100"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Typography color="#D4AF37" fontWeight="bold" fontSize="1.1rem">$</Typography>
-                          </InputAdornment>
-                        ),
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <Typography variant="body2" color="text.secondary">USD</Typography>
-                          </InputAdornment>
-                        ),
-                        sx: { 
-                          bgcolor: alpha('#ffffff', 0.03), 
-                          borderRadius: '14px', 
-                          color: '#fff', 
-                          fontSize: '1.2rem', 
-                          fontWeight: 'bold',
-                          border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-                          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' }
-                        }
-                      }}
-                    />
+                     <TextField
+                       fullWidth
+                       variant="outlined"
+                       value={investAmount}
+                       onChange={(e) => {
+                         const val = parseFloat(e.target.value) || 0;
+                         setInvestAmount(val);
+                       }}
+                       type="number"
+                       placeholder="Enter amount to buy (Min $1.00)"
+                       InputProps={{
+                         startAdornment: (
+                           <InputAdornment position="start">
+                             <Typography color="#D4AF37" fontWeight="bold" fontSize="1.1rem">$</Typography>
+                           </InputAdornment>
+                         ),
+                         endAdornment: (
+                           <InputAdornment position="end">
+                             <Typography variant="body2" color="text.secondary">USD</Typography>
+                           </InputAdornment>
+                         ),
+                         sx: { 
+                           bgcolor: alpha('#ffffff', 0.03), 
+                           borderRadius: '14px', 
+                           color: '#fff', 
+                           fontSize: '1.2rem', 
+                           fontWeight: 'bold',
+                           border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+                           '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' },
+                           '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#D4AF37' }
+                         }
+                       }}
+                     />
 
-                    {/* Pre-set Purchase Buttons */}
-                    <Box sx={{ display: 'flex', gap: 1.5, mt: 1.5 }}>
-                      {[10, 25, 50, 100].map((preset) => (
-                        <Button 
-                          key={preset}
-                          size="small"
-                          onClick={() => setInvestAmount(preset)}
-                          sx={{ 
-                            flexGrow: 1, 
-                            bgcolor: investAmount === preset ? alpha('#D4AF37', 0.2) : alpha('#D4AF37', 0.05), 
-                            color: '#FFDF73', 
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            border: `1px solid ${investAmount === preset ? '#D4AF37' : alpha('#D4AF37', 0.15)}`,
-                            '&:hover': { bgcolor: alpha('#D4AF37', 0.15) }
-                          }}
-                        >
-                          ${preset}
-                        </Button>
-                      ))}
-                    </Box>
+                     {/* Pre-set Purchase Buttons */}
+                     <Box sx={{ display: 'flex', gap: 1.5, mt: 1.5 }}>
+                       {[50, 250, 1000, 5000].map((preset) => (
+                         <Button 
+                           key={preset}
+                           size="small"
+                           onClick={() => setInvestAmount(preset)}
+                           sx={{ 
+                             flexGrow: 1, 
+                             bgcolor: investAmount === preset ? alpha('#D4AF37', 0.2) : alpha('#D4AF37', 0.05), 
+                             color: '#FFDF73', 
+                             borderRadius: '8px',
+                             fontWeight: 'bold',
+                             border: `1px solid ${investAmount === preset ? '#D4AF37' : alpha('#D4AF37', 0.15)}`,
+                             '&:hover': { bgcolor: alpha('#D4AF37', 0.15) }
+                           }}
+                         >
+                           ${preset.toLocaleString()}
+                         </Button>
+                       ))}
+                     </Box>
 
-                    {/* Solana price guide */}
-                    <Box sx={{ mt: 2.5, p: 2, borderRadius: '14px', bgcolor: alpha('#9945FF', 0.06), border: `1px solid ${alpha('#9945FF', 0.25)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" width={18} height={18} />
-                        <Typography variant="caption" color="text.secondary">
-                          Live Solana exchange rate:
-                        </Typography>
+                     {/* Solana price guide */}
+                     <Box sx={{ mt: 2.5, p: 2, borderRadius: '14px', bgcolor: alpha('#9945FF', 0.06), border: `1px solid ${alpha('#9945FF', 0.25)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                         <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="SOL" width={18} height={18} referrerPolicy="no-referrer" />
+                         <Typography variant="caption" color="text.secondary">
+                           Live Solana exchange rate:
+                         </Typography>
+                       </Box>
+                       <Typography variant="caption" fontWeight="bold" color="#9945FF">
+                         1 SOL = ${solPrice.toFixed(2)} USD
+                       </Typography>
+                     </Box>
+                  </Card>
+
+                  {/* Auto-Stake Selection Feature card */}
+                  <Card 
+                    onClick={() => setAutoStakeAfterBuy(!autoStakeAfterBuy)}
+                    sx={{ 
+                      p: 2, 
+                      bgcolor: autoStakeAfterBuy ? alpha('#D4AF37', 0.08) : alpha('#fff', 0.01), 
+                      border: `1.5px solid ${autoStakeAfterBuy ? '#D4AF37' : alpha('#fff', 0.05)}`, 
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        borderColor: '#D4AF37',
+                        bgcolor: alpha('#D4AF37', 0.04)
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Coins size={22} color="#D4AF37" />
+                        <Box>
+                          <Typography variant="body2" fontWeight="800" color="#fff">
+                            Auto-Stake purchased usGOLD
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Instantly route minted tokens to earn high-yield staking returns.
+                          </Typography>
+                        </Box>
+                      </Stack>
+                      <Box sx={{ 
+                        width: 44, 
+                        height: 24, 
+                        borderRadius: '12px', 
+                        bgcolor: autoStakeAfterBuy ? '#D4AF37' : alpha('#fff', 0.1), 
+                        position: 'relative',
+                        transition: 'background-color 0.2s'
+                      }}>
+                        <Box sx={{ 
+                          width: 18, 
+                          height: 18, 
+                          borderRadius: '50%', 
+                          bgcolor: autoStakeAfterBuy ? '#000' : '#fff', 
+                          position: 'absolute', 
+                          top: 3, 
+                          left: autoStakeAfterBuy ? 23 : 3,
+                          transition: 'left 0.2s'
+                        }} />
                       </Box>
-                      <Typography variant="caption" fontWeight="bold" color="#9945FF">
-                        1 SOL = ${solPrice.toFixed(2)} USD
-                      </Typography>
                     </Box>
                   </Card>
 
@@ -760,8 +811,8 @@ export function StakingPage({
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="body2" color="text.secondary">Purchase Limits:</Typography>
-                        <Typography variant="body2" fontWeight="bold" color={investAmount >= 10 && investAmount <= 100 ? '#4caf50' : '#f44336'}>
-                          $10.00 to $100.00 USD
+                        <Typography variant="body2" fontWeight="bold" color={investAmount >= 1 ? '#4caf50' : '#f44336'}>
+                          Unlimited (Min $1.00 USD)
                         </Typography>
                       </Box>
                     </Stack>
@@ -796,8 +847,28 @@ export function StakingPage({
                     <Button
                       variant="contained"
                       fullWidth
-                      disabled={isInvesting || investAmount < 10 || investAmount > 100}
-                      onClick={handleInvest}
+                      disabled={isInvesting || investAmount < 1}
+                      onClick={async () => {
+                        try {
+                          await handleInvest();
+                          if (autoStakeAfterBuy) {
+                            setCustomStakeAmount(investAmount.toString());
+                            setActionTab('stake');
+                            setTimeout(() => {
+                              alert(`Purchase successful! We have transferred you to "2. Stake usGOLD Vault" with ${investAmount} usGOLD pre-filled. Please select your duration and click "STAKE NOW" to earn up to 24% annual yield!`);
+                            }, 500);
+                          } else {
+                            setTimeout(() => {
+                              if (window.confirm(`Purchase successful! You received ${investAmount} usGOLD. Would you like to stake this usGOLD now to lock in 24% annual returns?`)) {
+                                setCustomStakeAmount(investAmount.toString());
+                                setActionTab('stake');
+                              }
+                            }, 500);
+                          }
+                        } catch (err) {
+                          console.error("Purchase / Auto-stake error:", err);
+                        }
+                      }}
                       sx={{
                         bgcolor: '#D4AF37',
                         color: '#000',

@@ -297,7 +297,7 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
           horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
         },
         width: container.clientWidth || 600,
-        height: 360,
+        height: container.clientHeight || (window.innerWidth < 600 ? 240 : 360),
       });
 
       const seriesOptions = {
@@ -318,9 +318,12 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
 
       const resizeObserver = new ResizeObserver(entries => {
         if (entries[0] && chartInstanceRef.current) {
-          const { width } = entries[0].contentRect;
+          const { width, height } = entries[0].contentRect;
           if (width > 0) {
-            chartInstanceRef.current.applyOptions({ width });
+            chartInstanceRef.current.applyOptions({ 
+              width,
+              height: height || (window.innerWidth < 600 ? 240 : 360)
+            });
           }
         }
       });
@@ -1551,26 +1554,34 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
           position: 'relative'
         }}
       >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${alpha('#fff', 0.05)}` }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <BarChart2 size={20} color="#D4AF37" />
-            <Typography variant="subtitle2" fontWeight="bold" color="#fff">PROFESSIONAL TRADING TERMINAL</Typography>
+        <Box sx={{ 
+          p: { xs: 1, sm: 2 }, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          borderBottom: `1px solid ${alpha('#fff', 0.05)}`,
+          flexWrap: 'nowrap',
+          gap: 1
+        }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <BarChart2 size={18} color="#D4AF37" />
             <Badge badgeContent="LIVE" color="success" sx={{ '& .MuiBadge-badge': { fontSize: 8, height: 14, minWidth: 28 } }} />
           </Stack>
-          <Stack direction="row" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} sx={{ width: '100%', justifyContent: { xs: 'space-between', sm: 'flex-end' }, alignItems: 'center' }}>
             {['1m', '5m', '15m', '1H', '4H', '1D'].map(tf => (
               <Button 
                 key={tf} 
                 size="small" 
                 onClick={() => setSelectedTimeframe(tf as any)}
                 sx={{ 
-                  minWidth: 38, 
+                  minWidth: { xs: 32, sm: 38 }, 
+                  px: { xs: 0.5, sm: 1 },
                   fontSize: '0.75rem',
                   fontWeight: selectedTimeframe === tf ? 'bold' : 'normal',
                   color: selectedTimeframe === tf ? '#D4AF37' : alpha('#fff', 0.6),
                   bgcolor: selectedTimeframe === tf ? alpha('#D4AF37', 0.15) : 'transparent',
                   border: `1px solid ${selectedTimeframe === tf ? alpha('#D4AF37', 0.3) : 'transparent'}`,
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   '&:hover': { bgcolor: alpha('#D4AF37', 0.1) }
                 }}
               >
@@ -1586,16 +1597,16 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
           </Stack>
         </Box>
 
-        <Box sx={{ p: 1, minHeight: 380, position: 'relative' }}>
+        <Box sx={{ p: 1, minHeight: { xs: 260, sm: 380 }, position: 'relative' }}>
           {!isChartReady && (
             <Skeleton 
               variant="rectangular" 
               width="100%" 
-              height={360} 
+              height="100%" 
               sx={{ bgcolor: alpha('#ffffff', 0.05), borderRadius: '12px', position: 'absolute', top: 8, left: 8, right: 8, bottom: 8 }} 
             />
           )}
-          <Box ref={chartContainerRef} sx={{ width: '100%', height: 360, opacity: isChartReady ? 1 : 0, transition: 'opacity 0.2s' }} />
+          <Box ref={chartContainerRef} sx={{ width: '100%', height: { xs: 240, sm: 360 }, opacity: isChartReady ? 1 : 0, transition: 'opacity 0.2s' }} />
         </Box>
       </Card>
 
