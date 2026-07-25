@@ -9,7 +9,7 @@ import {
   ArrowRight, CheckCircle2, Zap 
 } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAppKit } from '@reown/appkit/react';
 import { t } from '../translations';
 import { database } from '../firebase';
 import { ref, onValue, update, push } from 'firebase/database';
@@ -41,6 +41,7 @@ export function StakingPage({
 }: StakingPageProps) {
   useTheme();
   const { publicKey, connected } = useWallet();
+  const { open } = useAppKit();
 
   // Internal Tabs for Staking Page actions
   const [actionTab, setActionTab] = useState<'stake' | 'buy'>('stake');
@@ -288,7 +289,12 @@ export function StakingPage({
                     </Button>
                   ) : (
                     <Box sx={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}>
-                      <WalletMultiButton style={{ height: 24, fontSize: 10, backgroundColor: '#D4AF37', color: '#000', borderRadius: 8, fontWeight: 'bold' }} />
+                      <Button 
+                        onClick={() => open()}
+                        sx={{ height: 24, fontSize: 10, backgroundColor: '#D4AF37', color: '#000', borderRadius: 2, fontWeight: 'bold', '&:hover': { backgroundColor: '#FFDF73' } }}
+                      >
+                        Connect Wallet
+                      </Button>
                     </Box>
                   )}
                 </Box>
@@ -647,7 +653,7 @@ export function StakingPage({
                   <Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                       <Typography variant="subtitle2" color="#D4AF37" fontWeight="800" sx={{ letterSpacing: 1 }}>
-                        BUY & MINT usGOLD RESERVE
+                        TOP UP usGOLD FOR STAKING
                       </Typography>
                       <Chip label={`1 usGOLD = $1.00`} size="small" sx={{ bgcolor: alpha('#D4AF37', 0.12), color: '#D4AF37', fontWeight: 'bold' }} />
                     </Box>
@@ -756,14 +762,22 @@ export function StakingPage({
                         Please connect your Solana Wallet to proceed with buying usGOLD.
                       </Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <WalletMultiButton style={{ 
-                          backgroundColor: '#D4AF37', 
-                          color: '#000', 
-                          fontWeight: '900', 
-                          borderRadius: '14px',
-                          padding: '12px 28px',
-                          width: '100%'
-                        }} />
+                        <Button 
+                          onClick={() => open()}
+                          sx={{ 
+                            backgroundColor: '#D4AF37', 
+                            color: '#000', 
+                            fontWeight: '900', 
+                            borderRadius: '14px',
+                            padding: '12px 28px',
+                            width: '100%',
+                            '&:hover': {
+                              backgroundColor: '#FFDF73'
+                            }
+                          }}
+                        >
+                          Connect Wallet
+                        </Button>
                       </Box>
                     </Box>
                   ) : (

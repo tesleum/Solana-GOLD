@@ -10,12 +10,12 @@ import {
   CreditCard, DollarSign, ArrowRight, Activity, CheckCircle2, Info, Shield, HelpCircle
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { LAMPORTS_PER_SOL, SystemProgram, PublicKey, VersionedTransaction, TransactionMessage, TransactionInstruction } from '@solana/web3.js';
 import { t } from '../translations';
 import { database } from '../firebase';
 import { ref, onValue, update, push } from 'firebase/database';
+import { useAppKit } from '@reown/appkit/react';
 
 interface WalletPageProps {
   language: string;
@@ -58,6 +58,7 @@ export function WalletPage({
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
   const [copied, setCopied] = useState(false);
+  const { open } = useAppKit();
 
   // Futures Wallet Balance state from Firebase
   const [futuresBalance, setFuturesBalance] = useState<number>(0);
@@ -387,10 +388,10 @@ export function WalletPage({
           WebkitTextFillColor: 'transparent',
           filter: `drop-shadow(0 4px 15px ${alpha('#D4AF37', 0.35)})`
         }}>
-          Digital Treasury & Asset Minting
+          Wallet & Top Up Portal
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, maxWidth: 620, mx: 'auto', lineHeight: 1.6 }}>
-          Buy and mint gold-backed reserves (usGOLD) or USDT margin assets securely using your connected Solana wallet. Manage leverage trading accounts and lock up high-yield gold-staking vaults.
+          Deposit and top up your app assets. Top up usGOLD to lock in staking vaults, or top up USDT to access margin for futures trading. This wallet is independent of initial vault investments.
         </Typography>
       </Box>
 
@@ -411,14 +412,23 @@ export function WalletPage({
             Connect your Solana wallet to access your personal Imperial Treasury, purchase usGOLD and USDT directly with SOL, and view your interactive ledger.
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <WalletMultiButton style={{ 
-              backgroundColor: '#D4AF37', 
-              color: '#000', 
-              fontWeight: '900', 
-              borderRadius: '14px',
-              padding: '14px 32px',
-              boxShadow: '0 8px 24px rgba(212,175,55,0.3)'
-            }} />
+            <Button 
+              variant="contained" 
+              onClick={() => open()}
+              sx={{ 
+                backgroundColor: '#D4AF37', 
+                color: '#000', 
+                fontWeight: '900', 
+                borderRadius: '14px',
+                padding: '14px 32px',
+                boxShadow: '0 8px 24px rgba(212,175,55,0.3)',
+                '&:hover': {
+                  backgroundColor: '#FFDF73'
+                }
+              }}
+            >
+              Connect Wallet
+            </Button>
           </Box>
         </Card>
       ) : (
