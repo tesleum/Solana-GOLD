@@ -255,12 +255,12 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
 
                   <Divider sx={{ my: { xs: 2.5, sm: 3 }, borderColor: 'rgba(212, 175, 55, 0.1)' }} />
 
-                  <Stack direction="row" justifyContent="space-between" spacing={1}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={{ xs: 2, sm: 1 }}>
                     <Box>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>{t('personalYieldRate', language).replace('{rate}', apyYield)}</Typography>
                       <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>+${calculations.personalYield.toFixed(2)}</Typography>
                     </Box>
-                    <Box sx={{ textAlign: 'right' }}>
+                    <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>{t('networkRoyaltyEst', language)}</Typography>
                       <Typography variant="subtitle1" fontWeight="700" sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>+${calculations.networkCommissions.toFixed(2)}</Typography>
                     </Box>

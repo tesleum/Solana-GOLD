@@ -2080,33 +2080,29 @@ function Dashboard() {
 
         {activeTab === 'network' && (
           <Stack spacing={4} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
-            {/* Elegant Header */}
-            <Card sx={{ 
+            {/* Elegant Header - Simplified Box layout without Card */}
+            <Box sx={{ 
               textAlign: 'center', 
-              background: `linear-gradient(to bottom, ${alpha('#D4AF37', 0.1)}, transparent)`,
-              borderRadius: '24px',
-              border: `1px solid ${alpha('#D4AF37', 0.2)}`,
+              py: { xs: 1.5, sm: 2 },
               mb: 1
             }}>
-              <CardContent sx={{ py: { xs: 2.5, sm: 3 }, '&:last-child': { pb: { xs: 2.5, sm: 3 } } }}>
-                <Typography 
-                  variant="h4" 
-                  fontWeight="900" 
-                  sx={{ 
-                    mb: 1, 
-                    fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                    fontFamily: '"Cinzel", serif', 
-                    color: 'primary.main',
-                    textShadow: `0 2px 8px ${alpha('#D4AF37', 0.3)}`
-                  }}
-                >
-                  {t('myGoldenNetwork', language)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '95%', mx: 'auto', fontStyle: 'italic', fontWeight: 500, opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                  {t('networkDescription', language)}
-                </Typography>
-              </CardContent>
-            </Card>
+              <Typography 
+                variant="h4" 
+                fontWeight="900" 
+                sx={{ 
+                  mb: 1, 
+                  fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                  fontFamily: '"Cinzel", serif', 
+                  color: 'primary.main',
+                  textShadow: `0 2px 8px ${alpha('#D4AF37', 0.3)}`
+                }}
+              >
+                {t('myGoldenNetwork', language)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '95%', mx: 'auto', fontStyle: 'italic', fontWeight: 500, opacity: 0.8, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                {t('networkDescription', language)}
+              </Typography>
+            </Box>
 
             {/* Elegant Sub-Tab Selection */}
             <Box sx={{ 
