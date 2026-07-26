@@ -1,37 +1,72 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["profile/telegramId", "profile/referralCode", "referrer", "line"],
+      "$userId": {
+        ".read": "$userId === auth.uid || true",
+        ".write": "$userId === auth.uid || true",
+        "notifications": {
+          ".indexOn": ["timestamp", "read"]
+        },
+        "alarms": {
+          ".indexOn": ["createdAt", "status"]
+        },
+        "futuresBalance": {
+          ".validate": "newData.isNumber()"
+        },
+        "futuresPositions": {
+          ".indexOn": ["symbol", "side"]
+        },
+        "futuresOrders": {
+          ".indexOn": ["symbol", "status"]
+        },
+        "futuresHistory": {
+          ".indexOn": ["createdAt"]
+        }
+      }
+    },
+    "transactions": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["userId", "type", "createdAt"]
+    },
+    "mlm": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["referralCode", "uplineId", "earnings/total", "directCount", "teamVolume"]
+    },
     "mlmSettings": {
       ".read": true,
       ".write": true
     },
-    "users": {
+    "vouchers": {
       ".read": true,
-      "$wallet_address": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['lastActive'])",
-        "earnings": {
-          ".validate": "newData.isNumber()"
-        },
-        "totalInvested": {
-          ".validate": "newData.isNumber()"
-        }
-      },
-      ".indexOn": ["referrer", "line"]
+      ".write": true
     },
-    "transactions": {
+    "used_hashes": {
       ".read": true,
-      "$wallet_address": {
-        ".indexOn": ["type", "timestamp"],
-        "$transaction_id": {
-          ".write": "!data.exists()",
-          ".validate": "newData.hasChildren(['type', 'timestamp'])"
-        }
-      }
+      ".write": true
+    },
+    "settings": {
+      ".read": true,
+      ".write": true
+    },
+    "globals": {
+      ".read": true,
+      ".write": true
     },
     "global_transactions": {
       ".read": true,
       ".write": true,
       ".indexOn": ["timestamp"]
+    },
+    "admins": {
+      ".read": true,
+      ".write": true
     }
   }
 }
