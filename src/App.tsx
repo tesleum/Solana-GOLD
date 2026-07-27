@@ -1521,7 +1521,7 @@ function Dashboard() {
                 <ListItem key={idx} sx={{ bgcolor: alpha('#D4AF37', 0.05), mb: 1, borderRadius: '12px', border: `1px solid ${alpha('#D4AF37', 0.1)}` }}>
                   <ListItemAvatar>
                     <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37' }}>
-                      {notif.title.includes('Referral') ? <Users size={20} /> : <Coins size={20} />}
+                      {(notif?.title && String(notif.title).includes('Referral')) ? <Users size={20} /> : <Coins size={20} />}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText 
@@ -2637,12 +2637,18 @@ function Dashboard() {
                   <Typography variant="overline" color="text.secondary" sx={{ ml: 2, fontWeight: 800, letterSpacing: 2 }}>{t('ledgerEntriesTitle', language)}</Typography>
                   <Stack spacing={3} sx={{ mt: 2 }}>
                     {filteredTransactions.length > 0 ? filteredTransactions.map((tx: any, i: number) => {
-                      const isBuy = tx.type === 'buy';
-                      const amount = parseFloat(tx.amount.replace(/ \$usGOLD| SOL|/g, ''));
+                      const isBuy = tx?.type === 'buy' || tx?.type === 'mint' || tx?.type === 'stake_created';
+                      const rawAmt = tx?.amount ? String(tx.amount) : '0';
+                      const matchAmt = rawAmt.match(/([\d.]+)/);
+                      const amount = matchAmt ? parseFloat(matchAmt[1]) : 0;
+                      const timeStr = tx?.time || (tx?.timestamp ? new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent');
+                      const rawPrice = tx?.price ? String(tx.price) : (tx?.details ? String(tx.details) : 'Confirmed');
+                      const priceDisplay = rawPrice.includes('$') ? `Valued at ${rawPrice}` : rawPrice;
+                      const titleDisplay = tx?.details || (isBuy ? 'Minted GOLD' : 'Yield Harvest');
                       return (
                       <Card 
-                        key={tx.id || i}
-                        onClick={() => tx.txId ? window.open(`https://solscan.io/tx/${tx.txId}`, '_blank') : alert(`Transaction Details:\nID: ${tx.id || 'N/A'}\nType: ${tx.type}\nStatus: Confirmed`)}
+                        key={tx?.id || i}
+                        onClick={() => tx?.txId ? window.open(`https://solscan.io/tx/${tx.txId}`, '_blank') : alert(`Transaction Details:\nID: ${tx?.id || 'N/A'}\nType: ${tx?.type || 'Activity'}\nStatus: Confirmed`)}
                         sx={{
                           cursor: 'pointer',
                           background: `linear-gradient(90deg, ${isBuy ? alpha('#D4AF37', 0.05) : alpha('#4caf50', 0.05)} 0%, ${alpha('#121214', 0.9)} 100%)`,
@@ -2695,7 +2701,7 @@ function Dashboard() {
                           <Box sx={{ flex: 1 }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
                               <Typography variant="h6" fontWeight="800" color="#fff">
-                                {isBuy ? 'Minted GOLD' : 'Yield Harvest'}
+                                {titleDisplay}
                               </Typography>
                               <Typography variant="h6" fontWeight="900" sx={{ color: isBuy ? '#D4AF37' : '#4caf50' }}>
                                 +{amount}
@@ -2705,11 +2711,11 @@ function Dashboard() {
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Activity size={14} color={alpha('#fff', 0.5)} />
                                 <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>
-                                  {tx.time}
+                                  {timeStr}
                                 </Typography>
                               </Box>
                               <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 500 }}>
-                                {tx.price.includes('$') ? `Valued at ${tx.price}` : tx.price}
+                                {priceDisplay}
                               </Typography>
                             </Stack>
                           </Box>
