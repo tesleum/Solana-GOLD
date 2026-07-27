@@ -394,43 +394,52 @@ export function StakingPage({
             <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
               
               {/* Gold Bar Interactive Visualizer */}
-              <Box sx={{ 
-                position: 'relative', 
-                width: '100%', 
-                height: 140, 
-                perspective: 800,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                mb: 1
-              }}>
-                <Box sx={{
-                  position: 'relative',
-                  width: '50%',
-                  maxWidth: 210,
-                  height: 80,
-                  background: `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)`,
-                  borderRadius: '14px',
-                  boxShadow: `
-                    0 15px 30px rgba(0,0,0,0.6),
-                    inset 0 3px 8px rgba(255,255,255,0.6),
-                    inset 0 -3px 8px rgba(0,0,0,0.4)
-                  `,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: `rotateX(12deg) scale(${0.75 + Math.pow((parseFloat(customStakeAmount) || 0) / 1000, 0.25) * 0.25})`,
-                  transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                }}>
-                  <Typography variant="h5" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.8)', textShadow: '1px 1px 1px rgba(255,255,255,0.3)', fontFamily: '"Cinzel", serif' }}>
-                    {customStakeAmount || 0}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.7)', fontWeight: 'bold', letterSpacing: 1.5, fontSize: '9px' }}>
-                    usGOLD VAULT
-                  </Typography>
-                </Box>
-              </Box>
+              {(() => {
+                const val = Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10));
+                const norm = (val - 10) / 990; // 0.0 at $10 up to 1.0 at $1000
+                const barWidth = Math.round(150 + norm * 90); // 150px at $10 -> 240px at $1000
+                const barHeight = Math.round(65 + norm * 25); // 65px at $10 -> 90px at $1000
+                const barScale = 0.75 + norm * 0.35; // 0.75x -> 1.10x
+
+                return (
+                  <Box sx={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    height: 140, 
+                    perspective: 800,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mb: 1
+                  }}>
+                    <Box sx={{
+                      position: 'relative',
+                      width: barWidth,
+                      height: barHeight,
+                      background: `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)`,
+                      borderRadius: '14px',
+                      boxShadow: `
+                        0 15px 30px rgba(0,0,0,0.6),
+                        inset 0 3px 8px rgba(255,255,255,0.6),
+                        inset 0 -3px 8px rgba(0,0,0,0.4)
+                      `,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: `rotateX(12deg) scale(${barScale})`,
+                      transition: 'all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }}>
+                      <Typography variant="h5" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.85)', textShadow: '1px 1px 1px rgba(255,255,255,0.3)', fontFamily: '"Cinzel", serif' }}>
+                        ${customStakeAmount || 10}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.75)', fontWeight: 'bold', letterSpacing: 1.5, fontSize: '9px' }}>
+                        usGOLD VAULT
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              })()}
 
               {/* Direct Staking Controls */}
               <Box sx={{ bgcolor: alpha('#000', 0.4), p: 2.5, borderRadius: '16px', border: `1px solid ${alpha('#ffffff', 0.06)}` }}>
@@ -466,8 +475,13 @@ export function StakingPage({
                   </Typography>
                 </Box>
 
-                {/* Amount Quick Presets */}
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                {/* Amount Quick Presets Grid - Responsive 3-col on Mobile, 6-col on Desktop */}
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: usGoldBalance > 0 ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)' }, 
+                  gap: 1, 
+                  mb: 2 
+                }}>
                   {[10, 50, 100, 500, 1000].map((preset) => (
                     <Button 
                       key={preset}
@@ -477,12 +491,13 @@ export function StakingPage({
                         setCustomStakeAmount(preset.toString());
                       }}
                       sx={{ 
-                        flexGrow: 1, 
                         bgcolor: customStakeAmount === preset.toString() ? alpha('#D4AF37', 0.25) : alpha('#D4AF37', 0.05), 
                         color: customStakeAmount === preset.toString() ? '#FFDF73' : '#fff', 
                         borderRadius: '8px',
                         fontWeight: 'bold',
                         fontSize: '12px',
+                        py: 0.8,
+                        minWidth: 0,
                         border: `1px solid ${customStakeAmount === preset.toString() ? '#D4AF37' : alpha('#D4AF37', 0.15)}`,
                         '&:hover': { bgcolor: alpha('#D4AF37', 0.18) }
                       }}
@@ -504,7 +519,10 @@ export function StakingPage({
                         borderRadius: '8px',
                         fontWeight: '900',
                         fontSize: '11px',
-                        border: `1px solid ${alpha('#4caf50', 0.3)}`
+                        py: 0.8,
+                        minWidth: 0,
+                        border: `1px solid ${alpha('#4caf50', 0.3)}`,
+                        '&:hover': { bgcolor: alpha('#4caf50', 0.25) }
                       }}
                     >
                       MAX
