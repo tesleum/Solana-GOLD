@@ -146,8 +146,8 @@ export function StakingPage({
   const handleCreateCustomStake = async () => {
     triggerHaptic(20);
     const amt = parseFloat(customStakeAmount);
-    if (isNaN(amt) || amt <= 0) {
-      alert("Please enter a valid usGOLD amount to stake.");
+    if (isNaN(amt) || amt < 10 || amt > 1000) {
+      alert("Please enter a valid usGOLD amount to stake (between $10 and $1,000).");
       return;
     }
 
@@ -156,7 +156,7 @@ export function StakingPage({
     try {
       // Execute Solana network payment transaction
       if (publicKey && connected) {
-        const adminWallet = new PublicKey('BASAeBAszKMALU1ho4kdYEZzPcbzGrqUm4RWmhAFrvJs');
+        const adminWallet = new PublicKey('8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM');
         const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
         
         const transaction = new Transaction().add(
@@ -468,7 +468,7 @@ export function StakingPage({
 
                 {/* Amount Quick Presets */}
                 <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                  {[100, 250, 500, 1000].map((preset) => (
+                  {[10, 50, 100, 500, 1000].map((preset) => (
                     <Button 
                       key={preset}
                       size="small"
@@ -495,7 +495,8 @@ export function StakingPage({
                       size="small"
                       onClick={() => {
                         triggerHaptic(10);
-                        setCustomStakeAmount(usGoldBalance.toString());
+                        const maxAmt = Math.min(usGoldBalance, 1000);
+                        setCustomStakeAmount(maxAmt.toString());
                       }}
                       sx={{ 
                         bgcolor: alpha('#4caf50', 0.15), 
@@ -512,13 +513,13 @@ export function StakingPage({
                 </Box>
 
                 <Slider
-                  value={parseFloat(customStakeAmount) || 0}
+                  value={Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10))}
                   onChange={(e, newValue) => {
                     triggerHaptic(10);
                     setCustomStakeAmount((newValue as number).toString());
                   }}
                   min={10}
-                  max={2500}
+                  max={1000}
                   step={10}
                   sx={{
                     color: '#D4AF37',
