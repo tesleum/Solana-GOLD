@@ -137,6 +137,18 @@ export function StakingPage({
           details: `Staked in ${stakingDurationMonths}-Month Vault (${(profitRate * 100).toFixed(0)}% Return)`,
           timestamp: Date.now()
         });
+
+        // Referral reward unlocking logic
+        const referrer = localStorage.getItem('referrer');
+        if (referrer) {
+          const rewardRef = ref(database, `rewards/${referrer}`);
+          await push(rewardRef, {
+            type: 'referral_stake_completed',
+            amount: 1, // $1 usGOLD
+            referee: effectiveAddress,
+            timestamp: Date.now()
+          });
+        }
       } else {
         setActiveStakes(prev => [...prev, { key: Date.now().toString(), ...newStake }]);
       }
