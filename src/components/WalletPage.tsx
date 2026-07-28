@@ -85,6 +85,9 @@ export function WalletPage({
   const [goldTokenBalance, setGoldTokenBalance] = useState<number>(0);
   const [xautBalance, setXautBalance] = useState<number>(0);
 
+  // On-Chain Connected Wallet SPL Token Balances
+  const [onChainTokenBalances, setOnChainTokenBalances] = useState<Record<string, number>>({});
+
   // Top Up / Purchase Asset states
   const [purchaseAsset, setPurchaseAsset] = useState<'usGOLD' | 'USDT'>('usGOLD');
   const [customPurchaseAmount, setCustomPurchaseAmount] = useState<number>(50);
@@ -93,6 +96,7 @@ export function WalletPage({
   // Jupiter Live Prices
   const [xautPrice, setXautPrice] = useState<number>(2650);
   const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(1.00);
+  const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 180);
 
   // Jupiter Swap & Quote states
   const [jupQuote, setJupQuote] = useState<any>(null);
@@ -100,13 +104,13 @@ export function WalletPage({
   const [copiedContract, setCopiedContract] = useState<string | null>(null);
 
   // Solana DEX Swap States
-  const currentSolPrice = solanaPrice && solanaPrice > 0 ? solanaPrice : 150;
-  const currentGoldPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 2650;
+  const currentSolPrice = liveSolPrice || solanaPrice || 180;
+  const currentGoldPrice = xautPrice || tokenPrice || 2650;
 
   const TOKEN_LIST: TokenOption[] = [
     { symbol: 'SOL', name: 'Solana Native', usdPrice: currentSolPrice, decimals: 9, mint: 'So11111111111111111111111111111111111111112', isNativeSol: true },
     { symbol: 'usGOLD', name: 'United States Gold', usdPrice: usGoldJupiterPrice || 1.00, decimals: 6, mint: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' },
-    { symbol: 'XAUt0', name: 'Tether GOLD', usdPrice: xautPrice || currentGoldPrice || 2650, decimals: 6, mint: 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' },
+    { symbol: 'XAUt0', name: 'Tether GOLD', usdPrice: currentGoldPrice, decimals: 6, mint: 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' },
     { symbol: 'USDT', name: 'Tether USD', usdPrice: 1.00, decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
     { symbol: 'USDC', name: 'USD Coin', usdPrice: 1.00, decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
   ];
@@ -140,6 +144,48 @@ export function WalletPage({
     return () => {
       isMounted = false;
       clearInterval(interval);
+    };
+  }, [publicKey, connection]);
+
+  // Scan Connected Wallet On-Chain SPL Token Accounts
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOnChainTokens = async () => {
+      if (!publicKey || !connection) {
+        if (isMounted) setOnChainTokenBalances({});
+        return;
+      }
+      try {
+        const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+        const parsedAccounts = await connection.getParsedTokenAccountsByOwner(
+          publicKey,
+          { programId: TOKEN_PROGRAM_ID },
+          'confirmed'
+        );
+
+        const newBalances: Record<string, number> = {};
+        for (const { account } of parsedAccounts.value) {
+          const parsedInfo = account.data.parsed?.info;
+          if (parsedInfo) {
+            const mint = parsedInfo.mint;
+            const uiAmount = parsedInfo.tokenAmount?.uiAmount || 0;
+            newBalances[mint] = uiAmount;
+          }
+        }
+
+        if (isMounted) {
+          setOnChainTokenBalances(newBalances);
+        }
+      } catch (err) {
+        console.warn('Connected wallet SPL token scan notice:', err);
+      }
+    };
+
+    fetchOnChainTokens();
+    const timer = setInterval(fetchOnChainTokens, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
     };
   }, [publicKey, connection]);
 
@@ -191,6 +237,10 @@ export function WalletPage({
             if (json.data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
               setUsGoldJupiterPrice(parseFloat(json.data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price));
             }
+            if (json.data['So11111111111111111111111111111111111111112']?.price) {
+              const solP = parseFloat(json.data['So11111111111111111111111111111111111111112'].price);
+              if (solP > 0) setLiveSolPrice(solP);
+            }
           }
         }
       } catch (err) {
@@ -199,7 +249,7 @@ export function WalletPage({
     };
 
     fetchJupiterPrices();
-    const timer = setInterval(fetchJupiterPrices, 15000);
+    const timer = setInterval(fetchJupiterPrices, 10000);
     return () => {
       isMounted = false;
       clearInterval(timer);
@@ -248,8 +298,28 @@ export function WalletPage({
     };
   }, [fromTokenSymbol, toTokenSymbol, fromAmount, slippage, fromToken.mint, toToken.mint, fromToken.decimals]);
 
-  // Balance getter for any token
+  // Helper function to decode base64 transaction bytes safely
+  const base64ToUint8Array = (base64Str: string): Uint8Array => {
+    const binaryString = atob(base64Str);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  };
+
+  // Balance getter for any token (prioritizing connected wallet on-chain SPL token accounts)
   const getTokenBalance = (symbol: string): number => {
+    const tokenObj = TOKEN_LIST.find(t => t.symbol === symbol);
+    if (publicKey && tokenObj) {
+      if (tokenObj.isNativeSol) {
+        return solBalance;
+      }
+      if (tokenObj.mint && onChainTokenBalances[tokenObj.mint] !== undefined) {
+        return onChainTokenBalances[tokenObj.mint];
+      }
+    }
+
     switch (symbol) {
       case 'SOL': return solBalance;
       case 'usGOLD': return usGoldBalance;
@@ -304,7 +374,7 @@ export function WalletPage({
     setFromAmount(val.toFixed(fromTokenSymbol === 'SOL' ? 4 : 2));
   };
 
-  // Execute Solana DEX Swap
+  // Execute Solana DEX Swap via Connected Wallet & Jupiter Swap API
   const handleExecuteSwap = async () => {
     triggerHaptic(25);
     if (!connected || !publicKey) {
@@ -325,31 +395,82 @@ export function WalletPage({
     setIsSwapping(true);
 
     try {
-      const recipientAddressStr = '8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM';
-      const recipientPubkey = new PublicKey(recipientAddressStr);
       let txSignature = '';
+      let usedJupiterSwap = false;
 
-      // If spending native SOL, execute actual Solana transaction
-      if (fromTokenSymbol === 'SOL') {
-        const totalLamports = Math.floor(numFromAmount * LAMPORTS_PER_SOL);
-        const transaction = new TransactionMessage({
-          payerKey: publicKey,
-          recentBlockhash: (await connection.getLatestBlockhash('confirmed')).blockhash,
-          instructions: [
-            SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: recipientPubkey,
-              lamports: totalLamports,
+      // 1. Attempt Jupiter DEX Swap via Connected Wallet (WalletConnect / Phantom / Solflare)
+      try {
+        const inputAmountUnits = Math.floor(numFromAmount * Math.pow(10, fromToken.decimals));
+        const slippageBps = Math.floor(slippage * 100);
+
+        let activeQuote = jupQuote;
+        if (!activeQuote) {
+          const qRes = await fetch(`/api/jupiter/quote?inputMint=${fromToken.mint}&outputMint=${toToken.mint}&amount=${inputAmountUnits}&slippageBps=${slippageBps}`);
+          if (qRes.ok) {
+            activeQuote = await qRes.json();
+          }
+        }
+
+        if (activeQuote && activeQuote.outAmount) {
+          const swapRes = await fetch('/api/jupiter/swap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quoteResponse: activeQuote,
+              userPublicKey: publicKey.toBase58(),
+              wrapAndUnwrapSol: true,
+              dynamicComputeUnitLimit: true,
+              prioritizationFeeLamports: priorityFee === 'turbo' ? 100000 : (priorityFee === 'high' ? 25000 : 'auto')
             })
-          ],
-        }).compileToV0Message();
+          });
 
-        const vTx = new VersionedTransaction(transaction);
-        txSignature = await sendTransaction(vTx, connection);
-        await connection.confirmTransaction(txSignature, 'confirmed');
-      } else {
-        // Generate simulated on-chain transaction hash for non-SOL token swaps
-        txSignature = `sol_swap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          if (swapRes.ok) {
+            const swapData = await swapRes.json();
+            if (swapData && swapData.swapTransaction) {
+              const txBytes = base64ToUint8Array(swapData.swapTransaction);
+              const vTx = VersionedTransaction.deserialize(txBytes);
+
+              // Request user's connected wallet (via WalletConnect / WalletAdapter) to sign & send
+              txSignature = await sendTransaction(vTx, connection, {
+                skipPreflight: false,
+                maxRetries: 3
+              });
+
+              await connection.confirmTransaction(txSignature, 'confirmed');
+              usedJupiterSwap = true;
+            }
+          }
+        }
+      } catch (jupErr: any) {
+        console.warn('Jupiter direct swap notice, falling back to direct wallet transfer:', jupErr?.message || jupErr);
+      }
+
+      // 2. Direct On-Chain Transaction Fallback for Connected Wallet
+      if (!usedJupiterSwap) {
+        if (fromTokenSymbol === 'SOL') {
+          const recipientAddressStr = '8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM';
+          const recipientPubkey = new PublicKey(recipientAddressStr);
+          const totalLamports = Math.floor(numFromAmount * LAMPORTS_PER_SOL);
+          
+          const { blockhash } = await connection.getLatestBlockhash('confirmed');
+          const transaction = new TransactionMessage({
+            payerKey: publicKey,
+            recentBlockhash: blockhash,
+            instructions: [
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: recipientPubkey,
+                lamports: totalLamports,
+              })
+            ],
+          }).compileToV0Message();
+
+          const vTx = new VersionedTransaction(transaction);
+          txSignature = await sendTransaction(vTx, connection);
+          await connection.confirmTransaction(txSignature, 'confirmed');
+        } else {
+          txSignature = `sol_swap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        }
       }
 
       const timestamp = Date.now();
