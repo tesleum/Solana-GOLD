@@ -93,26 +93,28 @@ export function WalletPage({
   const [customPurchaseAmount, setCustomPurchaseAmount] = useState<number>(50);
   const [isProcessingUsdtBuy, setIsProcessingUsdtBuy] = useState(false);
 
-  // Jupiter Live Prices
-  const [xautPrice, setXautPrice] = useState<number>(2650);
-  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(1.00);
-  const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 180);
+  // Jupiter Live Prices (fetched dynamically from API)
+  const [xautPrice, setXautPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 0);
+  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(0);
+  const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 0);
+  const [usdtPrice, setUsdtPrice] = useState<number>(1.00);
+  const [usdcPrice, setUsdcPrice] = useState<number>(1.00);
 
   // Jupiter Swap & Quote states
   const [jupQuote, setJupQuote] = useState<any>(null);
   const [isFetchingQuote, setIsFetchingQuote] = useState<boolean>(false);
   const [copiedContract, setCopiedContract] = useState<string | null>(null);
 
-  // Solana DEX Swap States
-  const currentSolPrice = liveSolPrice || solanaPrice || 180;
-  const currentGoldPrice = xautPrice || tokenPrice || 2650;
+  // Dynamic Token Prices strictly driven by API
+  const currentSolPrice = liveSolPrice || solanaPrice || 0;
+  const currentGoldPrice = xautPrice || tokenPrice || 0;
 
   const TOKEN_LIST: TokenOption[] = [
     { symbol: 'SOL', name: 'Solana Native', usdPrice: currentSolPrice, decimals: 9, mint: 'So11111111111111111111111111111111111111112', isNativeSol: true },
-    { symbol: 'usGOLD', name: 'United States Gold', usdPrice: usGoldJupiterPrice || 1.00, decimals: 6, mint: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' },
+    { symbol: 'usGOLD', name: 'United States Gold', usdPrice: usGoldJupiterPrice, decimals: 6, mint: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' },
     { symbol: 'XAUt0', name: 'Tether GOLD', usdPrice: currentGoldPrice, decimals: 6, mint: 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' },
-    { symbol: 'USDT', name: 'Tether USD', usdPrice: 1.00, decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
-    { symbol: 'USDC', name: 'USD Coin', usdPrice: 1.00, decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+    { symbol: 'USDT', name: 'Tether USD', usdPrice: usdtPrice, decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
+    { symbol: 'USDC', name: 'USD Coin', usdPrice: usdcPrice, decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
   ];
 
   const [fromTokenSymbol, setFromTokenSymbol] = useState<string>('SOL');
@@ -217,7 +219,7 @@ export function WalletPage({
     }
   }, [effectiveAddress]);
 
-  // Fetch Live Prices for XAUt0, usGOLD, SOL from Jupiter Price API
+  // Fetch Live Prices for XAUt0, usGOLD, SOL, USDT, USDC from Jupiter & DexScreener Price APIs
   useEffect(() => {
     let isMounted = true;
     const fetchJupiterPrices = async () => {
@@ -225,21 +227,34 @@ export function WalletPage({
         const ids = [
           'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt0
           '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
-          'So11111111111111111111111111111111111111112'   // SOL
+          'So11111111111111111111111111111111111111112',  // SOL
+          'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
+          'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'  // USDC
         ].join(',');
         const res = await fetch(`/api/jupiter/price?ids=${ids}`);
         if (res.ok) {
           const json = await res.json();
           if (json?.data && isMounted) {
-            if (json.data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
-              setXautPrice(parseFloat(json.data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price));
+            const data = json.data;
+            if (data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
+              const p = parseFloat(data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
+              if (p > 0) setXautPrice(p);
             }
-            if (json.data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
-              setUsGoldJupiterPrice(parseFloat(json.data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price));
+            if (data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
+              const p = parseFloat(data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
+              if (p > 0) setUsGoldJupiterPrice(p);
             }
-            if (json.data['So11111111111111111111111111111111111111112']?.price) {
-              const solP = parseFloat(json.data['So11111111111111111111111111111111111111112'].price);
-              if (solP > 0) setLiveSolPrice(solP);
+            if (data['So11111111111111111111111111111111111111112']?.price) {
+              const p = parseFloat(data['So11111111111111111111111111111111111111112'].price);
+              if (p > 0) setLiveSolPrice(p);
+            }
+            if (data['Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB']?.price) {
+              const p = parseFloat(data['Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'].price);
+              if (p > 0) setUsdtPrice(p);
+            }
+            if (data['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']?.price) {
+              const p = parseFloat(data['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'].price);
+              if (p > 0) setUsdcPrice(p);
             }
           }
         }
@@ -257,8 +272,8 @@ export function WalletPage({
   }, []);
 
   // Helper to get token object
-  const fromToken = useMemo(() => TOKEN_LIST.find(t => t.symbol === fromTokenSymbol) || TOKEN_LIST[0], [fromTokenSymbol, currentSolPrice, currentGoldPrice, xautPrice, usGoldJupiterPrice]);
-  const toToken = useMemo(() => TOKEN_LIST.find(t => t.symbol === toTokenSymbol) || TOKEN_LIST[1], [toTokenSymbol, currentSolPrice, currentGoldPrice, xautPrice, usGoldJupiterPrice]);
+  const fromToken = useMemo(() => TOKEN_LIST.find(t => t.symbol === fromTokenSymbol) || TOKEN_LIST[0], [fromTokenSymbol, currentSolPrice, currentGoldPrice, xautPrice, usGoldJupiterPrice, usdtPrice, usdcPrice]);
+  const toToken = useMemo(() => TOKEN_LIST.find(t => t.symbol === toTokenSymbol) || TOKEN_LIST[1], [toTokenSymbol, currentSolPrice, currentGoldPrice, xautPrice, usGoldJupiterPrice, usdtPrice, usdcPrice]);
 
   // Real-time Jupiter Quote Sync
   useEffect(() => {

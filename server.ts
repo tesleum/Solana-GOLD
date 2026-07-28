@@ -76,14 +76,67 @@ async function startServer() {
 
   app.get("/api/jupiter/price", async (req, res) => {
     try {
-      const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
-      const jupUrl = `https://api.jup.ag/price/v2?${queryParams}`;
-      
-      const jupRes = await fetch(jupUrl);
-      const data = await jupRes.json();
-      res.status(jupRes.status).json(data);
+      const idsParam = req.query.ids as string || '';
+      const idsList = idsParam ? idsParam.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      const resultData: Record<string, { id: string; price: string }> = {};
+
+      // 1. Try Jupiter Price API v2
+      if (idsParam) {
+        try {
+          const jupUrl = `https://api.jup.ag/price/v2?ids=${encodeURIComponent(idsParam)}`;
+          const jupRes = await fetch(jupUrl, {
+            headers: {
+              'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
+            }
+          });
+          if (jupRes.ok) {
+            const jupJson = await jupRes.json();
+            if (jupJson && jupJson.data) {
+              for (const mint of idsList) {
+                if (jupJson.data[mint] && jupJson.data[mint].price) {
+                  resultData[mint] = {
+                    id: mint,
+                    price: String(jupJson.data[mint].price)
+                  };
+                }
+              }
+            }
+          }
+        } catch (jupErr) {
+          console.warn("Jupiter price API warning, switching to DexScreener:", jupErr);
+        }
+      }
+
+      // 2. Check for missing token mints and fill from DexScreener API
+      const missingMints = idsList.filter(mint => !resultData[mint]);
+      if (missingMints.length > 0) {
+        try {
+          const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${missingMints.join(',')}`;
+          const dexRes = await fetch(dexUrl);
+          if (dexRes.ok) {
+            const dexJson = await dexRes.json();
+            if (dexJson && dexJson.pairs && Array.isArray(dexJson.pairs)) {
+              for (const pair of dexJson.pairs) {
+                const baseMint = pair.baseToken?.address;
+                const priceUsd = pair.priceUsd;
+                if (baseMint && priceUsd && missingMints.includes(baseMint) && !resultData[baseMint]) {
+                  resultData[baseMint] = {
+                    id: baseMint,
+                    price: String(priceUsd)
+                  };
+                }
+              }
+            }
+          }
+        } catch (dexErr) {
+          console.warn("DexScreener price fallback warning:", dexErr);
+        }
+      }
+
+      res.json({ data: resultData });
     } catch (err: any) {
-      console.error("Jupiter Price Proxy Error:", err);
+      console.error("Price Proxy Error:", err);
       res.status(500).json({ error: err.message });
     }
   });
