@@ -27,6 +27,29 @@ export function TokenIcon({ symbol, size = 24 }: TokenIconProps) {
     );
   }
 
+  if (cleanSymbol === 'XAUT0' || cleanSymbol === 'XAUT' || cleanSymbol === 'XAUT0' || cleanSymbol === 'XAUT0') {
+    return (
+      <Avatar 
+        sx={{ 
+          width: size, 
+          height: size, 
+          bgcolor: alpha('#FFDF73', 0.15), 
+          color: '#FFDF73',
+          border: `1px solid ${alpha('#FFDF73', 0.3)}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 0,
+          m: 0,
+          minWidth: size,
+          minHeight: size
+        }}
+      >
+        <Coins size={size * 0.65} />
+      </Avatar>
+    );
+  }
+
   if (cleanSymbol === 'SOL') {
     return (
       <Box sx={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -74,7 +74,40 @@ async function startServer() {
     }
   });
 
+  app.get("/api/jupiter/price", async (req, res) => {
+    try {
+      const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
+      const jupUrl = `https://api.jup.ag/price/v2?${queryParams}`;
+      
+      const jupRes = await fetch(jupUrl);
+      const data = await jupRes.json();
+      res.status(jupRes.status).json(data);
+    } catch (err: any) {
+      console.error("Jupiter Price Proxy Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/jupiter/swap", async (req, res) => {
+    try {
+      const jupUrl = `https://api.jup.ag/swap/v1/swap`;
+      const jupRes = await fetch(jupUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
+        },
+        body: JSON.stringify(req.body)
+      });
+      const data = await jupRes.json();
+      res.status(jupRes.status).json(data);
+    } catch (err: any) {
+      console.error("Jupiter Swap Proxy Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/jupiter/swap-instructions", async (req, res) => {
     try {
       const jupUrl = `https://api.jup.ag/swap/v1/swap-instructions`;
       const jupRes = await fetch(jupUrl, {
@@ -88,7 +121,50 @@ async function startServer() {
       const data = await jupRes.json();
       res.status(jupRes.status).json(data);
     } catch (err: any) {
-      console.error("Jupiter Swap Proxy Error:", err);
+      console.error("Jupiter Swap Instructions Proxy Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Tatum Solana Account Balance Proxy
+  app.get("/api/tatum/balance/:address", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const tatumApiKey = process.env.TATUM_API_KEY || "";
+      const headers: any = {};
+      if (tatumApiKey) {
+        headers["x-api-key"] = tatumApiKey;
+      }
+      const tatumRes = await fetch(`https://api.tatum.io/v3/solana/account/balance/${address}`, {
+        headers
+      });
+      const data = await tatumRes.json();
+      res.status(tatumRes.status).json(data);
+    } catch (err: any) {
+      console.error("Tatum Balance Proxy Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Tatum Solana Broadcast Transaction Proxy
+  app.post("/api/tatum/broadcast", async (req, res) => {
+    try {
+      const tatumApiKey = process.env.TATUM_API_KEY || "";
+      const headers: any = {
+        "Content-Type": "application/json"
+      };
+      if (tatumApiKey) {
+        headers["x-api-key"] = tatumApiKey;
+      }
+      const tatumRes = await fetch(`https://api.tatum.io/v3/solana/transaction`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(req.body)
+      });
+      const data = await tatumRes.json();
+      res.status(tatumRes.status).json(data);
+    } catch (err: any) {
+      console.error("Tatum Broadcast Proxy Error:", err);
       res.status(500).json({ error: err.message });
     }
   });
