@@ -79,40 +79,65 @@ async function startServer() {
       const idsParam = req.query.ids as string || '';
       const idsList = idsParam ? idsParam.split(',').map(s => s.trim()).filter(Boolean) : [];
 
+      if (idsList.length === 0) {
+        return res.json({ data: {} });
+      }
+
       const resultData: Record<string, { id: string; price: string }> = {};
 
-      // 1. Try Jupiter Price API v2
-      if (idsParam) {
-        try {
-          const jupUrl = `https://api.jup.ag/price/v2?ids=${encodeURIComponent(idsParam)}`;
-          const jupRes = await fetch(jupUrl, {
-            headers: {
-              'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
+      const fetchPriceV2 = async (useKey: boolean) => {
+        const jupUrl = `https://api.jup.ag/price/v2?ids=${encodeURIComponent(idsParam)}`;
+        const headers: Record<string, string> = {};
+        if (useKey) {
+          headers['x-api-key'] = 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc';
+        }
+        const jupRes = await fetch(jupUrl, { headers });
+        if (jupRes.ok) {
+          const jupJson = await jupRes.json();
+          if (jupJson && jupJson.data) {
+            for (const mint of idsList) {
+              if (jupJson.data[mint] && jupJson.data[mint].price && !resultData[mint]) {
+                resultData[mint] = { id: mint, price: String(jupJson.data[mint].price) };
+              }
             }
-          });
-          if (jupRes.ok) {
-            const jupJson = await jupRes.json();
-            if (jupJson && jupJson.data) {
-              for (const mint of idsList) {
-                if (jupJson.data[mint] && jupJson.data[mint].price) {
-                  resultData[mint] = {
-                    id: mint,
-                    price: String(jupJson.data[mint].price)
-                  };
+          }
+        }
+      };
+
+      // 1. Try Jupiter Price API v2 (No Key)
+      try { await fetchPriceV2(false); } catch (e) { console.warn("Jup v2 no-key failed"); }
+
+      // 2. Try Jupiter Price API v2 (With Key) if still missing tokens
+      if (idsList.some(mint => !resultData[mint])) {
+        try { await fetchPriceV2(true); } catch (e) { console.warn("Jup v2 with-key failed"); }
+      }
+
+      // 3. Try Jupiter Price API v4 (Legacy) for remaining missing tokens
+      const stillMissing = idsList.filter(mint => !resultData[mint]);
+      if (stillMissing.length > 0) {
+        try {
+          const v4Url = `https://price.jup.ag/v4/price?ids=${encodeURIComponent(stillMissing.join(','))}`;
+          const v4Res = await fetch(v4Url);
+          if (v4Res.ok) {
+            const v4Json = await v4Res.json();
+            if (v4Json && v4Json.data) {
+              for (const mint of stillMissing) {
+                if (v4Json.data[mint] && v4Json.data[mint].price) {
+                  resultData[mint] = { id: mint, price: String(v4Json.data[mint].price) };
                 }
               }
             }
           }
-        } catch (jupErr) {
-          console.warn("Jupiter price API warning, switching to DexScreener:", jupErr);
+        } catch (v4Err) {
+          console.warn("Jupiter v4 fallback failed");
         }
       }
 
-      // 2. Check for missing token mints and fill from DexScreener API
-      const missingMints = idsList.filter(mint => !resultData[mint]);
-      if (missingMints.length > 0) {
+      // 4. DexScreener Fallback
+      const finalMissing = idsList.filter(mint => !resultData[mint]);
+      if (finalMissing.length > 0) {
         try {
-          const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${missingMints.join(',')}`;
+          const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${finalMissing.join(',')}`;
           const dexRes = await fetch(dexUrl);
           if (dexRes.ok) {
             const dexJson = await dexRes.json();
@@ -120,17 +145,14 @@ async function startServer() {
               for (const pair of dexJson.pairs) {
                 const baseMint = pair.baseToken?.address;
                 const priceUsd = pair.priceUsd;
-                if (baseMint && priceUsd && missingMints.includes(baseMint) && !resultData[baseMint]) {
-                  resultData[baseMint] = {
-                    id: baseMint,
-                    price: String(priceUsd)
-                  };
+                if (baseMint && priceUsd && finalMissing.includes(baseMint) && !resultData[baseMint]) {
+                  resultData[baseMint] = { id: baseMint, price: String(priceUsd) };
                 }
               }
             }
           }
         } catch (dexErr) {
-          console.warn("DexScreener price fallback warning:", dexErr);
+          console.warn("DexScreener fallback failed");
         }
       }
 

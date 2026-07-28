@@ -26,6 +26,7 @@ interface WalletPageProps {
   effectiveAddress: string | null;
   solanaPrice: number | null;
   tokenPrice: number | null;
+  usGoldPrice: number | null;
   apyYield: string;
   transactions: any[];
   userEarnings: number;
@@ -55,6 +56,7 @@ export function WalletPage({
   effectiveAddress,
   solanaPrice,
   tokenPrice,
+  usGoldPrice,
   apyYield,
   transactions,
   userEarnings,
@@ -95,7 +97,7 @@ export function WalletPage({
 
   // Jupiter Live Prices (fetched dynamically from API)
   const [xautPrice, setXautPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 0);
-  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(0);
+  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(usGoldPrice && usGoldPrice > 0 ? usGoldPrice : 0);
   const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 0);
   const [usdtPrice, setUsdtPrice] = useState<number>(1.00);
   const [usdcPrice, setUsdcPrice] = useState<number>(1.00);

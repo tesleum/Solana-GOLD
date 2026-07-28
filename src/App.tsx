@@ -120,6 +120,7 @@ function Dashboard() {
   
   const [tokenPrice, setTokenPrice] = useState<number | null>(null);
   const [solanaPrice, setSolanaPrice] = useState<number | null>(null);
+  const [usGoldPrice, setUsGoldPrice] = useState<number | null>(null);
   const [totalLiquidity, setTotalLiquidity] = useState<number | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [isFetchingChart, setIsFetchingChart] = useState(false);
@@ -478,6 +479,10 @@ function Dashboard() {
             if (pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
               const xautP = parseFloat(pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
               if (xautP > 0) setTokenPrice(xautP);
+            }
+            if (pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
+              const usgp = parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
+              if (usgp > 0) setUsGoldPrice(usgp);
             }
           }
         } catch (jupErr) {
@@ -2889,6 +2894,7 @@ function Dashboard() {
             effectiveAddress={effectiveAddress}
             solanaPrice={solanaPrice}
             tokenPrice={tokenPrice}
+            usGoldPrice={usGoldPrice}
             apyYield={apyYield}
             transactions={transactions}
             userEarnings={userEarnings}
