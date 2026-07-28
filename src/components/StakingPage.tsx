@@ -649,6 +649,22 @@ export function StakingPage({
                   </Button>
                 )}
                 
+                {/* Dedicated Staking Wallet Address Notice */}
+                <Box sx={{ mt: 2.5, p: 1.5, borderRadius: '10px', bgcolor: alpha('#D4AF37', 0.04), border: `1px solid ${alpha('#D4AF37', 0.15)}`, display: 'flex', gap: 1.2, alignItems: 'flex-start' }}>
+                  <Lock size={14} color="#D4AF37" style={{ marginTop: '2px', flexShrink: 0 }} />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ fontSize: '10px', display: 'block', color: '#FFDF73' }}>
+                      DEDICATED STAKING DEPOSIT POOL
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', lineHeight: 1.3, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                      8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', mt: 0.5, lineHeight: 1.2 }}>
+                      Staking payments are directed exclusively to this secure liquidity pool, fully isolated from gold minting operations.
+                    </Typography>
+                  </Box>
+                </Box>
+                
               </Box>
             </CardContent>
           </Card>

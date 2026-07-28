@@ -97,7 +97,6 @@ export function WalletPage({
     { symbol: 'usGOLD', name: 'Golden Stablecoin', usdPrice: 1.00, decimals: 6 },
     { symbol: 'USDT', name: 'Tether USD', usdPrice: 1.00, decimals: 6 },
     { symbol: 'USDC', name: 'USD Coin', usdPrice: 1.00, decimals: 6 },
-    { symbol: 'GOLD', name: 'Golden Reserve Token', usdPrice: currentGoldPrice, decimals: 6 },
   ];
 
   const [fromTokenSymbol, setFromTokenSymbol] = useState<string>('SOL');
@@ -449,168 +448,191 @@ export function WalletPage({
 
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
-      
-      {/* HEADER TITLE */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="900" sx={{ 
-            background: 'linear-gradient(to right, #FFDF73 10%, #D4AF37 50%, #AA7C11 100%)', 
-            WebkitBackgroundClip: 'text', 
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.5px'
-          }}>
-            Wallet & Solana Swap
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px' }}>
-            Instant token swap engine & live balance overview on Solana Network.
-          </Typography>
-        </Box>
 
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Chip 
-            icon={<ShieldCheck size={14} color="#14F195" />}
-            label="Solana Mainnet-Beta" 
-            size="small"
-            sx={{ bgcolor: alpha('#14F195', 0.1), color: '#14F195', border: `1px solid ${alpha('#14F195', 0.3)}`, fontWeight: 'bold' }}
-          />
-        </Stack>
-      </Box>
-
-      {/* 1. COMPACT ENHANCED BALANCE CARDS GRID (4 COMPACT CARDS) */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      {/* 1. UNIQUE ENHANCED COMPACT PORTFOLIO CARD */}
+      <Card sx={{ 
+        background: 'linear-gradient(135deg, #121316 0%, #1a1c22 100%)', 
+        border: `1.5px solid ${alpha('#D4AF37', 0.3)}`, 
+        borderRadius: '20px',
+        mb: 3,
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: `0 12px 36px ${alpha('#000', 0.6)}`
+      }}>
+        {/* Subtle decorative background glow */}
+        <Box sx={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, background: `radial-gradient(circle, ${alpha('#D4AF37', 0.12)} 0%, transparent 70%)`, pointerEvents: 'none' }} />
         
-        {/* Card 1: Total Net Worth */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            bgcolor: '#141518', 
-            border: `1px solid ${alpha('#D4AF37', 0.35)}`, 
-            borderRadius: '16px',
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: `0 8px 24px ${alpha('#000', 0.4)}`
-          }}>
-            <Box sx={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(circle, ${alpha('#D4AF37', 0.15)} 0%, transparent 70%)` }} />
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px', letterSpacing: 0.8 }}>
-                  NET WORTH (USD)
-                </Typography>
-                <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.15), width: 28, height: 28 }}>
-                  <Wallet size={14} color="#D4AF37" />
-                </Avatar>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 }, '&:last-child': { pb: { xs: 2.5, sm: 3 } } }}>
+          <Grid container spacing={3} alignItems="center">
+            
+            {/* Left Column: Net Worth Overview */}
+            <Grid item xs={12} md={4} sx={{ borderRight: { md: `1.5px solid ${alpha('#fff', 0.08)}` }, pr: { md: 3 } }}>
+              <Stack spacing={1}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px', letterSpacing: '1px' }}>
+                    TOTAL COMBINED PORTFOLIO
+                  </Typography>
+                  <Chip 
+                    icon={<ShieldCheck size={12} color="#14F195" />}
+                    label="Solana Mainnet" 
+                    size="small"
+                    sx={{ bgcolor: alpha('#14F195', 0.1), color: '#14F195', border: `1px solid ${alpha('#14F195', 0.25)}`, fontWeight: 'bold', fontSize: '9px', height: 18 }}
+                  />
+                </Stack>
+                
+                <Box>
+                  <Typography variant="h3" fontWeight="900" sx={{ 
+                    background: 'linear-gradient(135deg, #FFDF73 10%, #D4AF37 60%, #AA7C11 100%)', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: 1,
+                    my: 0.5,
+                    letterSpacing: '-1px'
+                  }}>
+                    ${totalPortfolioUSD.toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: '700' }}>
+                    <Sparkles size={12} color="#D4AF37" />
+                    Live valuation on Solana network
+                  </Typography>
+                </Box>
               </Stack>
-              <Typography variant="h5" fontWeight="900" color="#FFDF73" sx={{ mb: 0.5, letterSpacing: '-0.5px' }}>
-                ${totalPortfolioUSD.toFixed(2)}
-              </Typography>
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <Sparkles size={11} color="#D4AF37" />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', fontWeight: 600 }}>
-                  Combined Solana Assets
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+            </Grid>
 
-        {/* Card 2: usGOLD Staking Balance */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            bgcolor: '#141518', 
-            border: `1px solid ${alpha('#FFDF73', 0.25)}`, 
-            borderRadius: '16px',
-            boxShadow: `0 8px 24px ${alpha('#000', 0.4)}`
-          }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px', letterSpacing: 0.8 }}>
-                  usGOLD STAKING
-                </Typography>
-                <TokenIcon symbol="usGOLD" size={24} />
-              </Stack>
-              <Typography variant="h5" fontWeight="900" color="#fff" sx={{ mb: 0.5, letterSpacing: '-0.5px' }}>
-                {usGoldBalance.toFixed(2)} <span style={{ fontSize: '0.75rem', color: '#D4AF37' }}>usGOLD</span>
-              </Typography>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="#4caf50" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                  +2%/mo Yield
-                </Typography>
-                <Chip 
-                  label="Stake" 
-                  size="small"
-                  onClick={() => { triggerHaptic(10); setActiveTab('staking'); }}
-                  sx={{ height: 18, fontSize: '9px', fontWeight: '900', bgcolor: alpha('#D4AF37', 0.2), color: '#FFDF73', border: `1px solid ${alpha('#D4AF37', 0.3)}`, cursor: 'pointer' }}
-                />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+            {/* Right Column: Mini Asset Grid */}
+            <Grid item xs={12} md={8}>
+              <Grid container spacing={1.5}>
+                
+                {/* SOL */}
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    borderRadius: '12px', 
+                    bgcolor: alpha('#14F195', 0.03), 
+                    border: `1.2px solid ${alpha('#14F195', 0.18)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                      <TokenIcon symbol="SOL" size={24} />
+                      <Box>
+                        <Typography variant="body2" fontWeight="900" color="#fff" sx={{ lineHeight: 1.1 }}>
+                          {solBalance.toFixed(3)} SOL
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
+                          ~${(solBalance * currentSolPrice).toFixed(2)} USD
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Chip 
+                      label="Swap" 
+                      size="small" 
+                      onClick={() => { triggerHaptic(10); setWalletTab('swap'); setFromTokenSymbol('SOL'); }}
+                      sx={{ height: 20, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#14F195', 0.12), color: '#14F195', border: `1px solid ${alpha('#14F195', 0.2)}`, cursor: 'pointer', '&:hover': { bgcolor: alpha('#14F195', 0.25) } }}
+                    />
+                  </Box>
+                </Grid>
 
-        {/* Card 3: Futures USDT Margin */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            bgcolor: '#141518', 
-            border: `1px solid ${alpha('#26a69a', 0.3)}`, 
-            borderRadius: '16px',
-            boxShadow: `0 8px 24px ${alpha('#000', 0.4)}`
-          }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px', letterSpacing: 0.8 }}>
-                  FUTURES MARGIN
-                </Typography>
-                <TokenIcon symbol="USDT" size={24} />
-              </Stack>
-              <Typography variant="h5" fontWeight="900" color="#fff" sx={{ mb: 0.5, letterSpacing: '-0.5px' }}>
-                {futuresBalance.toFixed(2)} <span style={{ fontSize: '0.75rem', color: '#26a69a' }}>USDT</span>
-              </Typography>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="#26a69a" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                  100x Margin
-                </Typography>
-                <Chip 
-                  label="Trade" 
-                  size="small"
-                  onClick={() => { triggerHaptic(10); setActiveTab('trading'); }}
-                  sx={{ height: 18, fontSize: '9px', fontWeight: '900', bgcolor: alpha('#26a69a', 0.2), color: '#33c9bb', border: `1px solid ${alpha('#26a69a', 0.3)}`, cursor: 'pointer' }}
-                />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+                {/* usGOLD Staking */}
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    borderRadius: '12px', 
+                    bgcolor: alpha('#D4AF37', 0.03), 
+                    border: `1.2px solid ${alpha('#D4AF37', 0.18)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                      <TokenIcon symbol="usGOLD" size={24} />
+                      <Box>
+                        <Typography variant="body2" fontWeight="900" color="#fff" sx={{ lineHeight: 1.1 }}>
+                          {usGoldBalance.toFixed(2)} usGOLD
+                        </Typography>
+                        <Typography variant="caption" color="#4caf50" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
+                          +2%/mo Yield
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Chip 
+                      label="Stake" 
+                      size="small" 
+                      onClick={() => { triggerHaptic(10); setActiveTab('staking'); }}
+                      sx={{ height: 20, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', border: `1px solid ${alpha('#D4AF37', 0.25)}`, cursor: 'pointer', '&:hover': { bgcolor: alpha('#D4AF37', 0.3) } }}
+                    />
+                  </Box>
+                </Grid>
 
-        {/* Card 4: Solana Native SOL Balance */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ 
-            bgcolor: '#141518', 
-            border: `1px solid ${alpha('#14F195', 0.25)}`, 
-            borderRadius: '16px',
-            boxShadow: `0 8px 24px ${alpha('#000', 0.4)}`
-          }}>
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px', letterSpacing: 0.8 }}>
-                  NATIVE SOLANA
-                </Typography>
-                <TokenIcon symbol="SOL" size={22} />
-              </Stack>
-              <Typography variant="h5" fontWeight="900" color="#fff" sx={{ mb: 0.5, letterSpacing: '-0.5px' }}>
-                {solBalance.toFixed(3)} <span style={{ fontSize: '0.75rem', color: '#14F195' }}>SOL</span>
-              </Typography>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', fontWeight: 600 }}>
-                  ~${(solBalance * currentSolPrice).toFixed(2)} USD
-                </Typography>
-                <Chip 
-                  label={`$${currentSolPrice.toFixed(0)}/SOL`} 
-                  size="small"
-                  sx={{ height: 18, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#14F195', 0.12), color: '#14F195' }}
-                />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+                {/* Futures USDT */}
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    borderRadius: '12px', 
+                    bgcolor: alpha('#26a69a', 0.03), 
+                    border: `1.2px solid ${alpha('#26a69a', 0.18)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                      <TokenIcon symbol="USDT" size={24} />
+                      <Box>
+                        <Typography variant="body2" fontWeight="900" color="#fff" sx={{ lineHeight: 1.1 }}>
+                          {futuresBalance.toFixed(2)} USDT
+                        </Typography>
+                        <Typography variant="caption" color="#26a69a" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
+                          Futures Margin
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Chip 
+                      label="Trade" 
+                      size="small" 
+                      onClick={() => { triggerHaptic(10); setActiveTab('trading'); }}
+                      sx={{ height: 20, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#26a69a', 0.15), color: '#33c9bb', border: `1px solid ${alpha('#26a69a', 0.25)}`, cursor: 'pointer', '&:hover': { bgcolor: alpha('#26a69a', 0.3) } }}
+                    />
+                  </Box>
+                </Grid>
 
-      </Grid>
+                {/* USDC */}
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    borderRadius: '12px', 
+                    bgcolor: alpha('#0288d1', 0.03), 
+                    border: `1.2px solid ${alpha('#0288d1', 0.18)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                      <TokenIcon symbol="USDC" size={24} />
+                      <Box>
+                        <Typography variant="body2" fontWeight="900" color="#fff" sx={{ lineHeight: 1.1 }}>
+                          {usdcBalance.toFixed(2)} USDC
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
+                          ~${usdcBalance.toFixed(2)} USD
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Chip 
+                      label="Swap" 
+                      size="small" 
+                      onClick={() => { triggerHaptic(10); setWalletTab('swap'); setFromTokenSymbol('USDC'); }}
+                      sx={{ height: 20, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#0288d1', 0.15), color: '#29b6f6', border: `1px solid ${alpha('#0288d1', 0.25)}`, cursor: 'pointer', '&:hover': { bgcolor: alpha('#0288d1', 0.3) } }}
+                    />
+                  </Box>
+                </Grid>
+
+              </Grid>
+            </Grid>
+
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* 2. SUB-TAB NAVIGATION: ENHANCED SWAP / TOP UP / HISTORY */}
       <Stack direction="row" spacing={1} sx={{ mb: 3, borderBottom: `1px solid ${alpha('#fff', 0.08)}`, pb: 1.5 }}>
