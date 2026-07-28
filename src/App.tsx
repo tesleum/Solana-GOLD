@@ -462,19 +462,34 @@ function Dashboard() {
           }
         }
         
-        // Fetch SOL price separately
+        // Fetch prices directly from Jupiter API for XAUt0, usGOLD, SOL
         try {
-          const jupRes = await axios.get('https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000000');
-          if (jupRes.data && jupRes.data.outAmount) {
-            setSolanaPrice(parseFloat(jupRes.data.outAmount) / 1e6);
+          const ids = [
+            'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt0
+            '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
+            'So11111111111111111111111111111111111111112'   // SOL
+          ].join(',');
+          const jupPriceRes = await axios.get(`/api/jupiter/price?ids=${ids}`);
+          if (jupPriceRes.data && jupPriceRes.data.data) {
+            const pData = jupPriceRes.data.data;
+            if (pData['So11111111111111111111111111111111111111112']?.price) {
+              setSolanaPrice(parseFloat(pData['So11111111111111111111111111111111111111112'].price));
+            }
+            if (pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
+              const xautP = parseFloat(pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
+              if (xautP > 0) setTokenPrice(xautP);
+            }
           }
         } catch (jupErr) {
-          console.warn('Jupiter API failed to fetch SOL price, falling back to DexScreener', jupErr);
-          const solRes = await axios.get('https://api.dexscreener.com/latest/dex/pairs/solana/8sLbNZoA1cfnvA92vT8jQk2vAM8X4h6gH2U4uKwTzYYm'); // SOL/USDC pair
-          const solPair = solRes.data?.pairs?.[0];
-          if (solPair) {
-            const solP = parseFloat(solPair.priceUsd || '0');
-            if (solP > 0) setSolanaPrice(solP);
+          console.warn('Jupiter Price API notice:', jupErr);
+          // Fallback SOL quote
+          try {
+            const jupRes = await axios.get('https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000000');
+            if (jupRes.data && jupRes.data.outAmount) {
+              setSolanaPrice(parseFloat(jupRes.data.outAmount) / 1e6);
+            }
+          } catch (solErr) {
+            console.warn('SOL quote fallback notice:', solErr);
           }
         }
       } catch (err) {
