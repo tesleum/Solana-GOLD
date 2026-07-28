@@ -434,7 +434,7 @@ export function StakingPage({
                         ${customStakeAmount || 10}
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.75)', fontWeight: 'bold', letterSpacing: 1.5, fontSize: '9px' }}>
-                        usGOLD VAULT
+                        {t('stakingVault', language).toUpperCase()}
                       </Typography>
                     </Box>
                   </Box>
@@ -448,7 +448,7 @@ export function StakingPage({
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={1.5}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5}>
-                      STAKING AMOUNT
+                      {t('enterStakingAmount', language).toUpperCase()}
                     </Typography>
                     <Typography variant="h5" color="#fff" fontWeight="900">
                       {customStakeAmount || 0} <span style={{ fontSize: '0.9rem', color: '#D4AF37' }}>usGOLD</span>
@@ -457,7 +457,7 @@ export function StakingPage({
 
                   <Box textAlign="right">
                     <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5}>
-                      SOLANA REQUIRED
+                      {t('solanaRequired', language).toUpperCase()}
                     </Typography>
                     <Typography variant="h6" color="#14F195" fontWeight="bold">
                       {requiredSol.toFixed(6)} SOL
@@ -468,10 +468,10 @@ export function StakingPage({
                 {/* Calculation Breakdown Banner */}
                 <Box sx={{ mb: 2, p: 1.2, borderRadius: '10px', bgcolor: alpha('#14F195', 0.05), border: `1px solid ${alpha('#14F195', 0.2)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px' }}>
-                    Rate: <strong>1 usGOLD = ${(1 / currentSolPrice).toFixed(6)} SOL</strong> (@ ${currentSolPrice.toFixed(2)}/SOL)
+                    {t('exchangeRate', language)}: <strong>1 usGOLD = ${(1 / currentSolPrice).toFixed(6)} SOL</strong> (@ ${currentSolPrice.toFixed(2)}/SOL)
                   </Typography>
                   <Typography variant="caption" color="#14F195" fontWeight="bold" sx={{ fontSize: '11px' }}>
-                    Fee: +{networkFeeSol} SOL
+                    {t('solanaNetworkFee', language)}: +{networkFeeSol} SOL
                   </Typography>
                 </Box>
 
@@ -553,17 +553,17 @@ export function StakingPage({
                   }}
                 />
 
-                {/* Duration Picker */}
+                 {/* Duration Picker */}
                 <Box sx={{ mb: 2.5 }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5} display="block" mb={1}>
-                    SELECT LOCKUP PERIOD & FIXED YIELD RATE
+                    {t('selectDuration', language).toUpperCase()}
                   </Typography>
                   <Grid container spacing={1}>
                     {[
-                      { months: 1, total: '2% Yield' },
-                      { months: 3, total: '6% Yield' },
-                      { months: 6, total: '12% Yield' },
-                      { months: 12, total: '24% Yield' }
+                      { months: 1, total: `2% ${t('accruedYield', language)}` },
+                      { months: 3, total: `6% ${t('accruedYield', language)}` },
+                      { months: 6, total: `12% ${t('accruedYield', language)}` },
+                      { months: 12, total: `24% ${t('accruedYield', language)}` }
                     ].map((plan) => (
                       <Grid item xs={3} key={plan.months}>
                         <Box
@@ -585,7 +585,7 @@ export function StakingPage({
                           }}
                         >
                           <Typography variant="body2" fontWeight="800">
-                            {plan.months} Month
+                            {plan.months} {t('month', language)}
                           </Typography>
                           <Chip 
                             label={plan.total} 
@@ -620,7 +620,7 @@ export function StakingPage({
                       '&:hover': { backgroundColor: '#FFDF73' }
                     }}
                   >
-                    Connect Wallet to Stake usGOLD
+                    {t('connectWallet', language)}
                   </Button>
                 ) : (
                   <Button
@@ -644,26 +644,10 @@ export function StakingPage({
                     }}
                   >
                     {isCreatingStake 
-                      ? 'PROCESSING SOLANA TRANSACTION...' 
-                      : `STAKE ${customStakeAmount || 0} usGOLD (Pay ${totalSolPayment.toFixed(6)} SOL)`}
+                      ? t('processingTransaction', language).toUpperCase() 
+                      : `${t('staking', language).toUpperCase()} ${customStakeAmount || 0} usGOLD (Pay ${totalSolPayment.toFixed(6)} SOL)`}
                   </Button>
                 )}
-                
-                {/* Dedicated Staking Wallet Address Notice */}
-                <Box sx={{ mt: 2.5, p: 1.5, borderRadius: '10px', bgcolor: alpha('#D4AF37', 0.04), border: `1px solid ${alpha('#D4AF37', 0.15)}`, display: 'flex', gap: 1.2, alignItems: 'flex-start' }}>
-                  <Lock size={14} color="#D4AF37" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ fontSize: '10px', display: 'block', color: '#FFDF73' }}>
-                      DEDICATED STAKING DEPOSIT POOL
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', lineHeight: 1.3, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                      8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', mt: 0.5, lineHeight: 1.2 }}>
-                      Staking payments are directed exclusively to this secure liquidity pool, fully isolated from gold minting operations.
-                    </Typography>
-                  </Box>
-                </Box>
                 
               </Box>
             </CardContent>
@@ -683,10 +667,10 @@ export function StakingPage({
             <Box sx={{ p: 2.5, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2), display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="body1" fontWeight="800" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Activity color="#D4AF37" size={18} />
-                Active Staking Vaults
+                {t('activeStakingVaults', language)}
               </Typography>
               <Chip 
-                label={`${activeStakedList.length} Active`} 
+                label={`${activeStakedList.length} ${t('activeCount', language)}`} 
                 size="small" 
                 sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', fontWeight: 'bold', fontSize: '11px' }} 
               />
@@ -697,10 +681,10 @@ export function StakingPage({
                 <Box sx={{ py: 6, textAlign: 'center' }}>
                   <Coins size={40} color="#D4AF37" style={{ opacity: 0.35, marginBottom: 12 }} />
                   <Typography variant="body2" color="text.secondary" fontWeight="700" mb={0.5}>
-                    No Active Vaults
+                    {t('noActiveVaults', language)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ maxWidth: 220, mx: 'auto' }}>
-                    Stake usGOLD directly using SOL to start earning guaranteed 2% monthly yield.
+                    {t('stakeDirectDesc', language)}
                   </Typography>
                 </Box>
               ) : (
@@ -749,7 +733,7 @@ export function StakingPage({
                                 {st.amount} usGOLD
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
-                                {st.durationMonths}-Month Locked Vault
+                                {st.durationMonths} {t('monthLockedVault', language)}
                               </Typography>
                             </Box>
                           </Stack>
@@ -763,7 +747,7 @@ export function StakingPage({
                         {/* Live Yield Counter */}
                         <Box sx={{ mb: 1.5, p: 1.2, borderRadius: '8px', bgcolor: alpha('#4caf50', 0.05), border: `1px solid ${alpha('#4caf50', 0.15)}` }}>
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10px' }}>
-                            Accrued Yield (2%/mo):
+                            {t('accruedYield', language)} (2%/mo):
                           </Typography>
                           <Typography variant="body2" fontWeight="900" color="#4caf50" sx={{ fontFamily: 'monospace' }}>
                             +${currentAccruedProfit.toFixed(6)} USD
@@ -773,7 +757,7 @@ export function StakingPage({
                         {/* Countdown */}
                         <Box sx={{ mb: 1.5 }}>
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10px' }}>
-                            Countdown:
+                            {t('countdown', language)}:
                           </Typography>
                           <Typography variant="caption" fontWeight="bold" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '12px' }}>
                             {countdownFormatted}
@@ -802,7 +786,7 @@ export function StakingPage({
                         {/* Claim Action */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
-                            Real-time accrual
+                            {t('realtimeAccrual', language)}
                           </Typography>
                           <Button
                             size="small"
@@ -818,7 +802,7 @@ export function StakingPage({
                               textTransform: 'none'
                             }}
                           >
-                            Claim Yield
+                            {t('claimYield', language)}
                           </Button>
                         </Box>
                       </Box>
