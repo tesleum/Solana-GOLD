@@ -13,26 +13,30 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     const providedRpc = import.meta.env.VITE_RPC_URL;
     
     const endpoint = useMemo(() => {
+        if (providedRpc && providedRpc.startsWith('http')) {
+            return providedRpc;
+        }
         if (tatumApiKey) {
             return `https://solana-mainnet.gateway.tatum.io/?apikey=${tatumApiKey}`;
-        }
-        if (providedRpc && providedRpc !== '28be1705fb1ae9e78fad0951ca4287fed1af417aa227bfd3828594ddc9845c58') {
-            if (providedRpc.startsWith('http')) return providedRpc;
-            // The providedRPC might be an Alchemy or Helius key, let's just use mainnet if we don't know
-            return `https://api.mainnet-beta.solana.com`;
         }
         return 'https://api.mainnet-beta.solana.com';
     }, [tatumApiKey, providedRpc]);
 
     const wsEndpoint = useMemo(() => {
+        if (tatumApiKey) {
+            return `wss://solana-mainnet.gateway.tatum.io/?apikey=${tatumApiKey}`;
+        }
+        if (endpoint.includes('solana-mainnet.gateway.tatum.io')) {
+            return endpoint.replace('https://', 'wss://').replace('http://', 'ws://');
+        }
         if (endpoint.startsWith('https://')) {
             return endpoint.replace('https://', 'wss://');
         }
         if (endpoint.startsWith('http://')) {
             return endpoint.replace('http://', 'ws://');
         }
-        return undefined;
-    }, [endpoint]);
+        return 'wss://solana-mainnet.gateway.tatum.io';
+    }, [endpoint, tatumApiKey]);
     
     // Config for caching and reliability using modern websocket cache approach
     const connectionConfig = useMemo(() => {

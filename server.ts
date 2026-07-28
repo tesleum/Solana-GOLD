@@ -130,7 +130,7 @@ async function startServer() {
   app.get("/api/tatum/balance/:address", async (req, res) => {
     try {
       const { address } = req.params;
-      const tatumApiKey = process.env.TATUM_API_KEY || "";
+      const tatumApiKey = process.env.VITE_TATUM_API_KEY || process.env.TATUM_API_KEY || "";
       const headers: any = {};
       if (tatumApiKey) {
         headers["x-api-key"] = tatumApiKey;
@@ -149,7 +149,7 @@ async function startServer() {
   // Tatum Solana Broadcast Transaction Proxy
   app.post("/api/tatum/broadcast", async (req, res) => {
     try {
-      const tatumApiKey = process.env.TATUM_API_KEY || "";
+      const tatumApiKey = process.env.VITE_TATUM_API_KEY || process.env.TATUM_API_KEY || "";
       const headers: any = {
         "Content-Type": "application/json"
       };
