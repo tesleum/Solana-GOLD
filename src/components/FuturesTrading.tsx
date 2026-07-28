@@ -1073,10 +1073,10 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
                 WebkitTextFillColor: 'transparent',
                 textShadow: `0 2px 10px ${alpha('#D4AF37', 0.2)}`
               }}>
-                Empire Futures
+                Empire {t('futures', language)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Perpetual Contracts • Powered by FOREX Live Stream
+                {t('futuresTradingDesc', language)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1105,10 +1105,10 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
             <Info color="#D4AF37" size={20} />
             <Box>
               <Typography variant="subtitle2" fontWeight="bold" color="#D4AF37">
-                Demo Trading Mode Active (${demoBalance.toLocaleString()} USDT)
+                {t('demoModeActive', language)} (${demoBalance.toLocaleString()} USDT)
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Securely trade real-time live markets with simulated funds synced to your Treasury.
+                {t('demoModeDesc', language)}
               </Typography>
             </Box>
           </Box>
@@ -1123,9 +1123,9 @@ export function FuturesTrading({ language, effectiveAddress, onBack, onTopUp, on
         }}>
           {/* Table Header */}
           <Stack direction="row" sx={{ p: 2, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2) }}>
-            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700 }}>Contract</Typography>
-            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700, textAlign: 'right' }}>Price</Typography>
-            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700, textAlign: 'right' }}>24h Change</Typography>
+            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700 }}>{t('contract', language)}</Typography>
+            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700, textAlign: 'right' }}>{t('price', language)}</Typography>
+            <Typography variant="caption" sx={{ flex: 1, color: alpha('#fff', 0.5), fontWeight: 700, textAlign: 'right' }}>{t('change24h', language)}</Typography>
           </Stack>
 
           {loading && Object.keys(contracts).length === 0 ? (
