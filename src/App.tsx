@@ -465,7 +465,7 @@ function Dashboard() {
         // Fetch prices directly from Jupiter API for XAUt0, usGOLD, SOL
         try {
           const ids = [
-            'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt0
+            'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt (More tradable)
             '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
             'So11111111111111111111111111111111111111112'   // SOL
           ].join(',');
@@ -482,15 +482,6 @@ function Dashboard() {
           }
         } catch (jupErr) {
           console.warn('Jupiter Price API notice:', jupErr);
-          // Fallback SOL quote
-          try {
-            const jupRes = await axios.get('https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000000');
-            if (jupRes.data && jupRes.data.outAmount) {
-              setSolanaPrice(parseFloat(jupRes.data.outAmount) / 1e6);
-            }
-          } catch (solErr) {
-            console.warn('SOL quote fallback notice:', solErr);
-          }
         }
       } catch (err) {
         console.error('Failed to fetch market data:', err);
@@ -544,17 +535,15 @@ function Dashboard() {
       let currentSolPrice = solanaPrice;
       if (!currentSolPrice) {
         try {
-          const jupRes = await axios.get('https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000000', {
-            headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
-          });
-          if (jupRes.data && jupRes.data.outAmount) {
-            currentSolPrice = parseFloat(jupRes.data.outAmount) / 1e6;
+          const jupRes = await axios.get('/api/jupiter/price?ids=So11111111111111111111111111111111111111112');
+          if (jupRes.data?.data?.['So11111111111111111111111111111111111111112']?.price) {
+            currentSolPrice = parseFloat(jupRes.data.data['So11111111111111111111111111111111111111112'].price);
           }
         } catch(e) {
           console.warn("Failed to fetch current SOL price on invest");
         }
       }
-      const solPrice = currentSolPrice || 150;
+      const solPrice = currentSolPrice || 75; // Using 75 as a more realistic fallback for mid-2026 if API fails
 
       // On the MLM Vault page, investment is bounded between $10 and $100.
       // On the pure Staking Page, buying usGOLD is unlimited (Min $1.00).

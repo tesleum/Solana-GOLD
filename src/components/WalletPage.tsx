@@ -226,7 +226,7 @@ export function WalletPage({
     const fetchJupiterPrices = async () => {
       try {
         const ids = [
-          'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt0
+          'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt (More tradable)
           '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
           'So11111111111111111111111111111111111111112',  // SOL
           'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
