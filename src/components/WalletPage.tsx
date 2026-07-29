@@ -238,14 +238,24 @@ export function WalletPage({
           const json = await res.json();
           if (json?.data && isMounted) {
             const data = json.data;
+            
+            // 1. XAUt0 Price
+            let xp = 0;
             if (data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
-              const p = parseFloat(data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
-              if (p > 0) setXautPrice(p);
+              xp = parseFloat(data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
+              if (xp > 0) setXautPrice(xp);
             }
+            
+            // 2. usGOLD Price
             if (data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
               const p = parseFloat(data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
               if (p > 0) setUsGoldJupiterPrice(p);
+            } else if (xp > 0) {
+              // Fallback: If usGOLD price missing, use XAUt0 price
+              setUsGoldJupiterPrice(xp);
             }
+            
+            // 3. SOL Price
             if (data['So11111111111111111111111111111111111111112']?.price) {
               const p = parseFloat(data['So11111111111111111111111111111111111111112'].price);
               if (p > 0) setLiveSolPrice(p);

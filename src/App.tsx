@@ -473,16 +473,30 @@ function Dashboard() {
           const jupPriceRes = await axios.get(`/api/jupiter/price?ids=${ids}`);
           if (jupPriceRes.data && jupPriceRes.data.data) {
             const pData = jupPriceRes.data.data;
+            
+            // 1. SOL Price
             if (pData['So11111111111111111111111111111111111111112']?.price) {
               setSolanaPrice(parseFloat(pData['So11111111111111111111111111111111111111112'].price));
             }
+            
+            // 2. XAUt0 Price
+            let xautP = 0;
             if (pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
-              const xautP = parseFloat(pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
+              xautP = parseFloat(pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
               if (xautP > 0) setTokenPrice(xautP);
             }
+            
+            // 3. usGOLD Price (United States Gold)
             if (pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
               const usgp = parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
-              if (usgp > 0) setUsGoldPrice(usgp);
+              if (usgp > 0) {
+                setUsGoldPrice(usgp);
+                // If XAUt0 was not found, usGOLD can serve as tokenPrice
+                if (xautP <= 0) setTokenPrice(usgp);
+              }
+            } else if (xautP > 0) {
+              // Fallback: If usGOLD is missing but XAUt0 is found, use XAUt0 price for usGOLD
+              setUsGoldPrice(xautP);
             }
           }
         } catch (jupErr) {
