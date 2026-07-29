@@ -936,12 +936,13 @@ function Dashboard() {
       if (rewardForPool4) await logPoolReward(rewardForPool4, 4);
       if (rewardForPool2) await logPoolReward(rewardForPool2, 2);
 
-      setUsGoldBalance(prev => prev + investAmount);
+      const gramsReceived = investAmount / (tokenPrice || 1);
+      setUsGoldBalance(prev => prev + gramsReceived);
       setUserTotalInvested(prev => prev + investAmount);
       setBalance(prev => Math.max(0, prev - amountToInvest));
       
       triggerHaptic('success');
-      alert(`Investment successful! Distributed ~$${investAmount} in SOL and received ${investAmount} GOLD.`);
+      alert(`Investment successful! Distributed ~${investAmount} in SOL and received ${gramsReceived.toFixed(4)} grams of gold.`);
     } catch (err: any) {
       triggerHaptic('error');
       console.error('Investment failed:', err);
@@ -1617,7 +1618,7 @@ function Dashboard() {
                   }}>
                     {/* Engravings on the Gold Bar */}
                     <Typography variant="h4" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.6)', textShadow: '1px 1px 1px rgba(255,255,255,0.3), -1px -1px 1px rgba(0,0,0,0.2)', fontFamily: '"Cinzel", serif' }}>
-                      {investAmount} oz
+                      {(investAmount / (tokenPrice || 1)).toFixed(2)}g
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.5)', fontWeight: 'bold', letterSpacing: 2 }}>
                       {t('royalReserve', language)}
@@ -1649,6 +1650,9 @@ function Dashboard() {
                       <Typography variant="caption" color="text.secondary" fontWeight="600" letterSpacing={1}>{t('requiredSol', language)}</Typography>
                       <Typography variant="h6" color="#14F195" fontWeight="bold">
                         ~{solanaPrice ? (investAmount / solanaPrice).toFixed(4) : '---'} SOL
+                      </Typography>
+                      <Typography variant="caption" color="primary.main" fontWeight="bold" sx={{ display: 'block', fontSize: '10px' }}>
+                        Receiving: {(investAmount / (tokenPrice || 1)).toFixed(4)} grams
                       </Typography>
                     </Box>
                   </Stack>

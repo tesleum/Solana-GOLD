@@ -35,6 +35,7 @@ export function StakingPage({
   usGoldBalance,
   effectiveAddress,
   solanaPrice,
+  tokenPrice,
   setActiveTab
 }: StakingPageProps) {
   useTheme();
@@ -134,11 +135,13 @@ export function StakingPage({
     }
   };
 
-  // Solana Price & SOL conversion calculation for 1 usGOLD stablecoin ($1 USD)
-  const currentSolPrice = solanaPrice && solanaPrice > 0 ? solanaPrice : 150;
-  const stakeValUsd = parseFloat(customStakeAmount) || 0;
-  // 1 usGOLD = $1.00 USD, so SOL needed = stakeValUsd / currentSolPrice
-  const requiredSol = currentSolPrice ? (stakeValUsd / currentSolPrice) : 0;
+  // Solana Price & SOL conversion calculation for usGOLD (derived from tokenPrice)
+  const currentSolPrice = solanaPrice && solanaPrice > 0 ? solanaPrice : 0;
+  const effectiveTokenPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 0;
+  const stakeValUsd = (parseFloat(customStakeAmount) || 0) * effectiveTokenPrice;
+  
+  // SOL needed = (Amount * tokenPrice) / currentSolPrice
+  const requiredSol = (currentSolPrice && currentSolPrice > 0) ? (stakeValUsd / currentSolPrice) : 0;
   const networkFeeSol = 0.0001;
   const totalSolPayment = requiredSol + networkFeeSol;
 
@@ -288,16 +291,16 @@ export function StakingPage({
             <Grid item xs={6} sm={3}>
               <Box sx={{ p: 1.5, bgcolor: alpha('#fff', 0.02), borderRadius: '14px', border: `1px solid ${alpha('#D4AF37', 0.15)}` }}>
                 <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5} sx={{ fontSize: '10px' }}>
-                  LIQUID usGOLD
+                  LIQUID usGOLD (GRAMS)
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={0.8} mt={0.2}>
                   <Typography variant="h6" fontWeight="900" color="#fff">
-                    {usGoldBalance.toFixed(2)}
+                    {usGoldBalance.toFixed(4)}
                   </Typography>
                   <TokenIcon symbol="usGOLD" size={18} />
                 </Stack>
                 <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px', display: 'block' }}>
-                  Available
+                  ≈ ${(usGoldBalance * effectiveTokenPrice).toFixed(2)} USD
                 </Typography>
               </Box>
             </Grid>
@@ -306,11 +309,11 @@ export function StakingPage({
             <Grid item xs={6} sm={3}>
               <Box sx={{ p: 1.5, bgcolor: alpha('#4caf50', 0.03), borderRadius: '14px', border: `1px solid ${alpha('#4caf50', 0.2)}` }}>
                 <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5} sx={{ fontSize: '10px' }}>
-                  STAKED BALANCE
+                  STAKED (GRAMS)
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={0.8} mt={0.2}>
                   <Typography variant="h6" fontWeight="900" color="#4caf50">
-                    {totalStaked.toFixed(2)}
+                    {totalStaked.toFixed(4)}
                   </Typography>
                   <TokenIcon symbol="usGOLD" size={18} />
                 </Stack>
@@ -346,7 +349,7 @@ export function StakingPage({
                     <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px' }}>
                       REFERRAL REWARD
                     </Typography>
-                    <Chip label={`$1.00 usGOLD`} size="small" sx={{ height: 16, fontSize: '9px', bgcolor: '#D4AF37', color: '#000', fontWeight: '900' }} />
+                    <Chip label={`0.012 XAUt`} size="small" sx={{ height: 16, fontSize: '9px', bgcolor: '#D4AF37', color: '#000', fontWeight: '900' }} />
                   </Stack>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '9px', mt: 0.3, lineHeight: 1.1 }}>
                     Unlocks when referee stakes usGOLD
@@ -451,7 +454,7 @@ export function StakingPage({
                       STAKING AMOUNT
                     </Typography>
                     <Typography variant="h5" color="#fff" fontWeight="900">
-                      {customStakeAmount || 0} <span style={{ fontSize: '0.9rem', color: '#D4AF37' }}>usGOLD</span>
+                      {customStakeAmount || 0} <span style={{ fontSize: '0.9rem', color: '#D4AF37' }}>grams</span>
                     </Typography>
                   </Box>
 
@@ -468,7 +471,7 @@ export function StakingPage({
                 {/* Calculation Breakdown Banner */}
                 <Box sx={{ mb: 2, p: 1.2, borderRadius: '10px', bgcolor: alpha('#14F195', 0.05), border: `1px solid ${alpha('#14F195', 0.2)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px' }}>
-                    Rate: <strong>1 usGOLD = ${(1 / currentSolPrice).toFixed(6)} SOL</strong> (@ ${currentSolPrice.toFixed(2)}/SOL)
+                    Rate: <strong>1 gram = {effectiveTokenPrice.toFixed(2)} USD</strong> (@ ${currentSolPrice.toFixed(2)}/SOL)
                   </Typography>
                   <Typography variant="caption" color="#14F195" fontWeight="bold" sx={{ fontSize: '11px' }}>
                     Fee: +{networkFeeSol} SOL
@@ -645,7 +648,7 @@ export function StakingPage({
                   >
                     {isCreatingStake 
                       ? 'PROCESSING SOLANA TRANSACTION...' 
-                      : `STAKE ${customStakeAmount || 0} usGOLD (Pay ${totalSolPayment.toFixed(6)} SOL)`}
+                      : `STAKE ${customStakeAmount || 0} GRAMS (Pay ${totalSolPayment.toFixed(6)} SOL)`}
                   </Button>
                 )}
                 
@@ -746,7 +749,7 @@ export function StakingPage({
                             </Avatar>
                             <Box>
                               <Typography variant="body2" fontWeight="800" color="#fff">
-                                {st.amount} usGOLD
+                                {st.amount} Grams
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
                                 {st.durationMonths}-Month Locked Vault
