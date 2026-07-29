@@ -177,12 +177,9 @@ async function startServer() {
           console.warn(`Jupiter Quote API price fallback warning for ${mint}:`, quoteErr);
         }
 
-        // 4. Fallback for usGOLD to Tether GOLD (XAUt0) price if available
+        // 4. Fallback for usGOLD (Stablecoin United States Gold, $1.00 USD)
         if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' && !resultData[mint]) {
-          const xautP = resultData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price;
-          if (xautP) {
-            resultData[mint] = { id: mint, price: xautP };
-          }
+          resultData[mint] = { id: mint, price: '1.00' };
         }
       }
 

@@ -94,8 +94,8 @@ export function WalletPage({
   const [isProcessingUsdtBuy, setIsProcessingUsdtBuy] = useState(false);
 
   // Jupiter Live Prices (fetched dynamically from API)
-  const [xautPrice, setXautPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 0);
-  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 0);
+  const [xautPrice, setXautPrice] = useState<number>(0);
+  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 1.00);
   const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 0);
   const [usdtPrice, setUsdtPrice] = useState<number>(1.00);
   const [usdcPrice, setUsdcPrice] = useState<number>(1.00);
@@ -107,8 +107,8 @@ export function WalletPage({
 
   // Dynamic Token Prices strictly driven by API
   const currentSolPrice = liveSolPrice || solanaPrice || 0;
-  const currentGoldPrice = xautPrice || tokenPrice || 0;
-  const effectiveUsGoldPrice = usGoldJupiterPrice || tokenPrice || currentGoldPrice || 0;
+  const currentGoldPrice = xautPrice || 0;
+  const effectiveUsGoldPrice = usGoldJupiterPrice || (tokenPrice && tokenPrice > 0 ? tokenPrice : 1.00);
 
   const TOKEN_LIST: TokenOption[] = [
     { symbol: 'SOL', name: 'Solana Native', usdPrice: currentSolPrice, decimals: 9, mint: 'So11111111111111111111111111111111111111112', isNativeSol: true },
