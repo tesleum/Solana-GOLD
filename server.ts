@@ -1,11 +1,10 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import OpenAI from "openai";
 import crypto from "crypto";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = typeof __dirname !== 'undefined' ? __dirname : path.resolve();
 
 let apiKey = process.env.OPENAI_API_KEY || "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";
 if (apiKey.startsWith('OPENAI_API_KEY=')) {
