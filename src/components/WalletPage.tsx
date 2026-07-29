@@ -26,7 +26,6 @@ interface WalletPageProps {
   effectiveAddress: string | null;
   solanaPrice: number | null;
   tokenPrice: number | null;
-  usGoldPrice: number | null;
   apyYield: string;
   transactions: any[];
   userEarnings: number;
@@ -56,7 +55,6 @@ export function WalletPage({
   effectiveAddress,
   solanaPrice,
   tokenPrice,
-  usGoldPrice,
   apyYield,
   transactions,
   userEarnings,
@@ -97,7 +95,7 @@ export function WalletPage({
 
   // Jupiter Live Prices (fetched dynamically from API)
   const [xautPrice, setXautPrice] = useState<number>(tokenPrice && tokenPrice > 0 ? tokenPrice : 0);
-  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(usGoldPrice && usGoldPrice > 0 ? usGoldPrice : 0);
+  const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(0);
   const [liveSolPrice, setLiveSolPrice] = useState<number>(solanaPrice && solanaPrice > 0 ? solanaPrice : 0);
   const [usdtPrice, setUsdtPrice] = useState<number>(1.00);
   const [usdcPrice, setUsdcPrice] = useState<number>(1.00);
@@ -238,24 +236,14 @@ export function WalletPage({
           const json = await res.json();
           if (json?.data && isMounted) {
             const data = json.data;
-            
-            // 1. XAUt0 Price
-            let xp = 0;
             if (data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
-              xp = parseFloat(data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
-              if (xp > 0) setXautPrice(xp);
+              const p = parseFloat(data['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
+              if (p > 0) setXautPrice(p);
             }
-            
-            // 2. usGOLD Price
             if (data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
               const p = parseFloat(data['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
               if (p > 0) setUsGoldJupiterPrice(p);
-            } else if (xp > 0) {
-              // Fallback: If usGOLD price missing, use XAUt0 price
-              setUsGoldJupiterPrice(xp);
             }
-            
-            // 3. SOL Price
             if (data['So11111111111111111111111111111111111111112']?.price) {
               const p = parseFloat(data['So11111111111111111111111111111111111111112'].price);
               if (p > 0) setLiveSolPrice(p);
