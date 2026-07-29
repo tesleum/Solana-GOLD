@@ -478,8 +478,6 @@ function Dashboard() {
             if (pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
               const usGoldP = parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
               if (usGoldP > 0) setTokenPrice(usGoldP);
-            } else {
-              setTokenPrice(1.00);
             }
           }
         } catch (jupErr) {

@@ -2,7 +2,7 @@ const axios = require("axios");
 
 async function check() {
   try {
-    const res = await axios.get("https://api.geckoterminal.com/api/v2/networks/solana/tokens/CwFp9y4hpDDbiGAHPvHRNrCpiTtGm5C4xafwCYDSGoLd", {
+    const res = await axios.get("https://api.geckoterminal.com/api/v2/networks/solana/tokens/24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd", {
       headers: {
         "x-cg-demo-api-key": "CG-KCwNLjPnDDSgnRsVzkjq6yUc"
       }
@@ -13,7 +13,7 @@ async function check() {
   }
 
   try {
-    const res2 = await axios.get("https://api.geckoterminal.com/api/v2/networks/solana/tokens/CwFp9y4hpDDbiGAHPvHRNrCpiTtGm5C4xafwCYDSGoLd", {
+    const res2 = await axios.get("https://api.geckoterminal.com/api/v2/networks/solana/tokens/24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd", {
     });
     console.log("SUCCESS NO KEY:", res2.data.data.attributes.price_usd);
   } catch (e) {

@@ -134,6 +134,42 @@ async function startServer() {
       }
 
       // 3. Check for any remaining missing mints using Jupiter Quote API (converting to/from USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v)
+      // Special Logic for usGOLD (24JP...): If missing, use XAUt0 (AymA...) price / 31.1035
+      const USGOLD_MINT = '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd';
+      const XAUT_MINT = 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P';
+
+      if (idsList.includes(USGOLD_MINT) && !resultData[USGOLD_MINT]) {
+        // We need XAUt price to derive usGOLD price
+        let xautPrice = resultData[XAUT_MINT]?.price ? parseFloat(resultData[XAUT_MINT].price) : 0;
+        
+        if (xautPrice <= 0) {
+          // Fetch XAUt price specifically via Quote API if not already found
+          try {
+            const xautQuoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${XAUT_MINT}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=50`;
+            const xautQuoteRes = await fetch(xautQuoteUrl, {
+              headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
+            });
+            if (xautQuoteRes.ok) {
+              const xautQuoteJson = await xautQuoteRes.json();
+              if (xautQuoteJson?.outAmount) {
+                xautPrice = parseFloat(xautQuoteJson.outAmount) / 1e6;
+                if (!resultData[XAUT_MINT]) {
+                  resultData[XAUT_MINT] = { id: XAUT_MINT, price: String(xautPrice) };
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("Failed to fetch XAUt price for usGOLD derivation:", e);
+          }
+        }
+
+        if (xautPrice > 0) {
+          // usGOLD is 1 gram of gold, XAUt is 1 troy ounce (31.1035 grams)
+          const usGoldPrice = xautPrice / 31.1034768;
+          resultData[USGOLD_MINT] = { id: USGOLD_MINT, price: usGoldPrice.toFixed(6) };
+        }
+      }
+
       const stillMissing = idsList.filter(mint => !resultData[mint]);
       for (const mint of stillMissing) {
         try {
@@ -175,11 +211,6 @@ async function startServer() {
           }
         } catch (quoteErr) {
           console.warn(`Jupiter Quote API price fallback warning for ${mint}:`, quoteErr);
-        }
-
-        // 4. Fallback for usGOLD (Stablecoin United States Gold, $1.00 USD)
-        if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' && !resultData[mint]) {
-          resultData[mint] = { id: mint, price: '1.00' };
         }
       }
 
