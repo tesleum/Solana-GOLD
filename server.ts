@@ -107,116 +107,34 @@ async function startServer() {
         }
       }
 
-      // 2. Specialized derivation for usGOLD (24JP...) from XAUt (Tether Gold)
-      // usGOLD = 1 gram of gold. XAUt = 1 troy ounce (31.1034768 grams)
-      const USGOLD_MINT = '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd';
-      const XAUT_MINT = 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'; // More tradable version
-      const XAUT_ALT_MINT = '9Svi6X9663zLhL5mkaG99W7BfX3BWhWJ8BvK868E46M';
-      const SOL_MINT = 'So11111111111111111111111111111111111111112';
-
-      // Always try to get XAUt price to ensure usGOLD is accurate
-      let currentXautPrice = resultData[XAUT_MINT]?.price ? parseFloat(resultData[XAUT_MINT].price) : 0;
-      
-      if (currentXautPrice <= 0) {
-        // Try Alt MINT
-        currentXautPrice = resultData[XAUT_ALT_MINT]?.price ? parseFloat(resultData[XAUT_ALT_MINT].price) : 0;
-      }
-
-      if (currentXautPrice <= 0) {
-        try {
-          // Try Quote for primary
-          const xautQuoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${XAUT_MINT}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=50`;
-          const xautQuoteRes = await fetch(xautQuoteUrl, {
-            headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
-          });
-          if (xautQuoteRes.ok) {
-            const xautQuoteJson = await xautQuoteRes.json();
-            if (xautQuoteJson?.outAmount) {
-              currentXautPrice = parseFloat(xautQuoteJson.outAmount) / 1e6;
-              resultData[XAUT_MINT] = { id: XAUT_MINT, price: String(currentXautPrice) };
-            }
-          }
-        } catch (e) {}
-      }
-
-      if (idsList.includes(USGOLD_MINT)) {
-        // If usGOLD price on Jupiter is too low or missing, derive it from XAUt
-        const jupUsGoldPrice = resultData[USGOLD_MINT]?.price ? parseFloat(resultData[USGOLD_MINT].price) : 0;
-        if (currentXautPrice > 0) {
-          const derivedUsGoldPrice = currentXautPrice / 31.1034768;
-          // Use derived price if Jupiter market price is missing or significantly different (illiquid)
-          if (jupUsGoldPrice <= 0 || Math.abs(jupUsGoldPrice - derivedUsGoldPrice) / derivedUsGoldPrice > 0.05) {
-            resultData[USGOLD_MINT] = { id: USGOLD_MINT, price: derivedUsGoldPrice.toFixed(6) };
-          }
-        }
-      }
-
-      // 3. Fill missing from SOL separately if it's missing (fallback for Solana)
-      if (idsList.includes(SOL_MINT) && !resultData[SOL_MINT]) {
-        try {
-          // SOL has 9 decimals, so 1 SOL = 1,000,000,000 units
-          const solQuoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${SOL_MINT}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000000&slippageBps=50`;
-          const solQuoteRes = await fetch(solQuoteUrl, {
-            headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
-          });
-          if (solQuoteRes.ok) {
-            const solQuoteJson = await solQuoteRes.json();
-            if (solQuoteJson?.outAmount) {
-              const solPrice = parseFloat(solQuoteJson.outAmount) / 1e6;
-              resultData[SOL_MINT] = { id: SOL_MINT, price: String(solPrice) };
-            }
-          }
-        } catch (e) {
-          console.warn("SOL fallback quote failed:", e);
-        }
-      }
-
-      // 4. Check for other missing token mints and fill from DexScreener API
+      // 2. Check for missing token mints and fill from Jupiter Quote API if needed
+      // (This is a more "real" price for illiquid tokens than the simple Price API)
       const missingMints = idsList.filter(mint => !resultData[mint]);
-      if (missingMints.length > 0) {
+      for (const mint of missingMints) {
         try {
-          const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${missingMints.join(',')}`;
-          const dexRes = await fetch(dexUrl);
-          if (dexRes.ok) {
-            const dexJson = await dexRes.json();
-            if (dexJson && dexJson.pairs && Array.isArray(dexJson.pairs)) {
-              for (const pair of dexJson.pairs) {
-                const baseMint = pair.baseToken?.address;
-                const priceUsd = pair.priceUsd;
-                if (baseMint && priceUsd && missingMints.includes(baseMint) && !resultData[baseMint]) {
-                  resultData[baseMint] = { id: baseMint, price: String(priceUsd) };
-                }
-              }
-            }
-          }
-        } catch (dexErr) {
-          console.warn("DexScreener price fallback warning:", dexErr);
-        }
-      }
-
-      // 5. Final attempt for remaining using Quote API with dynamic decimal handling
-      const finalMissing = idsList.filter(mint => !resultData[mint]);
-      for (const mint of finalMissing) {
-        try {
-          // Assume 6 decimals for most stable/SPL tokens if unknown, but SOL is 9
-          const decimals = mint === SOL_MINT ? 9 : 6;
+          // Assume 6 decimals for most tokens (usGOLD is 6, USDT/USDC are 6)
+          // SOL is 9, so we handle it specifically
+          const decimals = mint === 'So11111111111111111111111111111111111111112' ? 9 : 6;
           const amount = Math.pow(10, decimals);
           const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${amount}&slippageBps=50`;
+          
           const quoteRes = await fetch(quoteUrl, {
             headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
           });
+          
           if (quoteRes.ok) {
-            const json = await quoteRes.json();
-            if (json && json.outAmount) {
-              const outUsdc = parseFloat(json.outAmount) / 1e6;
-              if (outUsdc > 0) {
-                resultData[mint] = { id: mint, price: String(outUsdc) };
+            const quoteJson = await quoteRes.json();
+            if (quoteJson?.outAmount) {
+              const price = parseFloat(quoteJson.outAmount) / 1e6;
+              if (price > 0) {
+                resultData[mint] = { id: mint, price: String(price) };
               }
             }
           }
-        } catch (quoteErr) {}
+        } catch (e) {
+          console.warn(`Failed to fetch Jupiter quote price for ${mint}:`, e);
+        }
       }
-
 
       res.json({ data: resultData });
     } catch (err: any) {

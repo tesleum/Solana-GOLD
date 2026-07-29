@@ -433,58 +433,49 @@ function Dashboard() {
     if (lineParam) {
       localStorage.setItem('line', lineParam.toUpperCase());
     }
-    // Fetch price and data from DexScreener to avoid CORS issues
+    // Fetch price and chart data
     const fetchMarketData = async () => {
       setIsFetchingChart(true);
       try {
-        const poolRes = await axios.get('https://api.dexscreener.com/latest/dex/pairs/solana/4uzpwQ3Lb8HNWrLRU8MYkR1viRnpxdzrPRaF4p4DCcUx');
-        const pair = poolRes.data?.pairs?.[0];
-        if (pair) {
-          const price = parseFloat(pair.priceNative || pair.priceUsd || '0');
-          if (price > 0) setTokenPrice(price);
+        // Fetch prices directly from Jupiter API via our proxy
+        const ids = [
+          'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt (More tradable)
+          '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
+          'So11111111111111111111111111111111111111112'   // SOL
+        ].join(',');
+        
+        const jupPriceRes = await axios.get(`/api/jupiter/price?ids=${ids}`);
+        if (jupPriceRes.data && jupPriceRes.data.data) {
+          const pData = jupPriceRes.data.data;
           
-          const liqUsd = parseFloat(pair.liquidity?.usd || '0');
-          if (liqUsd > 0) setTotalLiquidity(liqUsd);
+          // SOL Price
+          if (pData['So11111111111111111111111111111111111111112']?.price) {
+            setSolanaPrice(parseFloat(pData['So11111111111111111111111111111111111111112'].price));
+          }
           
-          // DexScreener doesn't provide chart endpoint publicly, so we mock chart data around current price
-          if (price > 0) {
+          // usGOLD Price
+          const usGoldP = pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price 
+            ? parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price) 
+            : 0;
+            
+          if (usGoldP > 0) {
+            setTokenPrice(usGoldP);
+            
+            // Generate mock chart data based on the Jupiter price
             const now = Date.now();
             const mockChart = Array.from({length: 30}).map((_, i) => {
               const dayOffset = 30 - i;
               const randomTrend = 1 + (Math.random() * 0.1 - 0.05);
               return {
                 time: new Date(now - dayOffset * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                val: price * randomTrend
+                price: usGoldP * randomTrend
               };
             });
-            const formattedData = mockChart.map((d) => ({ time: d.time, price: d.val }));
-            setChartData(formattedData);
+            setChartData(mockChart);
           }
-        }
-        
-        // Fetch prices directly from Jupiter API for XAUt0, usGOLD, SOL
-        try {
-          const ids = [
-            'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P', // XAUt (More tradable)
-            '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', // usGOLD
-            'So11111111111111111111111111111111111111112'   // SOL
-          ].join(',');
-          const jupPriceRes = await axios.get(`/api/jupiter/price?ids=${ids}`);
-          if (jupPriceRes.data && jupPriceRes.data.data) {
-            const pData = jupPriceRes.data.data;
-            if (pData['So11111111111111111111111111111111111111112']?.price) {
-              setSolanaPrice(parseFloat(pData['So11111111111111111111111111111111111111112'].price));
-            }
-            if (pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
-              const usGoldP = parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
-              if (usGoldP > 0) setTokenPrice(usGoldP);
-            }
-          }
-        } catch (jupErr) {
-          console.warn('Jupiter Price API notice:', jupErr);
         }
       } catch (err) {
-        console.error('Failed to fetch market data:', err);
+        console.error('Failed to fetch Jupiter market data:', err);
       } finally {
         setIsFetchingChart(false);
       }
