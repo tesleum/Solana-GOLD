@@ -475,7 +475,10 @@ function Dashboard() {
             if (pData['So11111111111111111111111111111111111111112']?.price) {
               setSolanaPrice(parseFloat(pData['So11111111111111111111111111111111111111112'].price));
             }
-            if (pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
+            if (pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']?.price) {
+              const usGoldP = parseFloat(pData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'].price);
+              if (usGoldP > 0) setTokenPrice(usGoldP);
+            } else if (pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price) {
               const xautP = parseFloat(pData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P'].price);
               if (xautP > 0) setTokenPrice(xautP);
             }

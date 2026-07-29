@@ -134,6 +134,50 @@ async function startServer() {
         }
       }
 
+      // 3. Check for any remaining missing mints using Jupiter Quote API (converting to/from USDC EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v)
+      const stillMissing = idsList.filter(mint => !resultData[mint]);
+      for (const mint of stillMissing) {
+        try {
+          // Try selling 1 token (10^6 units) for USDC
+          const quoteUrlA = `https://quote-api.jup.ag/v6/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=50`;
+          const quoteResA = await fetch(quoteUrlA, {
+            headers: {
+              'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
+            }
+          });
+          if (quoteResA.ok) {
+            const jsonA = await quoteResA.json();
+            if (jsonA && jsonA.outAmount) {
+              const outUsdc = parseFloat(jsonA.outAmount) / 1e6;
+              if (outUsdc > 0) {
+                resultData[mint] = { id: mint, price: String(outUsdc) };
+                continue;
+              }
+            }
+          }
+
+          // Try buying token with 1 USDC (10^6 units)
+          const quoteUrlB = `https://quote-api.jup.ag/v6/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=${mint}&amount=1000000&slippageBps=50`;
+          const quoteResB = await fetch(quoteUrlB, {
+            headers: {
+              'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
+            }
+          });
+          if (quoteResB.ok) {
+            const jsonB = await quoteResB.json();
+            if (jsonB && jsonB.outAmount) {
+              const outTokens = parseFloat(jsonB.outAmount) / 1e6;
+              if (outTokens > 0) {
+                const priceUsd = 1 / outTokens;
+                resultData[mint] = { id: mint, price: String(priceUsd) };
+              }
+            }
+          }
+        } catch (quoteErr) {
+          console.warn(`Jupiter Quote API price fallback warning for ${mint}:`, quoteErr);
+        }
+      }
+
       res.json({ data: resultData });
     } catch (err: any) {
       console.error("Price Proxy Error:", err);
