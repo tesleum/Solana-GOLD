@@ -93,6 +93,9 @@ async function startServer() {
             const jupJson = await jupRes.json();
             if (jupJson && jupJson.data) {
               for (const mint of idsList) {
+                // Force usGOLD into fallback
+                if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') continue;
+
                 if (jupJson.data[mint] && jupJson.data[mint].price) {
                   resultData[mint] = {
                     id: mint,
