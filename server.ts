@@ -93,9 +93,6 @@ async function startServer() {
             const jupJson = await jupRes.json();
             if (jupJson && jupJson.data) {
               for (const mint of idsList) {
-                // Force usGOLD into fallback
-                if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') continue;
-
                 if (jupJson.data[mint] && jupJson.data[mint].price) {
                   resultData[mint] = {
                     id: mint,
@@ -141,7 +138,7 @@ async function startServer() {
       for (const mint of stillMissing) {
         try {
           // Try selling 1 token (10^6 units) for USDC
-          const quoteUrlA = `https://quote-api.jup.ag/v6/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=50`;
+          const quoteUrlA = `https://api.jup.ag/swap/v1/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=50`;
           const quoteResA = await fetch(quoteUrlA, {
             headers: {
               'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
@@ -159,7 +156,7 @@ async function startServer() {
           }
 
           // Try buying token with 1 USDC (10^6 units)
-          const quoteUrlB = `https://quote-api.jup.ag/v6/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=${mint}&amount=1000000&slippageBps=50`;
+          const quoteUrlB = `https://api.jup.ag/swap/v1/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=${mint}&amount=1000000&slippageBps=50`;
           const quoteResB = await fetch(quoteUrlB, {
             headers: {
               'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
@@ -172,11 +169,20 @@ async function startServer() {
               if (outTokens > 0) {
                 const priceUsd = 1 / outTokens;
                 resultData[mint] = { id: mint, price: String(priceUsd) };
+                continue;
               }
             }
           }
         } catch (quoteErr) {
           console.warn(`Jupiter Quote API price fallback warning for ${mint}:`, quoteErr);
+        }
+
+        // 4. Fallback for usGOLD to Tether GOLD (XAUt0) price if available
+        if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' && !resultData[mint]) {
+          const xautP = resultData['AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P']?.price;
+          if (xautP) {
+            resultData[mint] = { id: mint, price: xautP };
+          }
         }
       }
 
