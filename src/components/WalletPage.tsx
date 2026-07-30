@@ -126,8 +126,9 @@ export function WalletPage({
   // Futures Margin Balance from Firebase
   const [futuresBalance, setFuturesBalance] = useState<number>(0);
 
-  // Additional Token Balances (USDC, GOLD, XAUt) from Firebase
+  // Additional Token Balances (USDC, USDT, GOLD, XAUt) from Firebase
   const [usdcBalance, setUsdcBalance] = useState<number>(0);
+  const [usdtBalance, setUsdtBalance] = useState<number>(0);
   const [goldTokenBalance, setGoldTokenBalance] = useState<number>(0);
   const [xautBalance, setXautBalance] = useState<number>(0);
 
@@ -192,6 +193,13 @@ export function WalletPage({
       usdPrice: usdcPrice,
       decimals: 6,
       mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    },
+    {
+      symbol: "USDT",
+      name: "Tether USD",
+      usdPrice: usdtPrice,
+      decimals: 6,
+      mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
     },
   ];
 
@@ -282,6 +290,7 @@ export function WalletPage({
           const data = snapshot.val();
           setFuturesBalance(data.futuresBalance || 0);
           setUsdcBalance(data.usdcBalance || 0);
+          setUsdtBalance(data.usdtBalance || 0);
           setGoldTokenBalance(data.goldTokenBalance || 0);
           setXautBalance(data.xautBalance || data.goldTokenBalance || 0);
         }
@@ -470,6 +479,8 @@ export function WalletPage({
         return xautBalance || goldTokenBalance;
       case "USDC":
         return usdcBalance;
+      case "USDT":
+        return usdtBalance;
       case "GOLD":
         return goldTokenBalance;
       default:
@@ -650,6 +661,8 @@ export function WalletPage({
           updates.usGoldBalance = Math.max(0, usGoldBalance - numFromAmount);
         } else if (fromTokenSymbol === "USDC") {
           updates.usdcBalance = Math.max(0, usdcBalance - numFromAmount);
+        } else if (fromTokenSymbol === "USDT") {
+          updates.usdtBalance = Math.max(0, usdtBalance - numFromAmount);
         } else if (fromTokenSymbol === "GOLD") {
           updates.goldTokenBalance = Math.max(
             0,
@@ -664,6 +677,9 @@ export function WalletPage({
         } else if (toTokenSymbol === "USDC") {
           updates.usdcBalance =
             (updates.usdcBalance ?? usdcBalance) + calculatedToAmount;
+        } else if (toTokenSymbol === "USDT") {
+          updates.usdtBalance =
+            (updates.usdtBalance ?? usdtBalance) + calculatedToAmount;
         } else if (toTokenSymbol === "GOLD") {
           updates.goldTokenBalance =
             (updates.goldTokenBalance ?? goldTokenBalance) + calculatedToAmount;
@@ -1091,7 +1107,7 @@ export function WalletPage({
                 </Grid>
 
                 {/* USDC */}
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <Box
                     sx={{
                       p: 1.5,
@@ -1140,6 +1156,61 @@ export function WalletPage({
                         border: `1px solid ${alpha("#0288d1", 0.25)}`,
                         cursor: "pointer",
                         "&:hover": { bgcolor: alpha("#0288d1", 0.3) },
+                      }}
+                    />
+                  </Box>
+                </Grid>
+
+                {/* USDT */}
+                <Grid item xs={12} sm={6}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: "12px",
+                      bgcolor: alpha("#26a69a", 0.03),
+                      border: `1.2px solid ${alpha("#26a69a", 0.18)}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Stack direction="row" spacing={1.2} alignItems="center">
+                      <TokenIcon symbol="USDT" size={24} />
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          fontWeight="900"
+                          color="#fff"
+                          sx={{ lineHeight: 1.1 }}
+                        >
+                          {usdtBalance.toFixed(2)} USDT
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: "10px" }}
+                        >
+                          ~${usdtBalance.toFixed(2)} USD
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Chip
+                      label="Swap"
+                      size="small"
+                      onClick={() => {
+                        triggerHaptic(10);
+                        setWalletTab("swap");
+                        setFromTokenSymbol("USDT");
+                      }}
+                      sx={{
+                        height: 20,
+                        fontSize: "9px",
+                        fontWeight: "800",
+                        bgcolor: alpha("#26a69a", 0.15),
+                        color: "#33c9bb",
+                        border: `1px solid ${alpha("#26a69a", 0.25)}`,
+                        cursor: "pointer",
+                        "&:hover": { bgcolor: alpha("#26a69a", 0.3) },
                       }}
                     />
                   </Box>
