@@ -6,6 +6,9 @@ import crypto from "crypto";
 
 const __dirname = path.resolve();
 
+const priceCache: Record<string, { price: string, timestamp: number }> = {};
+const CACHE_DURATION = 60000; // 1 minute
+
 let apiKey = process.env.OPENAI_API_KEY || "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";
 if (apiKey.startsWith('OPENAI_API_KEY=')) {
   apiKey = apiKey.replace('OPENAI_API_KEY=', '');
@@ -76,6 +79,12 @@ async function startServer() {
   app.get("/api/jupiter/price", async (req, res) => {
     try {
       const idsParam = req.query.ids as string || '';
+      
+      // Check cache
+      if (priceCache[idsParam] && (Date.now() - priceCache[idsParam].timestamp < CACHE_DURATION)) {
+        return res.json({ data: JSON.parse(priceCache[idsParam].price) });
+      }
+
       const idsList = idsParam ? idsParam.split(',').map(s => s.trim()).filter(Boolean) : [];
 
       const resultData: Record<string, { id: string; price: string }> = {};
@@ -135,6 +144,9 @@ async function startServer() {
           console.warn(`Failed to fetch Jupiter quote price for ${mint}:`, e);
         }
       }
+
+      // Cache the result
+      priceCache[idsParam] = { price: JSON.stringify(resultData), timestamp: Date.now() };
 
       res.json({ data: resultData });
     } catch (err: any) {
