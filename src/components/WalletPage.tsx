@@ -807,39 +807,8 @@ export function WalletPage({
                   </Box>
                 </Grid>
 
-                {/* Futures USDT */}
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ 
-                    p: 1.5, 
-                    borderRadius: '12px', 
-                    bgcolor: alpha('#26a69a', 0.03), 
-                    border: `1.2px solid ${alpha('#26a69a', 0.18)}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}>
-                    <Stack direction="row" spacing={1.2} alignItems="center">
-                      <TokenIcon symbol="USDT" size={24} />
-                      <Box>
-                        <Typography variant="body2" fontWeight="900" color="#fff" sx={{ lineHeight: 1.1 }}>
-                          {futuresBalance.toFixed(2)} USDT
-                        </Typography>
-                        <Typography variant="caption" color="#26a69a" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
-                          Futures Margin
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Chip 
-                      label="Trade" 
-                      size="small" 
-                      onClick={() => { triggerHaptic(10); setActiveTab('trading'); }}
-                      sx={{ height: 20, fontSize: '9px', fontWeight: '800', bgcolor: alpha('#26a69a', 0.15), color: '#33c9bb', border: `1px solid ${alpha('#26a69a', 0.25)}`, cursor: 'pointer', '&:hover': { bgcolor: alpha('#26a69a', 0.3) } }}
-                    />
-                  </Box>
-                </Grid>
-
                 {/* USDC */}
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12}>
                   <Box sx={{ 
                     p: 1.5, 
                     borderRadius: '12px', 
@@ -1347,29 +1316,11 @@ export function WalletPage({
                   >
                     Top Up usGOLD (Staking)
                   </Button>
-                  <Button
-                    fullWidth
-                    variant={purchaseAsset === 'USDT' ? 'contained' : 'outlined'}
-                    onClick={() => { triggerHaptic(10); setPurchaseAsset('USDT'); }}
-                    sx={{
-                      bgcolor: purchaseAsset === 'USDT' ? '#26a69a' : 'transparent',
-                      color: purchaseAsset === 'USDT' ? '#000' : '#26a69a',
-                      borderColor: '#26a69a',
-                      fontWeight: '800',
-                      borderRadius: '12px',
-                      py: 1.5,
-                      '&:hover': { bgcolor: purchaseAsset === 'USDT' ? '#33c9bb' : alpha('#26a69a', 0.1) }
-                    }}
-                  >
-                    Top Up USDT (Futures)
-                  </Button>
                 </Stack>
 
-                <Box sx={{ p: 3, borderRadius: '16px', bgcolor: alpha(purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a', 0.03), border: `1px dashed ${alpha(purchaseAsset === 'usGOLD' ? '#D4AF37' : '#26a69a', 0.3)}` }}>
+                <Box sx={{ p: 3, borderRadius: '16px', bgcolor: alpha('#D4AF37', 0.03), border: `1px dashed ${alpha('#D4AF37', 0.3)}` }}>
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    {purchaseAsset === 'usGOLD' 
-                      ? 'Mint usGOLD stablecoins directly using SOL. Tokens are deposited to your Staking Balance.' 
-                      : 'Deposit USDT margin using SOL. Margin is credited directly to your Futures Trading Balance.'}
+                    Mint usGOLD stablecoins directly using SOL. Tokens are deposited to your Staking Balance.
                   </Typography>
 
                   <Typography variant="subtitle2" color="#fff" fontWeight="800" mb={1}>

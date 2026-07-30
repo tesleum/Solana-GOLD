@@ -253,6 +253,7 @@ async function startServer() {
     };
   }
 
+  /* 
   // Get KuCoin Futures Account Overview
   app.get("/api/kucoin/account", async (req, res) => {
     try {
@@ -397,6 +398,7 @@ async function startServer() {
       res.status(500).json({ error: err.message });
     }
   });
+  */
 
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), "dist", "index.html"));

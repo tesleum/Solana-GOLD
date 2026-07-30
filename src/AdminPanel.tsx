@@ -333,7 +333,6 @@ export default function AdminPanel() {
       icon: <ArrowRightLeft />,
       path: "/admin/transactions",
     },
-    { text: "Futures", icon: <TrendingUp />, path: "/admin/futures" },
     { text: "Settings", icon: <Settings />, path: "/admin/settings" },
   ];
 
@@ -444,7 +443,6 @@ export default function AdminPanel() {
             <Route path="users" element={<UsersManagement />} />
             <Route path="mlm" element={<UnilevelMLM />} />
             <Route path="transactions" element={<Transactions />} />
-            <Route path="futures" element={<FuturesManagement />} />
             <Route path="settings" element={<AdminSettings />} />
           </Routes>
         </Container>
