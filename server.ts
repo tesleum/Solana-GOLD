@@ -59,18 +59,12 @@ async function startServer() {
   });
   app.get("/api/jupiter/quote", async (req, res) => {
     try {
-      const inputMint = req.query.inputMint as string;
-      const outputMint = req.query.outputMint as string;
-      const amount = req.query.amount as string || "1000000000";
-      const slippageBps = parseInt(req.query.slippageBps as string || "50");
-
       const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
-      const jupUrl = `https://quote-api.jup.ag/v6/quote?${queryParams}`;
+      const jupUrl = `https://api.jup.ag/swap/v1/quote?${queryParams}`;
       
       const jupRes = await fetch(jupUrl, {
         headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
       });
-      
       const data = await jupRes.json();
       res.status(jupRes.status).json(data);
     } catch (err: any) {
@@ -111,15 +105,6 @@ async function startServer() {
         } catch (jupErr) {
           console.warn("Jupiter price API warning:", jupErr);
         }
-      }
-
-      // Ensure usGOLD has a reliable price if missing
-      const usGoldMint = "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd";
-      if (idsList.includes(usGoldMint) && !resultData[usGoldMint]) {
-        // Use XAUt price if available, otherwise default to 2750.00
-        const xautMint = "AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P";
-        const fallbackPrice = resultData[xautMint]?.price || "2750.00";
-        resultData[usGoldMint] = { id: usGoldMint, price: String(fallbackPrice) };
       }
 
       // 2. Check for missing token mints and fill from Jupiter Quote API if needed

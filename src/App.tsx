@@ -1303,12 +1303,29 @@ function Dashboard() {
       >
         <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1.5, sm: 2.5 }, minHeight: { xs: '56px !important', sm: '64px !important' } }}>
           <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
-            <img 
-              src="/public/icon.svg" 
-              alt="App Logo" 
-              style={{ width: 36, height: 36, objectFit: 'contain' }} 
-              onError={(e) => { (e.target as HTMLImageElement).src = '/icon.svg'; }} 
-            />
+            <Box sx={{ position: 'relative' }}>
+              <Box 
+                sx={{ 
+                  width: { xs: 32, sm: 36 }, 
+                  height: { xs: 32, sm: 36 }, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #FFDF73, #D4AF37)',
+                  borderRadius: '50%',
+                  boxShadow: `0 0 12px ${alpha('#D4AF37', 0.4)}`,
+                  p: '6px'
+                }}
+              >
+                <img 
+                  src="/public/icon.svg" 
+                  alt="App Logo" 
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/icon.svg'; }} 
+                />
+              </Box>
+              <Box sx={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `1px solid ${alpha('#D4AF37', 0.3)}`, animation: 'pulse 2s infinite' }} />
+            </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                <Typography 
                 variant="h6" 

@@ -1814,6 +1814,16 @@ export function WalletPage({
                           >
                             <Copy size={12} />
                           </IconButton>
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href="https://solscan.io/token/AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: "#D4AF37", p: 0.5 }}
+                          >
+                            <ExternalLink size={12} />
+                          </IconButton>
                         </Stack>
                       </Stack>
                     </Box>
@@ -1889,6 +1899,16 @@ export function WalletPage({
                             }}
                           >
                             <Copy size={12} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href="https://solscan.io/token/24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: "#D4AF37", p: 0.5 }}
+                          >
+                            <ExternalLink size={12} />
                           </IconButton>
                         </Stack>
                       </Stack>
