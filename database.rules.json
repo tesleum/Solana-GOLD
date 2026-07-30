@@ -15,18 +15,7 @@
         "alarms": {
           ".indexOn": ["createdAt", "status"]
         },
-        "futuresBalance": {
-          ".validate": "newData.isNumber()"
-        },
-        "futuresPositions": {
-          ".indexOn": ["symbol", "side"]
-        },
-        "futuresOrders": {
-          ".indexOn": ["symbol", "status"]
-        },
-        "futuresHistory": {
-          ".indexOn": ["createdAt"]
-        }
+
       }
     },
     "transactions": {

@@ -15,7 +15,6 @@ import { NetworkTree } from './components/NetworkTree';
 import { ROIAnalyzer } from './components/ROIAnalyzer';
 import { OnboardingModal } from './components/OnboardingModal';
 import { AIPage } from './AIPage';
-import { FuturesTrading } from './components/FuturesTrading';
 import { WalletPage } from './components/WalletPage';
 import { StakingPage } from './components/StakingPage';
 import { t } from './translations';
@@ -103,7 +102,6 @@ function Dashboard() {
   const [totalMembers, setTotalMembers] = useState(0);
   const [apyYield, setApyYield] = useState('8');
   const [activeTab, setActiveTab] = useState('vault');
-  const [isFuturesDetailedSelected, setIsFuturesDetailedSelected] = useState(false);
   const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity' | 'performance'>('structure');
   const [txFilterType, setTxFilterType] = useState('all');
   const [txDateRange, setTxDateRange] = useState('all');
@@ -1534,7 +1532,7 @@ function Dashboard() {
         </DialogActions>
       </Dialog>
 
-      <Container maxWidth={activeTab === 'futures' ? 'md' : 'sm'} sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth="sm" sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
         {activeTab === 'vault' && (
           <Stack spacing={3} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
             {/* Gold Bar Investment UI */}
@@ -2878,7 +2876,6 @@ function Dashboard() {
       </Container>
 
       {/* Bottom Navigation */}
-       {!isFuturesDetailedSelected && (
       <Box 
         sx={{ 
           position: 'fixed', 
@@ -2972,7 +2969,6 @@ function Dashboard() {
           )}
         </BottomNavigation>
       </Box>
-      )}
 
       <Dialog 
         open={qrOpen} 

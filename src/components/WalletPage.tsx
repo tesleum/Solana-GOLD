@@ -89,7 +89,7 @@ export function WalletPage({
   const [onChainTokenBalances, setOnChainTokenBalances] = useState<Record<string, number>>({});
 
   // Top Up / Purchase Asset states
-  const [purchaseAsset, setPurchaseAsset] = useState<'usGOLD' | 'USDT'>('usGOLD');
+  const [purchaseAsset, setPurchaseAsset] = useState<"usGOLD">("usGOLD");
   const [customPurchaseAmount, setCustomPurchaseAmount] = useState<number>(50);
   const [isProcessingUsdtBuy, setIsProcessingUsdtBuy] = useState(false);
 
@@ -114,7 +114,6 @@ export function WalletPage({
     { symbol: 'SOL', name: 'Solana Native', usdPrice: currentSolPrice, decimals: 9, mint: 'So11111111111111111111111111111111111111112', isNativeSol: true },
     { symbol: 'usGOLD', name: 'United States Gold', usdPrice: effectiveUsGoldPrice, decimals: 6, mint: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' },
     { symbol: 'XAUt0', name: 'Tether GOLD', usdPrice: currentGoldPrice, decimals: 6, mint: 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' },
-    { symbol: 'USDT', name: 'Tether USD', usdPrice: usdtPrice, decimals: 6, mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' },
     { symbol: 'USDC', name: 'USD Coin', usdPrice: usdcPrice, decimals: 6, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
   ];
 
@@ -340,7 +339,6 @@ export function WalletPage({
       case 'SOL': return solBalance;
       case 'usGOLD': return usGoldBalance;
       case 'XAUt0': return xautBalance || goldTokenBalance;
-      case 'USDT': return futuresBalance;
       case 'USDC': return usdcBalance;
       case 'GOLD': return goldTokenBalance;
       default: return 0;
@@ -499,8 +497,6 @@ export function WalletPage({
         // Deduct fromToken balance
         if (fromTokenSymbol === 'usGOLD') {
           updates.usGoldBalance = Math.max(0, usGoldBalance - numFromAmount);
-        } else if (fromTokenSymbol === 'USDT') {
-          updates.futuresBalance = Math.max(0, futuresBalance - numFromAmount);
         } else if (fromTokenSymbol === 'USDC') {
           updates.usdcBalance = Math.max(0, usdcBalance - numFromAmount);
         } else if (fromTokenSymbol === 'GOLD') {
@@ -510,8 +506,6 @@ export function WalletPage({
         // Add toToken balance
         if (toTokenSymbol === 'usGOLD') {
           updates.usGoldBalance = (updates.usGoldBalance ?? usGoldBalance) + calculatedToAmount;
-        } else if (toTokenSymbol === 'USDT') {
-          updates.futuresBalance = (updates.futuresBalance ?? futuresBalance) + calculatedToAmount;
         } else if (toTokenSymbol === 'USDC') {
           updates.usdcBalance = (updates.usdcBalance ?? usdcBalance) + calculatedToAmount;
         } else if (toTokenSymbol === 'GOLD') {
@@ -637,15 +631,13 @@ export function WalletPage({
       }
       setInvestAmount(customPurchaseAmount);
       await handleInvest();
-    } else {
-      await handleBuyUsdtWithSol(customPurchaseAmount);
     }
   };
 
   // Calculations for Compact Portfolio Cards
   const totalSolUsd = solBalance * currentSolPrice;
   const totalUsGoldUsd = usGoldBalance * effectiveUsGoldPrice;
-  const totalUsdtUsd = futuresBalance * 1.00;
+  const totalUsdtUsd = 0;
   const totalUsdcUsd = usdcBalance * 1.00;
   const totalGoldUsd = goldTokenBalance * currentGoldPrice;
   const totalPortfolioUSD = totalSolUsd + totalUsGoldUsd + totalUsdtUsd + totalUsdcUsd + totalGoldUsd;
@@ -666,7 +658,7 @@ export function WalletPage({
             Solana Wallet Portal
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={4} sx={{ lineHeight: 1.6 }}>
-            Connect your Solana wallet to access live balances, execute instant token swaps, and top up usGOLD and USDT margin.
+            Connect your Solana wallet to access live balances, execute instant token swaps, and top up usGOLD.
           </Typography>
           <Button 
             variant="contained" 
