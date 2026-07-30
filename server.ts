@@ -63,18 +63,12 @@ async function startServer() {
   app.get("/api/jupiter/quote", async (req, res) => {
     try {
       const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
-      const jupUrl = `https://quote-api.jup.ag/v6/quote?${queryParams}`;
-      console.log("Proxying request to Jupiter Quote V6:", jupUrl);
-      const headers = { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' };
-      console.log("Headers:", headers);
+      const jupUrl = `https://api.jup.ag/swap/v1/quote?${queryParams}`;
       
       const jupRes = await fetch(jupUrl, {
         headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
       });
       const data = await jupRes.json();
-      if (!jupRes.ok) {
-        console.error("Jupiter Quote Proxy Error response:", data);
-      }
       res.status(jupRes.status).json(data);
     } catch (err: any) {
       console.error("Jupiter Quote Proxy Error:", err);
@@ -131,7 +125,7 @@ async function startServer() {
           // SOL is 9, so we handle it specifically
           const decimals = mint === 'So11111111111111111111111111111111111111112' ? 9 : 6;
           const amount = Math.pow(10, decimals);
-          const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${amount}&slippageBps=50`;
+          const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${amount}&slippageBps=50`;
           
           const quoteRes = await fetch(quoteUrl, {
             headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
