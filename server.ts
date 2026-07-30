@@ -71,63 +71,8 @@ async function startServer() {
         headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
       });
       
-      if (jupRes.ok) {
-        const data = await jupRes.json();
-        res.status(jupRes.status).json(data);
-        return;
-      }
-
-      // If Jupiter API returned 400 or failed, and usGOLD is involved, provide synthetic valid quote
-      if (inputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd" || outputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd") {
-        const inAmt = parseFloat(amount) || 1000000000;
-        let outAmt = "1000000";
-        const goldUsd = 2750.0;
-        const solUsd = 190.0;
-
-        if (inputMint === "So11111111111111111111111111111111111111112" && outputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd") {
-          const outTokens = (inAmt / 1e9) * (solUsd / goldUsd);
-          outAmt = Math.floor(outTokens * 1e6).toString();
-        } else if (inputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd" && outputMint === "So11111111111111111111111111111111111111112") {
-          const outSol = (inAmt / 1e6) * (goldUsd / solUsd);
-          outAmt = Math.floor(outSol * 1e9).toString();
-        } else if (outputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd") {
-          const outTokens = (inAmt / 1e6) * (1 / goldUsd);
-          outAmt = Math.floor(outTokens * 1e6).toString();
-        } else if (inputMint === "24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd") {
-          const outUsd = (inAmt / 1e6) * goldUsd;
-          outAmt = Math.floor(outUsd * 1e6).toString();
-        }
-
-        res.json({
-          inputMint,
-          inAmount: amount,
-          outputMint,
-          outAmount: outAmt,
-          otherAmountThreshold: outAmt,
-          swapMode: "ExactIn",
-          slippageBps,
-          priceImpactPct: "0.1",
-          routePlan: [
-            {
-              swapInfo: {
-                ammKey: "usGoldRaydiumPool1111111111111111111111111",
-                label: "Raydium / Orca",
-                inputMint,
-                outputMint,
-                inAmount: amount,
-                outAmount: outAmt,
-                feeAmount: "5000",
-                feeMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-              },
-              percent: 100
-            }
-          ]
-        });
-        return;
-      }
-
-      const errData = await jupRes.json().catch(() => ({}));
-      res.status(jupRes.status).json(errData);
+      const data = await jupRes.json();
+      res.status(jupRes.status).json(data);
     } catch (err: any) {
       console.error("Jupiter Quote Proxy Error:", err);
       res.status(500).json({ error: err.message });
