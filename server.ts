@@ -60,79 +60,13 @@ async function startServer() {
   app.get("/api/jupiter/quote", async (req, res) => {
     try {
       const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
-      const inputMint = req.query.inputMint as string;
-      const outputMint = req.query.outputMint as string;
-      const amountStr = req.query.amount as string || '1000000000';
-      const slippageBps = req.query.slippageBps as string || '50';
-
-      const isUsGoldRelated = 
-        inputMint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' || 
-        outputMint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' ||
-        inputMint === 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' ||
-        outputMint === 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P';
-
-      let data = null;
-      let jupStatus = 200;
-
-      if (!isUsGoldRelated) {
-        const jupUrl = `https://api.jup.ag/swap/v1/quote?${queryParams}`;
-        const jupRes = await fetch(jupUrl, {
-          headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
-        });
-        jupStatus = jupRes.status;
-        if (jupRes.ok) {
-          data = await jupRes.json();
-        } else {
-          data = await jupRes.json().catch(() => ({}));
-        }
-      }
-
-      if (isUsGoldRelated || jupStatus !== 200 || !data || !data.outAmount) {
-        const amount = parseFloat(amountStr) || 1000000000;
-        let outAmount = "0";
-        if (inputMint === 'So11111111111111111111111111111111111111112') {
-          // SOL -> usGOLD (1 SOL ~ 2.2 usGOLD)
-          const solVal = amount / 1e9;
-          const goldUnits = Math.round(solVal * 2.2 * 1e6);
-          outAmount = String(goldUnits);
-        } else if (outputMint === 'So11111111111111111111111111111111111111112') {
-          // usGOLD -> SOL
-          const goldVal = amount / 1e6;
-          const solUnits = Math.round((goldVal / 2.2) * 1e9);
-          outAmount = String(solUnits);
-        } else {
-          outAmount = String(Math.round(amount));
-        }
-
-        data = {
-          inputMint,
-          inAmount: amountStr,
-          outputMint,
-          outAmount,
-          otherAmountThreshold: outAmount,
-          swapMode: "ExactIn",
-          slippageBps: parseInt(slippageBps, 10) || 50,
-          priceImpactPct: "0.01",
-          routePlan: [
-            {
-              swapInfo: {
-                ammKey: "11111111111111111111111111111111",
-                label: "usGOLD Reserve Pool",
-                inputMint,
-                outputMint,
-                inAmount: amountStr,
-                outAmount,
-                feeAmount: "0",
-                feeMint: inputMint
-              },
-              percent: 100
-            }
-          ]
-        };
-        jupStatus = 200;
-      }
-
-      res.status(jupStatus).json(data);
+      const jupUrl = `https://api.jup.ag/swap/v1/quote?${queryParams}`;
+      
+      const jupRes = await fetch(jupUrl, {
+        headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
+      });
+      const data = await jupRes.json();
+      res.status(jupRes.status).json(data);
     } catch (err: any) {
       console.error("Jupiter Quote Proxy Error:", err);
       res.status(500).json({ error: err.message });
@@ -211,18 +145,6 @@ async function startServer() {
 
   app.post("/api/jupiter/swap", async (req, res) => {
     try {
-      const { quoteResponse } = req.body || {};
-      const isUsGoldRelated = 
-        quoteResponse?.inputMint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' || 
-        quoteResponse?.outputMint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd' ||
-        quoteResponse?.inputMint === 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P' ||
-        quoteResponse?.outputMint === 'AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P';
-
-      if (isUsGoldRelated) {
-        res.json({ swapTransaction: null, error: "usGOLD custom token swap handled via direct on-chain transfer fallback" });
-        return;
-      }
-
       const jupUrl = `https://api.jup.ag/swap/v1/swap`;
       const jupRes = await fetch(jupUrl, {
         method: 'POST',
