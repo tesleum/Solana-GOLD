@@ -68,7 +68,9 @@ async function startServer() {
       const headers = { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' };
       console.log("Headers:", headers);
       
-      const jupRes = await fetch(jupUrl);
+      const jupRes = await fetch(jupUrl, {
+        headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
+      });
       const data = await jupRes.json();
       if (!jupRes.ok) {
         console.error("Jupiter Quote Proxy Error response:", data);
