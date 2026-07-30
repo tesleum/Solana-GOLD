@@ -63,7 +63,8 @@ async function startServer() {
   app.get("/api/jupiter/quote", async (req, res) => {
     try {
       const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();
-      const jupUrl = `https://api.jup.ag/swap/v1/quote?${queryParams}`;
+      const jupUrl = `https://quote-api.jup.ag/v6/quote?${queryParams}`;
+      console.log("Proxying request to Jupiter Quote V6:", jupUrl);
       
       const jupRes = await fetch(jupUrl, {
         headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
