@@ -144,7 +144,7 @@ export function WalletPage({
   // Jupiter Live Prices (fetched dynamically from API)
   const [xautPrice, setXautPrice] = useState<number>(0);
   const [usGoldJupiterPrice, setUsGoldJupiterPrice] = useState<number>(
-    tokenPrice && tokenPrice > 0 ? tokenPrice : 75.50,
+    tokenPrice && tokenPrice > 0 ? tokenPrice : 0,
   );
   const [liveSolPrice, setLiveSolPrice] = useState<number>(
     solanaPrice && solanaPrice > 0 ? solanaPrice : 0,
@@ -1814,7 +1814,16 @@ export function WalletPage({
                           >
                             <Copy size={12} />
                           </IconButton>
-
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href="https://solscan.io/token/AymATz4TCL9sWNEEV9Kvyz45CHVhDZ6kUgjTJPzLpU9P"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: "#D4AF37", p: 0.5 }}
+                          >
+                            <ExternalLink size={12} />
+                          </IconButton>
                         </Stack>
                       </Stack>
                     </Box>
@@ -1891,7 +1900,16 @@ export function WalletPage({
                           >
                             <Copy size={12} />
                           </IconButton>
-
+                          <IconButton
+                            size="small"
+                            component="a"
+                            href="https://solscan.io/token/24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ color: "#D4AF37", p: 0.5 }}
+                          >
+                            <ExternalLink size={12} />
+                          </IconButton>
                         </Stack>
                       </Stack>
                     </Box>

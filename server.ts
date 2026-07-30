@@ -107,22 +107,20 @@ async function startServer() {
         }
       }
 
-      // 2. Check for missing token mints and fill from Jupiter Quote API in parallel with timeout and fast fallback
+      // 2. Check for missing token mints and fill from Jupiter Quote API if needed
+      // (This is a more "real" price for illiquid tokens than the simple Price API)
       const missingMints = idsList.filter(mint => !resultData[mint]);
-      await Promise.all(missingMints.map(async (mint) => {
+      for (const mint of missingMints) {
         try {
+          // Assume 6 decimals for most tokens (usGOLD is 6, USDT/USDC are 6)
+          // SOL is 9, so we handle it specifically
           const decimals = mint === 'So11111111111111111111111111111111111111112' ? 9 : 6;
           const amount = Math.pow(10, decimals);
           const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${amount}&slippageBps=50`;
           
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1200); // 1.2s timeout for instant responsiveness
-          
           const quoteRes = await fetch(quoteUrl, {
-            headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' },
-            signal: controller.signal
+            headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' }
           });
-          clearTimeout(timeoutId);
           
           if (quoteRes.ok) {
             const quoteJson = await quoteRes.json();
@@ -134,16 +132,8 @@ async function startServer() {
             }
           }
         } catch (e) {
-          // Fast fallback for usGOLD if quote takes too long or fails
-          if (mint === '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') {
-            resultData[mint] = { id: mint, price: '75.50' };
-          }
+          console.warn(`Failed to fetch Jupiter quote price for ${mint}:`, e);
         }
-      }));
-
-      // Ensure usGOLD always has a fast fallback price if still missing
-      if (idsList.includes('24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') && !resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']) {
-        resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'] = { id: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd', price: '75.50' };
       }
 
       res.json({ data: resultData });
