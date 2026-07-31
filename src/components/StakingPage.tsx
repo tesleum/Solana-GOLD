@@ -252,10 +252,13 @@ export function StakingPage({
             }
             
             if (rewardKeyToUpdate) {
-              // Update status to needs_approval
+              // Update status to needs_approval and attach staking data
               await update(ref(database, `rewards/${referrer}/${rewardKeyToUpdate}`), {
                 status: 'needs_approval',
-                completedAt: Date.now()
+                completedAt: Date.now(),
+                stakeAmount: amt,
+                stakeDurationMonths: stakingDurationMonths,
+                solPaid: totalSolPayment.toFixed(6)
               });
             } else {
               // Create it directly as needs_approval if it didn't exist
@@ -265,7 +268,10 @@ export function StakingPage({
                 referee: effectiveAddress,
                 status: 'needs_approval',
                 timestamp: Date.now(),
-                completedAt: Date.now()
+                completedAt: Date.now(),
+                stakeAmount: amt,
+                stakeDurationMonths: stakingDurationMonths,
+                solPaid: totalSolPayment.toFixed(6)
               });
             }
           }

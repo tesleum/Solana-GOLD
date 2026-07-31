@@ -1864,6 +1864,11 @@ function ReferralApprovals() {
                     <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontSize: '0.75rem' }}>
                       {isMobile ? `${row.referee.substring(0, 5)}...${row.referee.substring(row.referee.length - 5)}` : row.referee}
                     </Typography>
+                    {row.stakeAmount && (
+                      <Typography variant="caption" display="block" sx={{ color: '#D4AF37', mt: 0.5, fontSize: '0.7rem', fontWeight: 'bold' }}>
+                        Staked: {row.stakeAmount} usGOLD ({row.stakeDurationMonths}m) | {row.solPaid} SOL
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell sx={{ py: 1.5 }}>
                     <Typography variant="body2" fontWeight="800" sx={{ color: '#fff' }}>
