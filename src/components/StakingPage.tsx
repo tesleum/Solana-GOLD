@@ -399,47 +399,43 @@ export function StakingPage({
             </Box>
           </Stack>
 
-          {/* TOP RIGHT REFERRAL & STATUS BADGES */}
+          {/* TOP RIGHT REDESIGNED REFERRAL STATUS */}
           <Stack direction="row" alignItems="center" spacing={1}>
             <Tooltip 
-              title={`Referral Rewards: 1 usGOLD/ref (Pending: ${pendingCount} | Reviewing: ${needsApprovalCount} | Redeemed: ${approvedCount})`}
+              title={`Referral Rewards: 1 usGOLD/ref (Earned: ${pendingReferralRewards.toFixed(2)} usGOLD | Pending: ${pendingCount} | Needs Approval: ${needsApprovalCount} | Redeemed: ${approvedCount})`}
               arrow
             >
               <Button
                 size="small"
                 onClick={handleShareReferral}
-                startIcon={<Gift size={12} color="#000" />}
+                startIcon={<Gift size={13} color="#D4AF37" />}
                 sx={{
-                  bgcolor: 'linear-gradient(90deg, #D4AF37, #FFDF73)',
-                  color: '#000',
-                  fontSize: '10px',
-                  fontWeight: 900,
-                  py: 0.3,
-                  px: 1.2,
+                  bgcolor: alpha('#D4AF37', 0.1),
+                  border: `1px solid ${alpha('#D4AF37', 0.45)}`,
+                  color: '#FFDF73',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  py: 0.5,
+                  px: 1.5,
                   borderRadius: '12px',
                   textTransform: 'none',
-                  boxShadow: `0 2px 8px ${alpha('#D4AF37', 0.4)}`,
-                  '&:hover': { bgcolor: '#FFDF73' }
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    bgcolor: alpha('#D4AF37', 0.25),
+                    borderColor: '#FFDF73'
+                  }
                 }}
               >
-                {copiedLink ? 'Copied Link!' : shareSuccess ? 'Shared!' : `Referral (${approvedCount + pendingCount})`}
+                <Stack direction="column" alignItems="flex-start" sx={{ textAlign: 'left', lineHeight: 1.1 }}>
+                  <Typography variant="caption" sx={{ fontSize: '8px', color: '#D4AF37', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    {copiedLink ? 'Copied link!' : shareSuccess ? 'Shared!' : 'Invite & Earn'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '11px', fontWeight: 900, color: '#fff' }}>
+                    {pendingReferralRewards.toFixed(1)} usGOLD Ref
+                  </Typography>
+                </Stack>
               </Button>
             </Tooltip>
-
-            <Chip 
-              icon={<Sparkles size={11} color="#FFDF73" />} 
-              label="VIP" 
-              size="small" 
-              sx={{ 
-                height: 22, 
-                fontSize: '9px', 
-                bgcolor: alpha('#D4AF37', 0.15), 
-                color: '#FFDF73', 
-                fontWeight: 900,
-                border: `1px solid ${alpha('#D4AF37', 0.3)}`
-              }} 
-            />
-            <Wifi size={16} color="#D4AF37" style={{ opacity: 0.85, transform: 'rotate(90deg)' }} />
           </Stack>
         </Stack>
 
@@ -697,12 +693,10 @@ export function StakingPage({
         </Box>
 
         {/* FOOTER INFO */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={1.5} pt={1} borderTop={`1px solid ${alpha('#fff', 0.04)}`}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', fontWeight: 700 }}>
-            HOLDER: <strong style={{ color: '#fff' }}>{effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : 'MEMBER'}</strong>
-          </Typography>
-          <Typography variant="caption" color="#14F195" sx={{ fontSize: '9px', fontWeight: 900 }}>
-            PERPETUAL 24% APY
+        <Stack direction="row" justifyContent="center" alignItems="center" mt={1.5} pt={1} borderTop={`1px solid ${alpha('#fff', 0.04)}`}>
+          <Typography variant="caption" color="#14F195" sx={{ fontSize: '10px', fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', backgroundColor: '#14F195', animation: 'pulse 1.5s infinite' }}></span>
+            Active Gold Vault Interest Rate: Perpetual 24% APY
           </Typography>
         </Stack>
       </Card>
