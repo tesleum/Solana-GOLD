@@ -268,6 +268,16 @@ function Dashboard() {
             earnings: 0,
             lastActive: Date.now()
           });
+          if (storedReferrer) {
+            const rewardRef = ref(database, `rewards/${storedReferrer}`);
+            push(rewardRef, {
+              type: 'referral_reward',
+              amount: 1,
+              referee: addressToRegister,
+              status: 'pending',
+              timestamp: Date.now()
+            });
+          }
         } else {
           // Update last active if already exists
           const timestamp = Date.now();

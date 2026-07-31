@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { database, auth } from "./firebase";
-import { ref, onValue, set } from "firebase/database";
+import { ref, onValue, set, get, update, push } from "firebase/database";
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -333,6 +333,7 @@ export default function AdminPanel() {
       icon: <ArrowRightLeft />,
       path: "/admin/transactions",
     },
+    { text: "Approvals", icon: <Coins />, path: "/admin/approvals" },
     { text: "Settings", icon: <Settings />, path: "/admin/settings" },
   ];
 
@@ -443,6 +444,7 @@ export default function AdminPanel() {
             <Route path="users" element={<UsersManagement />} />
             <Route path="mlm" element={<UnilevelMLM />} />
             <Route path="transactions" element={<Transactions />} />
+            <Route path="approvals" element={<ReferralApprovals />} />
             <Route path="settings" element={<AdminSettings />} />
           </Routes>
         </Container>
@@ -1693,6 +1695,224 @@ function AdminSettings() {
           </Box>
         </CardContent>
       </Card>
+    </Box>
+  );
+}
+
+function ReferralApprovals() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [rewards, setRewards] = useState<any[]>([]);
+  const [filter, setFilter] = useState<string>("needs_approval"); // needs_approval, pending, approved, all
+  const [loading, setLoading] = useState<boolean>(true);
+  const [actioningKey, setActioningKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const rewardsRef = ref(database, "rewards");
+    const unsubscribe = onValue(rewardsRef, (snapshot) => {
+      setLoading(true);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const loaded: any[] = [];
+        Object.keys(data).forEach((referrerId) => {
+          const userRewards = data[referrerId];
+          Object.keys(userRewards).forEach((rewardKey) => {
+            loaded.push({
+              key: rewardKey,
+              referrerId,
+              ...userRewards[rewardKey],
+            });
+          });
+        });
+        setRewards(loaded);
+      } else {
+        setRewards([]);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleApprove = async (reward: any) => {
+    setActioningKey(reward.key);
+    try {
+      // 1. Update reward status in rewards/${referrerId}/${rewardKey}
+      const rewardPath = `rewards/${reward.referrerId}/${reward.key}`;
+      await update(ref(database, rewardPath), {
+        status: "approved",
+        approvedAt: Date.now()
+      });
+
+      // 2. Add transaction of type 'referral_reward' to transactions/${referrerId}
+      const txPath = `transactions/${reward.referrerId}`;
+      await push(ref(database, txPath), {
+        type: 'referral_reward',
+        amount: '1.0000 usGOLD',
+        price: 'Referral',
+        details: `Referral Reward for referee: ${reward.referee}`,
+        time: new Date().toLocaleString(),
+        timestamp: Date.now()
+      });
+
+      // 3. Update referrer's earnings and claimedCommissions in user profile
+      const userRef = ref(database, `users/${reward.referrerId}`);
+      const userSnap = await get(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.val();
+        await update(userRef, {
+          earnings: (userData.earnings || 0) + 1,
+          claimedCommissions: (userData.claimedCommissions || 0) + 1,
+          lastActive: Date.now()
+        });
+      }
+
+      // 4. Log globally
+      await push(ref(database, `global_transactions`), {
+        type: 'referral_reward_redeemed',
+        user: reward.referrerId,
+        referee: reward.referee,
+        amount: 1,
+        timestamp: Date.now()
+      });
+
+      alert("Success! Approved referral reward of 1 usGOLD and credited to referrer wallet.");
+    } catch (err) {
+      console.error("Failed to approve referral reward:", err);
+      alert("Failed to approve reward. Please try again.");
+    } finally {
+      setActioningKey(null);
+    }
+  };
+
+  const filteredRewards = rewards.filter((r) => {
+    if (filter === "all") return true;
+    if (filter === "approved") return r.status === "approved" || r.status === "redeemed" || r.type === "referral_stake_completed";
+    return r.status === filter;
+  }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  return (
+    <Box>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+          mb: 4, 
+          fontFamily: '"Cinzel", serif', 
+          fontWeight: 800,
+          fontSize: { xs: '1.5rem', sm: '2.125rem' } 
+        }}
+      >
+        Referral Rewards Approvals
+      </Typography>
+
+      <Box sx={{ display: "flex", gap: { xs: 1.5, sm: 2 }, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
+          <InputLabel>Filter by Status</InputLabel>
+          <Select
+            value={filter}
+            label="Filter by Status"
+            onChange={(e) => setFilter(e.target.value)}
+            sx={{ borderRadius: 2 }}
+          >
+            <MenuItem value="needs_approval">Waiting for Approval</MenuItem>
+            <MenuItem value="pending">Pending (Referee has not staked)</MenuItem>
+            <MenuItem value="approved">Approved & Redeemed</MenuItem>
+            <MenuItem value="all">All Rewards</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress color="primary" />
+        </Box>
+      ) : filteredRewards.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <Typography color="text.secondary">No referral rewards found for this filter.</Typography>
+        </Paper>
+      ) : (
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 0, 
+            bgcolor: '#121214', 
+            borderRadius: 3,
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            overflowX: 'auto',
+            width: '100%'
+          }}
+        >
+          <Table size={isMobile ? "small" : "medium"}>
+            <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Referrer (Recipient)</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Referee (Invitee)</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Amount</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', display: { xs: 'none', md: 'table-cell' } }}>Date Created</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textTransform: 'uppercase', textAlign: 'right' }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredRewards.map((row) => (
+                <TableRow key={row.key} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                  <TableCell sx={{ py: 1.5 }}>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace', color: '#fff', fontSize: '0.75rem' }}>
+                      {isMobile ? `${row.referrerId.substring(0, 5)}...${row.referrerId.substring(row.referrerId.length - 5)}` : row.referrerId}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 1.5 }}>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontSize: '0.75rem' }}>
+                      {isMobile ? `${row.referee.substring(0, 5)}...${row.referee.substring(row.referee.length - 5)}` : row.referee}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 1.5 }}>
+                    <Typography variant="body2" fontWeight="800" sx={{ color: '#fff' }}>
+                      1 usGOLD
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 1.5 }}>
+                    <Chip 
+                      label={
+                        row.status === "needs_approval" ? "Waiting Approval" :
+                        row.status === "pending" ? "Pending" : "Redeemed"
+                      }
+                      size="small"
+                      color={
+                        row.status === "needs_approval" ? "warning" :
+                        row.status === "pending" ? "default" : "success"
+                      }
+                      variant="filled"
+                    />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.5, display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', fontSize: '0.75rem' }}>
+                    {new Date(row.timestamp || Date.now()).toLocaleString()}
+                  </TableCell>
+                  <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                    {row.status === "needs_approval" && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color="success"
+                        disabled={actioningKey === row.key}
+                        onClick={() => handleApprove(row)}
+                        sx={{ fontSize: '0.75rem', py: 0.5, borderRadius: '8px' }}
+                      >
+                        {actioningKey === row.key ? "Crediting..." : "Approve & Credit"}
+                      </Button>
+                    )}
+                    {row.status === "pending" && (
+                      <Typography variant="caption" color="text.secondary">Waiting Referee Stake</Typography>
+                    )}
+                    {(row.status === "approved" || row.status === "redeemed" || row.type === "referral_stake_completed") && (
+                      <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 'bold' }}>Credited</Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
     </Box>
   );
 }

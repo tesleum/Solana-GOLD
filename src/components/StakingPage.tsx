@@ -12,7 +12,7 @@ import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana
 import { useAppKit } from '@reown/appkit/react';
 import { t } from '../translations';
 import { database } from '../firebase';
-import { ref, onValue, update, push } from 'firebase/database';
+import { ref, onValue, update, push, get } from 'firebase/database';
 import { TokenIcon } from './TokenIcon';
 import { triggerHaptic } from '../lib/haptic';
 
@@ -54,6 +54,9 @@ export function StakingPage({
   // Referral Rewards from Firebase
   const [pendingReferralRewards, setPendingReferralRewards] = useState<number>(1.00);
   const [referralsCount, setReferralsCount] = useState<number>(0);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+  const [needsApprovalCount, setNeedsApprovalCount] = useState<number>(0);
+  const [approvedCount, setApprovedCount] = useState<number>(0);
 
   // Real-time ticking timestamp state for second-by-second countdown & profit accrual
   const [nowTime, setNowTime] = useState<number>(Date.now());
@@ -92,9 +95,24 @@ export function StakingPage({
         if (snapshot.exists()) {
           const val = snapshot.val();
           const list = Object.values(val) as any[];
-          const pending = list.filter(r => r.type === 'referral_stake_completed').reduce((sum, item) => sum + (item.amount || 1), 0);
-          setPendingReferralRewards(pending || 1.00);
+          
+          const pCount = list.filter(r => r.status === 'pending').length;
+          const nCount = list.filter(r => r.status === 'needs_approval').length;
+          const aCount = list.filter(r => r.status === 'approved' || r.status === 'redeemed' || r.type === 'referral_stake_completed').length;
+          
+          setPendingCount(pCount);
+          setNeedsApprovalCount(nCount);
+          setApprovedCount(aCount);
           setReferralsCount(list.length);
+          
+          const legacyPending = list.filter(r => r.type === 'referral_stake_completed').reduce((sum, item) => sum + (item.amount || 1), 0);
+          setPendingReferralRewards((aCount * 1) || legacyPending || 0);
+        } else {
+          setPendingCount(0);
+          setNeedsApprovalCount(0);
+          setApprovedCount(0);
+          setReferralsCount(0);
+          setPendingReferralRewards(0);
         }
       });
 
@@ -206,16 +224,53 @@ export function StakingPage({
           timestamp: Date.now()
         });
 
-        // Referral reward unlocking logic: Notify referrer when referee completes staking
-        const referrer = localStorage.getItem('referrer');
-        if (referrer) {
-          const rewardRef = ref(database, `rewards/${referrer}`);
-          await push(rewardRef, {
-            type: 'referral_stake_completed',
-            amount: 1, // $1 usGOLD reward
-            referee: effectiveAddress,
-            timestamp: Date.now()
-          });
+        // Referral reward unlocking logic: Referee completed staking payment
+        try {
+          const userRef = ref(database, `users/${effectiveAddress}`);
+          const userSnapshot = await get(userRef);
+          let referrer = localStorage.getItem('referrer');
+          
+          if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            if (userData.referrer) {
+              referrer = userData.referrer;
+            }
+          }
+          
+          if (referrer) {
+            const rewardsRef = ref(database, `rewards/${referrer}`);
+            const rewardsSnapshot = await get(rewardsRef);
+            let rewardKeyToUpdate = null;
+            
+            if (rewardsSnapshot.exists()) {
+              const rewardsData = rewardsSnapshot.val();
+              // Find the pending reward for this referee
+              rewardKeyToUpdate = Object.keys(rewardsData).find(key => 
+                rewardsData[key].referee === effectiveAddress && 
+                rewardsData[key].status === 'pending'
+              );
+            }
+            
+            if (rewardKeyToUpdate) {
+              // Update status to needs_approval
+              await update(ref(database, `rewards/${referrer}/${rewardKeyToUpdate}`), {
+                status: 'needs_approval',
+                completedAt: Date.now()
+              });
+            } else {
+              // Create it directly as needs_approval if it didn't exist
+              await push(rewardsRef, {
+                type: 'referral_reward',
+                amount: 1,
+                referee: effectiveAddress,
+                status: 'needs_approval',
+                timestamp: Date.now(),
+                completedAt: Date.now()
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error updating referral reward:", err);
         }
       } else {
         setActiveStakes(prev => [...prev, { key: Date.now().toString(), ...newStake }]);
@@ -342,18 +397,29 @@ export function StakingPage({
             </Grid>
 
             {/* Pending Referrals & Web Share API */}
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={12} sm={3}>
               <Box sx={{ p: 1.5, bgcolor: alpha('#D4AF37', 0.06), borderRadius: '14px', border: `1px dashed ${alpha('#D4AF37', 0.35)}`, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <Box>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
                     <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                      REFERRAL REWARD
+                      REFERRAL REWARDS
                     </Typography>
-                    <Chip label={`0.012 XAUt`} size="small" sx={{ height: 16, fontSize: '9px', bgcolor: '#D4AF37', color: '#000', fontWeight: '900' }} />
+                    <Chip label={`1 usGOLD`} size="small" sx={{ height: 16, fontSize: '9px', bgcolor: '#D4AF37', color: '#000', fontWeight: '900' }} />
                   </Stack>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '9px', mt: 0.3, lineHeight: 1.1 }}>
-                    Unlocks when referee stakes usGOLD
-                  </Typography>
+                  <Stack spacing={0.5} sx={{ mb: 1 }}>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Pending:</Typography>
+                      <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#fff' }}>{pendingCount} usGOLD</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Reviewing:</Typography>
+                      <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#FFDF73' }}>{needsApprovalCount} usGOLD</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Redeemed:</Typography>
+                      <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#14F195' }}>{approvedCount} usGOLD</Typography>
+                    </Box>
+                  </Stack>
                 </Box>
 
                 <Button
