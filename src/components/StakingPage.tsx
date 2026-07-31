@@ -6,7 +6,7 @@ import {
 import { 
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
   Copy, Check, TrendingUp, Award, Sparkles, CheckCircle2, Zap, Users, Lock, ArrowUpRight,
-  Wifi, Cpu, CreditCard
+  Wifi, Cpu, CreditCard, Gift, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -65,6 +65,7 @@ export function StakingPage({
   // Copy / Share Notification States
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [activeSlide, setActiveSlide] = useState<number>(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -334,143 +335,143 @@ export function StakingPage({
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
       
-      {/* 1. SINGLE UNIFIED LUXURY BANK WALLET CARD */}
+      {/* 1. SINGLE COMPACT LUXURY BANK WALLET CARD WITH TOP-RIGHT REFERRAL & SLIDABLE METRICS */}
       <Card sx={{
-        background: 'linear-gradient(135deg, #1d1a10 0%, #0d0d10 40%, #18150e 75%, #08090a 100%)',
+        background: 'linear-gradient(135deg, #1c190f 0%, #0d0d10 40%, #17150e 75%, #08090a 100%)',
         border: `1px solid ${alpha('#D4AF37', 0.45)}`,
-        borderRadius: '24px',
-        mb: 3.5,
+        borderRadius: '20px',
+        mb: 3,
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: `0 24px 60px ${alpha('#000', 0.8)}, 0 0 40px ${alpha('#D4AF37', 0.15)}, inset 0 1px 1px ${alpha('#FFDF73', 0.4)}`,
-        p: { xs: 2.5, sm: 3.5 }
+        boxShadow: `0 20px 50px ${alpha('#000', 0.8)}, 0 0 35px ${alpha('#D4AF37', 0.15)}, inset 0 1px 1px ${alpha('#FFDF73', 0.4)}`,
+        p: { xs: 2, sm: 2.5 }
       }}>
-        {/* Decorative Metallic Lighting */}
+        {/* Decorative Metallic Background Lights */}
         <Box sx={{ 
           position: 'absolute', 
-          top: -80, 
-          right: -80, 
-          width: 300, 
-          height: 300, 
-          background: `radial-gradient(circle, ${alpha('#D4AF37', 0.22)} 0%, ${alpha('#FFDF73', 0.05)} 45%, transparent 70%)`,
+          top: -70, 
+          right: -70, 
+          width: 250, 
+          height: 250, 
+          background: `radial-gradient(circle, ${alpha('#D4AF37', 0.2)} 0%, ${alpha('#FFDF73', 0.04)} 45%, transparent 70%)`,
           pointerEvents: 'none'
         }} />
         <Box sx={{ 
           position: 'absolute', 
-          bottom: -90, 
-          left: -90, 
-          width: 320, 
-          height: 320, 
-          background: `radial-gradient(circle, ${alpha('#14F195', 0.1)} 0%, transparent 70%)`,
-          pointerEvents: 'none'
-        }} />
-        <Box sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '100%',
-          background: `linear-gradient(120deg, transparent 35%, ${alpha('#FFDF73', 0.07)} 50%, transparent 65%)`,
+          bottom: -80, 
+          left: -80, 
+          width: 260, 
+          height: 260, 
+          background: `radial-gradient(circle, ${alpha('#14F195', 0.08)} 0%, transparent 70%)`,
           pointerEvents: 'none'
         }} />
 
-        {/* CARD TOP HEADER: Brand Badge + Chip + Contactless Icon */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
+        {/* TOP CARD HEADER: Brand (Left) + TOP-RIGHT REFERRAL & VIP (Right) */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+          <Stack direction="row" alignItems="center" spacing={1.2}>
+            {/* EMV Microchip graphic */}
             <Box sx={{ 
-              p: 1, 
-              borderRadius: '12px', 
-              bgcolor: alpha('#D4AF37', 0.18), 
-              border: `1px solid ${alpha('#D4AF37', 0.45)}`,
+              width: 38, 
+              height: 28, 
+              borderRadius: '5px', 
+              background: 'linear-gradient(135deg, #E5C158 0%, #B38F26 50%, #F5D77F 100%)',
+              border: '1px solid #99781D',
+              boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 6px rgba(0,0,0,0.5)',
+              position: 'relative',
+              overflow: 'hidden',
+              p: 0.4,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              flexDirection: 'column',
+              justify: 'space-between'
             }}>
-              <CreditCard size={22} color="#FFDF73" />
+              <Box sx={{ width: '100%', height: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
+              <Box sx={{ width: '100%', height: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
+              <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
             </Box>
+
             <Box>
-              <Typography variant="overline" color="#D4AF37" sx={{ fontWeight: 900, letterSpacing: 2, fontSize: '11px', lineHeight: 1, display: 'block' }}>
+              <Typography variant="overline" color="#D4AF37" sx={{ fontWeight: 900, letterSpacing: 1.5, fontSize: '10px', lineHeight: 1, display: 'block' }}>
                 SOLANA GOLD VAULT
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', fontWeight: 700, letterSpacing: 0.5 }}>
-                UNIFIED GOLD-BACKED DEBIT & YIELD CARD
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', fontWeight: 700, letterSpacing: 0.5 }}>
+                DEBIT & YIELD CARD
               </Typography>
             </Box>
           </Stack>
 
-          <Stack direction="row" alignItems="center" spacing={1.5}>
+          {/* TOP RIGHT REFERRAL & STATUS BADGES */}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Tooltip 
+              title={`Referral Rewards: 1 usGOLD/ref (Pending: ${pendingCount} | Reviewing: ${needsApprovalCount} | Redeemed: ${approvedCount})`}
+              arrow
+            >
+              <Button
+                size="small"
+                onClick={handleShareReferral}
+                startIcon={<Gift size={12} color="#000" />}
+                sx={{
+                  bgcolor: 'linear-gradient(90deg, #D4AF37, #FFDF73)',
+                  color: '#000',
+                  fontSize: '10px',
+                  fontWeight: 900,
+                  py: 0.3,
+                  px: 1.2,
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  boxShadow: `0 2px 8px ${alpha('#D4AF37', 0.4)}`,
+                  '&:hover': { bgcolor: '#FFDF73' }
+                }}
+              >
+                {copiedLink ? 'Copied Link!' : shareSuccess ? 'Shared!' : `Referral (${approvedCount + pendingCount})`}
+              </Button>
+            </Tooltip>
+
             <Chip 
-              icon={<Sparkles size={12} color="#000" />} 
-              label="ROYAL VIP" 
+              icon={<Sparkles size={11} color="#FFDF73" />} 
+              label="VIP" 
               size="small" 
               sx={{ 
-                height: 24, 
-                fontSize: '10px', 
-                bgcolor: 'linear-gradient(90deg, #D4AF37, #FFDF73)', 
-                color: '#000', 
+                height: 22, 
+                fontSize: '9px', 
+                bgcolor: alpha('#D4AF37', 0.15), 
+                color: '#FFDF73', 
                 fontWeight: 900,
-                letterSpacing: 0.5,
-                px: 0.5
+                border: `1px solid ${alpha('#D4AF37', 0.3)}`
               }} 
             />
-            <Wifi size={20} color="#D4AF37" style={{ opacity: 0.85, transform: 'rotate(90deg)' }} />
+            <Wifi size={16} color="#D4AF37" style={{ opacity: 0.85, transform: 'rotate(90deg)' }} />
           </Stack>
         </Stack>
 
-        {/* EMV CHIP & TOTAL NET ASSETS */}
-        <Grid container spacing={2} alignItems="center" sx={{ my: 1 }}>
+        {/* NET PORTFOLIO BALANCE & CARD ADDRESS */}
+        <Grid container spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
           <Grid item xs={12} sm={7}>
-            <Stack direction="row" alignItems="center" spacing={2} mb={1}>
-              {/* EMV Gold Microchip graphic */}
-              <Box sx={{ 
-                width: 48, 
-                height: 35, 
-                borderRadius: '7px', 
-                background: 'linear-gradient(135deg, #E5C158 0%, #B38F26 50%, #F5D77F 100%)',
-                border: '1px solid #99781D',
-                boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.5)',
-                position: 'relative',
-                overflow: 'hidden',
-                p: 0.5,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}>
-                <Box sx={{ width: '100%', height: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
-                <Box sx={{ width: '100%', height: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
-                <Box sx={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', bgcolor: 'rgba(0,0,0,0.35)' }} />
-              </Box>
-
-              <Typography variant="caption" sx={{ color: alpha('#FFDF73', 0.8), fontWeight: 800, fontSize: '11px', letterSpacing: 1.2 }}>
-                NET PORTFOLIO BALANCE
-              </Typography>
-            </Stack>
+            <Typography variant="caption" sx={{ color: alpha('#FFDF73', 0.8), fontWeight: 800, fontSize: '10px', letterSpacing: 1, display: 'block', mb: 0.2 }}>
+              NET PORTFOLIO BALANCE
+            </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-              <Typography variant="h3" fontWeight="900" sx={{ 
+              <Typography variant="h4" fontWeight="900" sx={{ 
                 color: '#FFF', 
                 fontFamily: '"Cinzel", serif',
                 letterSpacing: '-0.5px',
-                fontSize: { xs: '2rem', sm: '2.75rem' },
-                textShadow: `0 0 24px ${alpha('#D4AF37', 0.35)}`
+                fontSize: { xs: '1.8rem', sm: '2.2rem' },
+                textShadow: `0 0 20px ${alpha('#D4AF37', 0.35)}`
               }}>
                 ${(((usGoldBalance + totalStaked) * effectiveTokenPrice) + liveTotalAccrued).toFixed(2)}
               </Typography>
-              <Typography variant="subtitle1" fontWeight="800" color="#D4AF37" sx={{ fontSize: '15px' }}>
+              <Typography variant="subtitle2" fontWeight="800" color="#D4AF37" sx={{ fontSize: '13px' }}>
                 USD
               </Typography>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 600 }}>
-              Total Weight: <strong style={{ color: '#FFDF73' }}>{(usGoldBalance + totalStaked).toFixed(4)} usGOLD</strong> Grams
-            </Typography>
           </Grid>
 
           <Grid item xs={12} sm={5}>
             {/* CARD ACCOUNT NUMBER DISPLAY */}
             <Box sx={{ 
-              py: 1.5, 
-              px: 2, 
-              borderRadius: '14px', 
+              py: 1, 
+              px: 1.5, 
+              borderRadius: '12px', 
               bgcolor: alpha('#000', 0.55), 
               border: `1px solid ${alpha('#D4AF37', 0.25)}`,
               display: 'flex',
@@ -486,9 +487,9 @@ export function StakingPage({
                   letterSpacing: { xs: 1.5, sm: 2 }, 
                   fontWeight: 800, 
                   color: alpha('#fff', 0.95),
-                  fontSize: { xs: '11px', sm: '12px' }
+                  fontSize: { xs: '10.5px', sm: '11.5px' }
                 }}>
-                  4912 •••• •••• {effectiveAddress ? effectiveAddress.slice(-4).toUpperCase() : '8888'}
+                  4912 •••• {effectiveAddress ? effectiveAddress.slice(-4).toUpperCase() : '8888'}
                 </Typography>
               </Box>
 
@@ -502,190 +503,207 @@ export function StakingPage({
                       alert("Vault card wallet address copied!");
                     }
                   }}
-                  sx={{ color: '#D4AF37', p: 0.8, bgcolor: alpha('#D4AF37', 0.1), '&:hover': { bgcolor: alpha('#D4AF37', 0.25) } }}
+                  sx={{ color: '#D4AF37', p: 0.6, bgcolor: alpha('#D4AF37', 0.1), '&:hover': { bgcolor: alpha('#D4AF37', 0.25) } }}
                 >
-                  <Copy size={14} />
+                  <Copy size={13} />
                 </IconButton>
               </Tooltip>
             </Box>
           </Grid>
         </Grid>
 
-        {/* DIVIDER LINE WITH Subtle Glow */}
-        <Divider sx={{ my: 2.5, borderColor: alpha('#D4AF37', 0.25) }} />
-
-        {/* INTEGRATED EMBEDDED METRICS GRID (4 SECTIONS INSIDE SINGLE CARD) */}
-        <Grid container spacing={2}>
-          {/* Section 1: Liquid usGOLD */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: alpha('#fff', 0.025), 
-              borderRadius: '16px', 
-              border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justify: 'space-between',
-              transition: 'all 0.2s',
-              '&:hover': { borderColor: alpha('#D4AF37', 0.5), bgcolor: alpha('#D4AF37', 0.05) }
-            }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '10px' }}>
-                  1. LIQUID usGOLD
-                </Typography>
-                <TokenIcon symbol="usGOLD" size={18} />
-              </Stack>
-              <Box mt={1.5}>
-                <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontSize: '1.15rem' }}>
-                  {usGoldBalance.toFixed(4)} <span style={{ fontSize: '12px', color: '#D4AF37' }}>g</span>
-                </Typography>
-                <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10.5px' }}>
-                  ≈ ${(usGoldBalance * effectiveTokenPrice).toFixed(2)} USD
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Section 2: Vault Staked */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: alpha('#4caf50', 0.04), 
-              borderRadius: '16px', 
-              border: `1px solid ${alpha('#4caf50', 0.3)}`,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justify: 'space-between',
-              transition: 'all 0.2s',
-              '&:hover': { borderColor: alpha('#4caf50', 0.6), bgcolor: alpha('#4caf50', 0.08) }
-            }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '10px' }}>
-                  2. VAULT STAKED
-                </Typography>
-                <Lock size={16} color="#4caf50" />
-              </Stack>
-              <Box mt={1.5}>
-                <Typography variant="h6" fontWeight="900" color="#4caf50" sx={{ fontSize: '1.15rem' }}>
-                  {totalStaked.toFixed(4)} <span style={{ fontSize: '12px' }}>g</span>
-                </Typography>
-                <Typography variant="caption" color="#4caf50" fontWeight="bold" sx={{ fontSize: '10.5px' }}>
-                  +2% / mo Fixed Yield
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Section 3: Live Yield Ticker */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: alpha('#FFDF73', 0.04), 
-              borderRadius: '16px', 
-              border: `1px solid ${alpha('#FFDF73', 0.3)}`,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justify: 'space-between',
-              transition: 'all 0.2s',
-              '&:hover': { borderColor: alpha('#FFDF73', 0.6), bgcolor: alpha('#FFDF73', 0.08) }
-            }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '10px' }}>
-                  3. LIVE YIELD TICKER
-                </Typography>
-                <Activity size={16} color="#FFDF73" className="animate-pulse" />
-              </Stack>
-              <Box mt={1.5}>
-                <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>
-                  +${liveTotalAccrued.toFixed(6)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10.5px' }}>
-                  Accruing per second
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          {/* Section 4: Referrals */}
-          <Grid item xs={12} sm={6} md={3}>
-            <Box sx={{ 
-              p: 1.8, 
-              bgcolor: alpha('#D4AF37', 0.07), 
-              borderRadius: '16px', 
-              border: `1px dashed ${alpha('#D4AF37', 0.45)}`,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justify: 'space-between'
-            }}>
-              <Box>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
-                  <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                    4. REFERRAL REWARDS
-                  </Typography>
-                  <Chip label="1 usGOLD" size="small" sx={{ height: 16, fontSize: '8px', bgcolor: '#D4AF37', color: '#000', fontWeight: '900' }} />
-                </Stack>
-                <Stack spacing={0.3}>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Pending:</Typography>
-                    <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#fff' }}>{pendingCount}</Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Reviewing:</Typography>
-                    <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#FFDF73' }}>{needsApprovalCount}</Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between">
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px' }}>Redeemed:</Typography>
-                    <Typography variant="caption" sx={{ fontSize: '9px', fontWeight: 'bold', color: '#14F195' }}>{approvedCount}</Typography>
-                  </Box>
-                </Stack>
-              </Box>
-
-              <Button
-                size="small"
-                onClick={handleShareReferral}
-                startIcon={<Share2 size={11} />}
-                sx={{
-                  mt: 0.8,
-                  bgcolor: alpha('#D4AF37', 0.25),
-                  color: '#FFDF73',
-                  fontSize: '10px',
-                  fontWeight: '800',
-                  py: 0.4,
-                  borderRadius: '8px',
-                  border: `1px solid ${alpha('#D4AF37', 0.5)}`,
-                  textTransform: 'none',
-                  '&:hover': { bgcolor: alpha('#D4AF37', 0.4) }
-                }}
-              >
-                {copiedLink ? 'Copied Link!' : shareSuccess ? 'Shared!' : 'Share Referral'}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* CARD FOOTER INFO */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={2.5} pt={1.5} borderTop={`1px solid ${alpha('#fff', 0.05)}`}>
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '8px', letterSpacing: 1, fontWeight: 700, display: 'block' }}>
-              CARD HOLDER
+        {/* SLIDABLE METRICS SECTION HEADER WITH TABS & CHEVRONS */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, pt: 1, borderTop: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', fontWeight: 800, letterSpacing: 0.5 }}>
+              SWIPE / SLIDE METRICS:
             </Typography>
-            <Typography variant="caption" color="#fff" fontWeight="800" sx={{ fontSize: '11px', letterSpacing: 0.5 }}>
-              {effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : 'VALUED MEMBER'}
-            </Typography>
+            <Stack direction="row" spacing={0.5}>
+              {['Liquid usGOLD', 'Vault Staked', 'Live Yield Ticker'].map((name, idx) => (
+                <Chip
+                  key={name}
+                  label={name}
+                  size="small"
+                  onClick={() => {
+                    setActiveSlide(idx);
+                    const container = document.getElementById('slidable-metrics-container');
+                    if (container) {
+                      container.scrollTo({ left: idx * 260, behavior: 'smooth' });
+                    }
+                  }}
+                  sx={{
+                    height: 20,
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    bgcolor: activeSlide === idx ? alpha('#D4AF37', 0.3) : alpha('#fff', 0.05),
+                    color: activeSlide === idx ? '#FFDF73' : 'text.secondary',
+                    border: `1px solid ${activeSlide === idx ? alpha('#D4AF37', 0.5) : alpha('#fff', 0.1)}`,
+                    transition: 'all 0.2s'
+                  }}
+                />
+              ))}
+            </Stack>
+          </Stack>
+
+          {/* Chevrons for manual sliding */}
+          <Stack direction="row" spacing={0.5}>
+            <IconButton 
+              size="small"
+              onClick={() => {
+                const nextIdx = Math.max(0, activeSlide - 1);
+                setActiveSlide(nextIdx);
+                const container = document.getElementById('slidable-metrics-container');
+                if (container) {
+                  container.scrollTo({ left: nextIdx * 260, behavior: 'smooth' });
+                }
+              }}
+              sx={{ color: '#D4AF37', p: 0.4, bgcolor: alpha('#fff', 0.04) }}
+            >
+              <ChevronLeft size={14} />
+            </IconButton>
+            <IconButton 
+              size="small"
+              onClick={() => {
+                const nextIdx = Math.min(2, activeSlide + 1);
+                setActiveSlide(nextIdx);
+                const container = document.getElementById('slidable-metrics-container');
+                if (container) {
+                  container.scrollTo({ left: nextIdx * 260, behavior: 'smooth' });
+                }
+              }}
+              sx={{ color: '#D4AF37', p: 0.4, bgcolor: alpha('#fff', 0.04) }}
+            >
+              <ChevronRight size={14} />
+            </IconButton>
+          </Stack>
+        </Box>
+
+        {/* HORIZONTAL TOUCH-SLIDABLE CAROUSEL (3 METRICS: LIQUID, STAKED, LIVE YIELD) */}
+        <Box 
+          id="slidable-metrics-container"
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            const scrollPos = target.scrollLeft;
+            const cardWidth = 260;
+            const newIndex = Math.min(2, Math.max(0, Math.round(scrollPos / cardWidth)));
+            if (newIndex !== activeSlide) {
+              setActiveSlide(newIndex);
+            }
+          }}
+          sx={{ 
+            display: 'flex', 
+            gap: 1.5, 
+            overflowX: 'auto', 
+            scrollSnapType: 'x mandatory',
+            py: 0.5,
+            px: 0.2,
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' }
+          }}
+        >
+          {/* Card 1: Liquid usGOLD */}
+          <Box sx={{ 
+            minWidth: { xs: 240, sm: '31%' },
+            flex: '0 0 auto',
+            scrollSnapAlign: 'start',
+            p: 1.5, 
+            bgcolor: alpha('#fff', 0.025), 
+            borderRadius: '14px', 
+            border: `1px solid ${activeSlide === 0 ? alpha('#D4AF37', 0.55) : alpha('#D4AF37', 0.2)}`,
+            boxShadow: activeSlide === 0 ? `0 4px 16px ${alpha('#D4AF37', 0.15)}` : 'none',
+            transition: 'all 0.2s ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between'
+          }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
+                1. LIQUID usGOLD
+              </Typography>
+              <TokenIcon symbol="usGOLD" size={16} />
+            </Stack>
+            <Box mt={1}>
+              <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
+                {usGoldBalance.toFixed(4)} <span style={{ fontSize: '11px', color: '#D4AF37' }}>g</span>
+              </Typography>
+              <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px' }}>
+                ≈ ${(usGoldBalance * effectiveTokenPrice).toFixed(2)} USD
+              </Typography>
+            </Box>
           </Box>
 
-          <Box textAlign="right">
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '8px', letterSpacing: 1, fontWeight: 700, display: 'block' }}>
-              VAULT RATE & YIELD
-            </Typography>
-            <Typography variant="caption" color="#14F195" fontWeight="900" sx={{ fontSize: '11px' }}>
-              PERPETUAL / 24% APY
-            </Typography>
+          {/* Card 2: Vault Staked */}
+          <Box sx={{ 
+            minWidth: { xs: 240, sm: '31%' },
+            flex: '0 0 auto',
+            scrollSnapAlign: 'start',
+            p: 1.5, 
+            bgcolor: alpha('#4caf50', 0.04), 
+            borderRadius: '14px', 
+            border: `1px solid ${activeSlide === 1 ? alpha('#4caf50', 0.6) : alpha('#4caf50', 0.25)}`,
+            boxShadow: activeSlide === 1 ? `0 4px 16px ${alpha('#4caf50', 0.15)}` : 'none',
+            transition: 'all 0.2s ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between'
+          }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
+                2. VAULT STAKED
+              </Typography>
+              <Lock size={15} color="#4caf50" />
+            </Stack>
+            <Box mt={1}>
+              <Typography variant="h6" fontWeight="900" color="#4caf50" sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
+                {totalStaked.toFixed(4)} <span style={{ fontSize: '11px' }}>g</span>
+              </Typography>
+              <Typography variant="caption" color="#4caf50" fontWeight="bold" sx={{ fontSize: '10px' }}>
+                +2% / mo Fixed Yield
+              </Typography>
+            </Box>
           </Box>
+
+          {/* Card 3: Live Yield Ticker */}
+          <Box sx={{ 
+            minWidth: { xs: 240, sm: '31%' },
+            flex: '0 0 auto',
+            scrollSnapAlign: 'start',
+            p: 1.5, 
+            bgcolor: alpha('#FFDF73', 0.04), 
+            borderRadius: '14px', 
+            border: `1px solid ${activeSlide === 2 ? alpha('#FFDF73', 0.6) : alpha('#FFDF73', 0.25)}`,
+            boxShadow: activeSlide === 2 ? `0 4px 16px ${alpha('#FFDF73', 0.15)}` : 'none',
+            transition: 'all 0.2s ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between'
+          }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
+                3. LIVE YIELD TICKER
+              </Typography>
+              <Activity size={15} color="#FFDF73" className="animate-pulse" />
+            </Stack>
+            <Box mt={1}>
+              <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '1rem', lineHeight: 1.2 }}>
+                +${liveTotalAccrued.toFixed(6)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
+                Per-second real-time
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* FOOTER INFO */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mt={1.5} pt={1} borderTop={`1px solid ${alpha('#fff', 0.04)}`}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', fontWeight: 700 }}>
+            HOLDER: <strong style={{ color: '#fff' }}>{effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : 'MEMBER'}</strong>
+          </Typography>
+          <Typography variant="caption" color="#14F195" sx={{ fontSize: '9px', fontWeight: 900 }}>
+            PERPETUAL 24% APY
+          </Typography>
         </Stack>
       </Card>
 
