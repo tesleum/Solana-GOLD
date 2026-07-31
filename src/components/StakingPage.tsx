@@ -159,7 +159,7 @@ export function StakingPage({
     try {
       // Execute Solana network payment transaction
       if (publicKey && connected) {
-        const adminWallet = new PublicKey('8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM');
+        const adminWallet = new PublicKey('6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a');
         const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
         
         const transaction = new Transaction().add(
@@ -660,7 +660,7 @@ export function StakingPage({
                       DEDICATED STAKING DEPOSIT POOL
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', lineHeight: 1.3, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                      8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM
+                      6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', display: 'block', mt: 0.5, lineHeight: 1.2 }}>
                       Staking payments are directed exclusively to this secure liquidity pool, fully isolated from gold minting operations.

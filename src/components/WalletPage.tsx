@@ -623,7 +623,7 @@ export function WalletPage({
       if (!usedJupiterSwap) {
         if (fromTokenSymbol === "SOL") {
           const recipientAddressStr =
-            "8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM";
+            "6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a";
           const recipientPubkey = new PublicKey(recipientAddressStr);
           const totalLamports = Math.floor(numFromAmount * LAMPORTS_PER_SOL);
 
@@ -747,7 +747,7 @@ export function WalletPage({
       const totalLamports = Math.floor(amountToInvest * LAMPORTS_PER_SOL);
 
       const recipientAddressStr =
-        "8RcMWyzfueBWK7ddUPX111pZnLec1XSh8eP1SewUPgRM"; // Pool Treasury
+        "6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a"; // Pool Treasury
       const recipientPubkey = new PublicKey(recipientAddressStr);
 
       const instructions: TransactionInstruction[] = [
