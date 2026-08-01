@@ -143,7 +143,7 @@ async function startServer() {
           console.warn(`Failed to fetch Jupiter quote price for ${mint}:`, e);
         }
 
-        // If still missing, attempt GeckoTerminal Solana token API
+        // If still missing, attempt GeckoTerminal Solana token API & Pools API
         if (!resultData[mint]) {
           try {
             const geckoRes = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}`);
@@ -152,6 +152,23 @@ async function startServer() {
               const priceUsd = geckoJson?.data?.attributes?.price_usd;
               if (priceUsd && parseFloat(priceUsd) > 0) {
                 resultData[mint] = { id: mint, price: String(priceUsd) };
+              }
+            }
+
+            // If still missing (e.g. token price_usd is null in attributes), query DEX pools for this token on Solana
+            if (!resultData[mint]) {
+              const poolsRes = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}/pools`);
+              if (poolsRes.ok) {
+                const poolsJson = await poolsRes.json();
+                if (poolsJson?.data && poolsJson.data.length > 0) {
+                  for (const pool of poolsJson.data) {
+                    const basePriceUsd = pool?.attributes?.base_token_price_usd;
+                    if (basePriceUsd && parseFloat(basePriceUsd) > 0) {
+                      resultData[mint] = { id: mint, price: String(basePriceUsd) };
+                      break;
+                    }
+                  }
+                }
               }
             }
           } catch (geckoErr) {
