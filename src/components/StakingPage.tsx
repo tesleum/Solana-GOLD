@@ -553,9 +553,6 @@ export function StakingPage({
             {/* SLIDABLE METRICS SECTION HEADER WITH TABS & CHEVRONS */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, pt: 1, borderTop: `1px dashed ${alpha('#D4AF37', 0.2)}` }}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', fontWeight: 800, letterSpacing: 0.5 }}>
-                  SWIPE / SLIDE METRICS:
-                </Typography>
                 <Stack direction="row" spacing={0.5}>
                   {['Liquid usGOLD', 'Vault Staked', 'Live Yield Ticker'].map((name, idx) => (
                     <Chip
