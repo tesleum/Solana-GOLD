@@ -145,6 +145,14 @@ async function startServer() {
         }
       }
 
+      // 3. Fallback for usGOLD (24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd) if not yet listed/tradable on Jupiter pools
+      if (idsList.includes('24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') && !resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']) {
+        resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'] = {
+          id: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd',
+          price: '1.00'
+        };
+      }
+
       // Cache the result
       priceCache[idsParam] = { price: JSON.stringify(resultData), timestamp: Date.now() };
 

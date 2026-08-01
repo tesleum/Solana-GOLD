@@ -924,13 +924,13 @@ function Dashboard() {
       if (rewardForPool4) await logPoolReward(rewardForPool4, 4);
       if (rewardForPool2) await logPoolReward(rewardForPool2, 2);
 
-      const gramsReceived = investAmount / (tokenPrice || 1);
-      setUsGoldBalance(prev => prev + gramsReceived);
+      const usGoldReceived = investAmount / (tokenPrice || 1);
+      setUsGoldBalance(prev => prev + usGoldReceived);
       setUserTotalInvested(prev => prev + investAmount);
       setBalance(prev => Math.max(0, prev - amountToInvest));
       
       triggerHaptic('success');
-      alert(`Investment successful! Distributed ~${investAmount} in SOL and received ${gramsReceived.toFixed(4)} grams of gold.`);
+      alert(`Investment successful! Distributed ~$${investAmount} in SOL and received ${usGoldReceived.toFixed(4)} usGOLD.`);
     } catch (err: any) {
       triggerHaptic('error');
       console.error('Investment failed:', err);
@@ -1625,7 +1625,7 @@ function Dashboard() {
                         ~{solanaPrice ? (investAmount / solanaPrice).toFixed(4) : '---'} SOL
                       </Typography>
                       <Typography variant="caption" color="primary.main" fontWeight="bold" sx={{ display: 'block', fontSize: '10px' }}>
-                        Receiving: {(investAmount / (tokenPrice || 1)).toFixed(4)} grams
+                        Receiving: {(investAmount / (tokenPrice || 1)).toFixed(4)} usGOLD
                       </Typography>
                     </Box>
                   </Stack>
