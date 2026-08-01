@@ -116,8 +116,7 @@ async function startServer() {
         }
       }
 
-      // 2. Check for missing token mints and fill from Jupiter Quote API if needed
-      // (This is a more "real" price for illiquid tokens than the simple Price API)
+      // 2. Check for missing token mints and fill from Jupiter Quote API or GeckoTerminal API if needed
       const missingMints = idsList.filter(mint => !resultData[mint]);
       for (const mint of missingMints) {
         try {
@@ -143,14 +142,22 @@ async function startServer() {
         } catch (e) {
           console.warn(`Failed to fetch Jupiter quote price for ${mint}:`, e);
         }
-      }
 
-      // 3. Fallback for usGOLD (24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd) if not yet listed/tradable on Jupiter pools
-      if (idsList.includes('24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd') && !resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd']) {
-        resultData['24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd'] = {
-          id: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd',
-          price: '1.00'
-        };
+        // If still missing, attempt GeckoTerminal Solana token API
+        if (!resultData[mint]) {
+          try {
+            const geckoRes = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/tokens/${mint}`);
+            if (geckoRes.ok) {
+              const geckoJson = await geckoRes.json();
+              const priceUsd = geckoJson?.data?.attributes?.price_usd;
+              if (priceUsd && parseFloat(priceUsd) > 0) {
+                resultData[mint] = { id: mint, price: String(priceUsd) };
+              }
+            }
+          } catch (geckoErr) {
+            console.warn(`GeckoTerminal API warning for ${mint}:`, geckoErr);
+          }
+        }
       }
 
       // Cache the result
