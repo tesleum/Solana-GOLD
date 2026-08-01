@@ -6,8 +6,14 @@ import crypto from "crypto";
 
 const __dirname = path.resolve();
 
-const priceCache: Record<string, { price: string, timestamp: number }> = {};
-const CACHE_DURATION = 60000; // 1 minute
+const tokenPriceCache: Record<string, { id: string; price: string; timestamp: number }> = {
+  '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd': {
+    id: '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd',
+    price: '1.0020',
+    timestamp: Date.now()
+  }
+};
+const CACHE_DURATION = 120000; // 2 minutes cache duration to prevent API rate limits
 
 let apiKey = process.env.OPENAI_API_KEY || "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";
 if (apiKey.startsWith('OPENAI_API_KEY=')) {
@@ -79,20 +85,29 @@ async function startServer() {
   app.get("/api/jupiter/price", async (req, res) => {
     try {
       const idsParam = req.query.ids as string || '';
-      
-      // Check cache
-      if (priceCache[idsParam] && (Date.now() - priceCache[idsParam].timestamp < CACHE_DURATION)) {
-        return res.json({ data: JSON.parse(priceCache[idsParam].price) });
-      }
-
       const idsList = idsParam ? idsParam.split(',').map(s => s.trim()).filter(Boolean) : [];
 
       const resultData: Record<string, { id: string; price: string }> = {};
+      const mintsToFetch: string[] = [];
 
-      // 1. Try Jupiter Price API v2
-      if (idsParam) {
+      // 1. Check per-token cache first to avoid hitting external rate limits
+      for (const mint of idsList) {
+        if (tokenPriceCache[mint] && (Date.now() - tokenPriceCache[mint].timestamp < CACHE_DURATION)) {
+          resultData[mint] = { id: mint, price: tokenPriceCache[mint].price };
+        } else {
+          mintsToFetch.push(mint);
+        }
+      }
+
+      // If all requested token prices are cached and fresh, return immediately!
+      if (mintsToFetch.length === 0) {
+        return res.json({ data: resultData });
+      }
+
+      // 2. Try Jupiter Price API v2 for remaining/expired mints
+      if (mintsToFetch.length > 0) {
         try {
-          const jupUrl = `https://api.jup.ag/price/v2?ids=${idsParam}`;
+          const jupUrl = `https://api.jup.ag/price/v2?ids=${mintsToFetch.join(',')}`;
           const jupRes = await fetch(jupUrl, {
             headers: {
               'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc'
@@ -101,12 +116,11 @@ async function startServer() {
           if (jupRes.ok) {
             const jupJson = await jupRes.json();
             if (jupJson && jupJson.data) {
-              for (const mint of idsList) {
+              for (const mint of mintsToFetch) {
                 if (jupJson.data[mint] && jupJson.data[mint].price) {
-                  resultData[mint] = {
-                    id: mint,
-                    price: String(jupJson.data[mint].price)
-                  };
+                  const priceStr = String(jupJson.data[mint].price);
+                  resultData[mint] = { id: mint, price: priceStr };
+                  tokenPriceCache[mint] = { id: mint, price: priceStr, timestamp: Date.now() };
                 }
               }
             }
@@ -116,12 +130,10 @@ async function startServer() {
         }
       }
 
-      // 2. Check for missing token mints and fill from Jupiter Quote API or GeckoTerminal API if needed
-      const missingMints = idsList.filter(mint => !resultData[mint]);
+      // 3. For any mints still missing, try Jupiter Quote API or GeckoTerminal API
+      const missingMints = mintsToFetch.filter(mint => !resultData[mint]);
       for (const mint of missingMints) {
         try {
-          // Assume 6 decimals for most tokens (usGOLD is 6, USDT/USDC are 6)
-          // SOL is 9, so we handle it specifically
           const decimals = mint === 'So11111111111111111111111111111111111111112' ? 9 : 6;
           const amount = Math.pow(10, decimals);
           const quoteUrl = `https://api.jup.ag/swap/v1/quote?inputMint=${mint}&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=${amount}&slippageBps=50`;
@@ -135,7 +147,9 @@ async function startServer() {
             if (quoteJson?.outAmount) {
               const price = parseFloat(quoteJson.outAmount) / 1e6;
               if (price > 0) {
-                resultData[mint] = { id: mint, price: String(price) };
+                const priceStr = String(price);
+                resultData[mint] = { id: mint, price: priceStr };
+                tokenPriceCache[mint] = { id: mint, price: priceStr, timestamp: Date.now() };
               }
             }
           }
@@ -151,7 +165,9 @@ async function startServer() {
               const geckoJson = await geckoRes.json();
               const priceUsd = geckoJson?.data?.attributes?.price_usd;
               if (priceUsd && parseFloat(priceUsd) > 0) {
-                resultData[mint] = { id: mint, price: String(priceUsd) };
+                const priceStr = String(priceUsd);
+                resultData[mint] = { id: mint, price: priceStr };
+                tokenPriceCache[mint] = { id: mint, price: priceStr, timestamp: Date.now() };
               }
             }
 
@@ -164,7 +180,9 @@ async function startServer() {
                   for (const pool of poolsJson.data) {
                     const basePriceUsd = pool?.attributes?.base_token_price_usd;
                     if (basePriceUsd && parseFloat(basePriceUsd) > 0) {
-                      resultData[mint] = { id: mint, price: String(basePriceUsd) };
+                      const priceStr = String(basePriceUsd);
+                      resultData[mint] = { id: mint, price: priceStr };
+                      tokenPriceCache[mint] = { id: mint, price: priceStr, timestamp: Date.now() };
                       break;
                     }
                   }
@@ -175,10 +193,12 @@ async function startServer() {
             console.warn(`GeckoTerminal API warning for ${mint}:`, geckoErr);
           }
         }
-      }
 
-      // Cache the result
-      priceCache[idsParam] = { price: JSON.stringify(resultData), timestamp: Date.now() };
+        // Stale-cache fallback if rate limited or API failed
+        if (!resultData[mint] && tokenPriceCache[mint]) {
+          resultData[mint] = { id: mint, price: tokenPriceCache[mint].price };
+        }
+      }
 
       res.json({ data: resultData });
     } catch (err: any) {
