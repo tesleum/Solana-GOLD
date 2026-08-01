@@ -799,6 +799,7 @@ export function StakingPage({
                   </Typography>
                 </Box>
 
+                {/* Adjust Staking Amount Label */}
                 <Box sx={{ mt: 1, mb: 1 }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="700">
                     {t('adjustStakingAmount', language)}

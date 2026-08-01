@@ -1285,7 +1285,18 @@ function Dashboard() {
   return (
   <CacheProvider value={isRtl ? cacheRtl : cacheLtr}>
     <ThemeProvider theme={rtlTheme}>
-    <Box sx={{ pb: 9, minHeight: '100vh', bgcolor: 'background.default', minWidth: 0, overflowX: 'hidden', maxWidth: 680, mx: 'auto', borderLeft: { sm: `1px solid ${alpha('#D4AF37', 0.1)}` }, borderRight: { sm: `1px solid ${alpha('#D4AF37', 0.1)}` } }}>
+    <Box sx={{ 
+      pb: 9, 
+      minHeight: '100vh', 
+      bgcolor: 'background.default', 
+      minWidth: 0, 
+      overflowX: 'hidden',
+      maxWidth: 500,
+      mx: 'auto',
+      borderLeft: { sm: `1px solid ${alpha('#D4AF37', 0.15)}` },
+      borderRight: { sm: `1px solid ${alpha('#D4AF37', 0.15)}` },
+      position: 'relative'
+    }}>
       <OnboardingModal openExternal={isGuidanceOpen} onCloseExternal={() => setIsGuidanceOpen(false)} />
       {/* Header */}
       <AppBar 
@@ -1296,7 +1307,7 @@ function Dashboard() {
           left: '50%',
           transform: 'translateX(-50%)',
           width: { xs: 'calc(100% - 16px)', sm: 'calc(100% - 32px)' },
-          maxWidth: 680,
+          maxWidth: 480,
           borderRadius: '32px',
           bgcolor: alpha('#121214', 0.7),
           backdropFilter: 'blur(20px) saturate(180%)',
