@@ -455,7 +455,7 @@ export function StakingPage({
                 fontSize: { xs: '1.8rem', sm: '2.2rem' },
                 textShadow: `0 0 20px ${alpha('#D4AF37', 0.35)}`
               }}>
-                ${(((usGoldBalance + totalStaked) * effectiveTokenPrice) + liveTotalAccrued).toFixed(2)}
+                ${((totalStaked * effectiveTokenPrice) + liveTotalAccrued).toFixed(2)}
               </Typography>
               <Typography variant="subtitle2" fontWeight="800" color="#D4AF37" sx={{ fontSize: '13px' }}>
                 USD
@@ -554,7 +554,7 @@ export function StakingPage({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, pt: 1, borderTop: `1px dashed ${alpha('#D4AF37', 0.2)}` }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Stack direction="row" spacing={0.5}>
-                  {[t('liquidUsGold', language), t('vaultStaked', language), t('liveYieldTicker', language)].map((name, idx) => (
+                  {[t('vaultStaked', language), t('liveYieldTicker', language)].map((name, idx) => (
                     <Chip
                       key={name}
                       label={name}
@@ -600,7 +600,7 @@ export function StakingPage({
                 <IconButton 
                   size="small"
                   onClick={() => {
-                    const nextIdx = Math.min(2, activeSlide + 1);
+                    const nextIdx = Math.min(1, activeSlide + 1);
                     setActiveSlide(nextIdx);
                     const container = document.getElementById('slidable-metrics-container');
                     if (container) {
@@ -621,7 +621,7 @@ export function StakingPage({
                 const target = e.currentTarget;
                 const scrollPos = target.scrollLeft;
                 const cardWidth = 260;
-                const newIndex = Math.min(2, Math.max(0, Math.round(scrollPos / cardWidth)));
+                const newIndex = Math.min(1, Math.max(0, Math.round(scrollPos / cardWidth)));
                 if (newIndex !== activeSlide) {
                   setActiveSlide(newIndex);
                 }
@@ -637,38 +637,7 @@ export function StakingPage({
                 '&::-webkit-scrollbar': { display: 'none' }
               }}
             >
-              {/* Card 1: Liquid usGOLD */}
-              <Box sx={{ 
-                minWidth: { xs: 240, sm: '31%' },
-                flex: '0 0 auto',
-                scrollSnapAlign: 'start',
-                p: 1.5, 
-                bgcolor: alpha('#fff', 0.025), 
-                borderRadius: '14px', 
-                border: `1px solid ${activeSlide === 0 ? alpha('#D4AF37', 0.55) : alpha('#D4AF37', 0.2)}`,
-                boxShadow: activeSlide === 0 ? `0 4px 16px ${alpha('#D4AF37', 0.15)}` : 'none',
-                transition: 'all 0.2s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                justify: 'space-between'
-              }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
-                    1. {t('liquidUsGold', language)}
-                  </Typography>
-                  <TokenIcon symbol="usGOLD" size={16} />
-                </Stack>
-                <Box mt={1}>
-                  <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
-                    {usGoldBalance.toFixed(4)} <span style={{ fontSize: '11px', color: '#D4AF37' }}>usGOLD</span>
-                  </Typography>
-                  <Typography variant="caption" color="#D4AF37" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                    ≈ ${(usGoldBalance * effectiveTokenPrice).toFixed(2)} USD
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Card 2: Vault Staked */}
+              {/* Card 1: Vault Staked */}
               <Box sx={{ 
                 minWidth: { xs: 240, sm: '31%' },
                 flex: '0 0 auto',
@@ -676,8 +645,8 @@ export function StakingPage({
                 p: 1.5, 
                 bgcolor: alpha('#4caf50', 0.04), 
                 borderRadius: '14px', 
-                border: `1px solid ${activeSlide === 1 ? alpha('#4caf50', 0.6) : alpha('#4caf50', 0.25)}`,
-                boxShadow: activeSlide === 1 ? `0 4px 16px ${alpha('#4caf50', 0.15)}` : 'none',
+                border: `1px solid ${activeSlide === 0 ? alpha('#4caf50', 0.6) : alpha('#4caf50', 0.25)}`,
+                boxShadow: activeSlide === 0 ? `0 4px 16px ${alpha('#4caf50', 0.15)}` : 'none',
                 transition: 'all 0.2s ease-in-out',
                 display: 'flex',
                 flexDirection: 'column',
@@ -685,7 +654,7 @@ export function StakingPage({
               }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
-                    2. {t('vaultStaked', language)}
+                    1. {t('vaultStaked', language)}
                   </Typography>
                   <Lock size={15} color="#4caf50" />
                 </Stack>
@@ -699,7 +668,7 @@ export function StakingPage({
                 </Box>
               </Box>
 
-              {/* Card 3: Live Yield Ticker */}
+              {/* Card 2: Live Yield Ticker */}
               <Box sx={{ 
                 minWidth: { xs: 240, sm: '31%' },
                 flex: '0 0 auto',
@@ -707,8 +676,8 @@ export function StakingPage({
                 p: 1.5, 
                 bgcolor: alpha('#FFDF73', 0.04), 
                 borderRadius: '14px', 
-                border: `1px solid ${activeSlide === 2 ? alpha('#FFDF73', 0.6) : alpha('#FFDF73', 0.25)}`,
-                boxShadow: activeSlide === 2 ? `0 4px 16px ${alpha('#FFDF73', 0.15)}` : 'none',
+                border: `1px solid ${activeSlide === 1 ? alpha('#FFDF73', 0.6) : alpha('#FFDF73', 0.25)}`,
+                boxShadow: activeSlide === 1 ? `0 4px 16px ${alpha('#FFDF73', 0.15)}` : 'none',
                 transition: 'all 0.2s ease-in-out',
                 display: 'flex',
                 flexDirection: 'column',
@@ -716,7 +685,7 @@ export function StakingPage({
               }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
-                    3. {t('liveYieldTicker', language)}
+                    2. {t('liveYieldTicker', language)}
                   </Typography>
                   <Activity size={15} color="#FFDF73" className="animate-pulse" />
                 </Stack>
@@ -833,7 +802,7 @@ export function StakingPage({
                 {/* Amount Quick Presets Grid - Responsive 3-col on Mobile, 6-col on Desktop */}
                 <Box sx={{ 
                   display: 'grid', 
-                  gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: usGoldBalance > 0 ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)' }, 
+                  gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' }, 
                   gap: 1, 
                   mb: 2 
                 }}>
@@ -860,29 +829,6 @@ export function StakingPage({
                       ${preset}
                     </Button>
                   ))}
-                  {usGoldBalance > 0 && (
-                    <Button 
-                      size="small"
-                      onClick={() => {
-                        triggerHaptic(10);
-                        const maxAmt = Math.min(usGoldBalance, 1000);
-                        setCustomStakeAmount(maxAmt.toString());
-                      }}
-                      sx={{ 
-                        bgcolor: alpha('#4caf50', 0.15), 
-                        color: '#4caf50', 
-                        borderRadius: '8px',
-                        fontWeight: '900',
-                        fontSize: '11px',
-                        py: 0.8,
-                        minWidth: 0,
-                        border: `1px solid ${alpha('#4caf50', 0.3)}`,
-                        '&:hover': { bgcolor: alpha('#4caf50', 0.25) }
-                      }}
-                    >
-                      {t('max', language)}
-                    </Button>
-                  )}
                 </Box>
 
                 <Slider
