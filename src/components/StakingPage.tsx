@@ -799,36 +799,10 @@ export function StakingPage({
                   </Typography>
                 </Box>
 
-                {/* Amount Quick Presets Grid - Responsive 3-col on Mobile, 6-col on Desktop */}
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(5, 1fr)' }, 
-                  gap: 1, 
-                  mb: 2 
-                }}>
-                  {[10, 50, 100, 500, 1000].map((preset) => (
-                    <Button 
-                      key={preset}
-                      size="small"
-                      onClick={() => {
-                        triggerHaptic(10);
-                        setCustomStakeAmount(preset.toString());
-                      }}
-                      sx={{ 
-                        bgcolor: customStakeAmount === preset.toString() ? alpha('#D4AF37', 0.25) : alpha('#D4AF37', 0.05), 
-                        color: customStakeAmount === preset.toString() ? '#FFDF73' : '#fff', 
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        py: 0.8,
-                        minWidth: 0,
-                        border: `1px solid ${customStakeAmount === preset.toString() ? '#D4AF37' : alpha('#D4AF37', 0.15)}`,
-                        '&:hover': { bgcolor: alpha('#D4AF37', 0.18) }
-                      }}
-                    >
-                      ${preset}
-                    </Button>
-                  ))}
+                <Box sx={{ mt: 1, mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="700">
+                    {t('adjustStakingAmount', language)}
+                  </Typography>
                 </Box>
 
                 <Slider

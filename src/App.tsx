@@ -322,7 +322,7 @@ function Dashboard() {
             const txData = data[k];
             // Extract numerical amount from string like "10.000 $usGOLD"
             const match = String(txData.amount).match(/([\d.]+)/);
-            if (match) {
+            if (match && txData.type !== 'vault_investment') {
               totalGold += parseFloat(match[1]);
             }
             return {
@@ -1285,7 +1285,7 @@ function Dashboard() {
   return (
   <CacheProvider value={isRtl ? cacheRtl : cacheLtr}>
     <ThemeProvider theme={rtlTheme}>
-    <Box sx={{ pb: 9, minHeight: '100vh', bgcolor: 'background.default', minWidth: 0, overflowX: 'hidden' }}>
+    <Box sx={{ pb: 9, minHeight: '100vh', bgcolor: 'background.default', minWidth: 0, overflowX: 'hidden', maxWidth: 680, mx: 'auto', borderLeft: { sm: `1px solid ${alpha('#D4AF37', 0.1)}` }, borderRight: { sm: `1px solid ${alpha('#D4AF37', 0.1)}` } }}>
       <OnboardingModal openExternal={isGuidanceOpen} onCloseExternal={() => setIsGuidanceOpen(false)} />
       {/* Header */}
       <AppBar 
