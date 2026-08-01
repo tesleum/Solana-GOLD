@@ -176,9 +176,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "activeStakingVaults": "Active Staking Vaults",
     "enterStakingAmount": "Enter Staking Amount (usGOLD)",
     "selectDuration": "Select Staking Duration & Return",
-    "guaranteedReturn": "Guaranteed Monthly Fixed Return",
-    "solanaGoldVault": "SOLANA GOLD VAULT",
-    "debitAndYieldCard": "DEBIT & YIELD CARD"
+    "guaranteedReturn": "Guaranteed Monthly Fixed Return"
   },
   "ES": {
     "investInUsGold": "Invertir en GOLD",
@@ -1065,9 +1063,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "activeStakingVaults": "خزانه‌های فعال استیکینگ",
     "enterStakingAmount": "ورود مقدار استیک (usGOLD)",
     "selectDuration": "انتخاب مدت زمان و سود استیکینگ",
-    "guaranteedReturn": "سود ثابت ماهانه تضمین شده",
-    "solanaGoldVault": "خزانه طلای سولانا",
-    "debitAndYieldCard": "کارت نقدی و سود"
+    "guaranteedReturn": "سود ثابت ماهانه تضمین شده"
   },
   "RU": {
     "investInUsGold": "Инвестировать в GOLD",
