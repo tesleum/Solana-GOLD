@@ -1250,7 +1250,7 @@ export function WalletPage({
             textTransform: "none",
           }}
         >
-          Enhanced Solana Swap
+          {t('enhancedSolanaSwap', language)}
         </Button>
 
         <Button
@@ -1272,7 +1272,7 @@ export function WalletPage({
             textTransform: "none",
           }}
         >
-          Top Up Assets
+          {t('topUpAssets', language)}
         </Button>
 
         <Button
@@ -1294,7 +1294,7 @@ export function WalletPage({
             textTransform: "none",
           }}
         >
-          Ledger
+          {t('ledger', language)}
         </Button>
       </Stack>
 
@@ -1327,14 +1327,14 @@ export function WalletPage({
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
                     <ArrowDownUp size={20} color="#D4AF37" />
-                    Instant Solana DEX Swap
+                    {t('instantSolanaDexSwap', language)}
                   </Typography>
 
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Tooltip title="Slippage Settings">
+                    <Tooltip title={t('slippageSettings', language)}>
                       <Chip
                         icon={<Settings2 size={12} color="#D4AF37" />}
-                        label={`Slippage ${slippage}%`}
+                        label={`${t('slippage', language)} ${slippage}%`}
                         onClick={() => {
                           const nextSlippage =
                             slippage === 0.1
@@ -1380,14 +1380,14 @@ export function WalletPage({
                       color="text.secondary"
                       fontWeight="800"
                     >
-                      YOU PAY
+                      {t('youPay', language)}
                     </Typography>
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       fontWeight="700"
                     >
-                      Balance:{" "}
+                      {t('balance', language)}:{" "}
                       <strong style={{ color: "#fff" }}>
                         {fromTokenBalance.toFixed(4)} {fromTokenSymbol}
                       </strong>
@@ -1474,7 +1474,7 @@ export function WalletPage({
                     {[25, 50, 75, 100].map((pct) => (
                       <Chip
                         key={pct}
-                        label={pct === 100 ? "MAX" : `${pct}%`}
+                        label={pct === 100 ? t('max', language) : `${pct}%`}
                         onClick={() => handleSetPercent(pct)}
                         sx={{
                           height: 22,
@@ -1542,14 +1542,14 @@ export function WalletPage({
                       color="text.secondary"
                       fontWeight="800"
                     >
-                      YOU RECEIVE (ESTIMATED)
+                      {t('youReceive', language)}
                     </Typography>
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       fontWeight="700"
                     >
-                      Balance:{" "}
+                      {t('balance', language)}:{" "}
                       <strong style={{ color: "#fff" }}>
                         {toTokenBalance.toFixed(4)} {toTokenSymbol}
                       </strong>
@@ -1650,7 +1650,7 @@ export function WalletPage({
                         color="text.secondary"
                         fontWeight="700"
                       >
-                        Exchange Rate
+                        {t('exchangeRate', language)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1675,7 +1675,7 @@ export function WalletPage({
                         color="text.secondary"
                         fontWeight="700"
                       >
-                        Solana Network Fee
+                        {t('solanaNetworkFee', language)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1696,7 +1696,7 @@ export function WalletPage({
                         color="text.secondary"
                         fontWeight="700"
                       >
-                        Price Impact
+                        {t('priceImpact', language)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1717,7 +1717,7 @@ export function WalletPage({
                         color="text.secondary"
                         fontWeight="700"
                       >
-                        Minimum Received
+                        {t('minimumReceived', language)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1756,15 +1756,15 @@ export function WalletPage({
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CircularProgress size={20} color="inherit" />
                       <Typography fontWeight="900">
-                        EXECUTING SOLANA SWAP...
+                        {t('executingSolanaSwap', language)}
                       </Typography>
                     </Stack>
                   ) : !connected ? (
-                    "CONNECT SOLANA WALLET"
+                    t('connectSolanaWallet', language)
                   ) : numFromAmount > fromTokenBalance ? (
-                    `INSUFFICIENT ${fromTokenSymbol} BALANCE`
+                    t('insufficientBalanceToken', language).replace('{symbol}', fromTokenSymbol)
                   ) : (
-                    `SWAP ${fromTokenSymbol} FOR ${toTokenSymbol}`
+                    t('swapTokenForToken', language).replace('{from}', fromTokenSymbol).replace('{to}', toTokenSymbol)
                   )}
                 </Button>
 
@@ -1797,7 +1797,7 @@ export function WalletPage({
                       }}
                     >
                       <CheckCircle2 size={14} color="#14F195" />
-                      VERIFIED SOLANA GOLD TOKEN CONTRACTS
+                        {t('verifiedSolanaGoldContracts', language)}
                     </Typography>
                     <Chip
                       label="Jupiter Verified"
@@ -1985,7 +1985,7 @@ export function WalletPage({
             >
               <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
                 <Typography variant="h6" fontWeight="900" color="#fff" mb={3}>
-                  Direct Solana Asset Top Up
+                  {t('directSolanaAssetTopUp', language)}
                 </Typography>
 
                 <Stack direction="row" spacing={2} mb={4}>
@@ -2014,7 +2014,7 @@ export function WalletPage({
                       },
                     }}
                   >
-                    Top Up usGOLD (Staking)
+                    {t('topUpUsGoldStaking', language)}
                   </Button>
                 </Stack>
 
@@ -2027,8 +2027,7 @@ export function WalletPage({
                   }}
                 >
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    Mint usGOLD stablecoins directly using SOL. Tokens are
-                    deposited to your Staking Balance.
+                    {t('mintUsGoldStablecoins', language)}
                   </Typography>
 
                   <Typography
@@ -2037,7 +2036,7 @@ export function WalletPage({
                     fontWeight="800"
                     mb={1}
                   >
-                    ENTER AMOUNT (USD)
+                    {t('enterAmountUsd', language)}
                   </Typography>
                   <TextField
                     fullWidth
@@ -2135,7 +2134,7 @@ export function WalletPage({
                         color="text.secondary"
                         display="block"
                       >
-                        Cost in SOL
+                        {t('costInSol', language)}
                       </Typography>
                       <Stack direction="row" spacing={0.75} alignItems="center">
                         <Typography variant="h6" color="#fff" fontWeight="900">
@@ -2151,7 +2150,7 @@ export function WalletPage({
                         color="text.secondary"
                         display="block"
                       >
-                        You Receive
+                        {t('youReceive', language)}
                       </Typography>
                       <Stack
                         direction="row"
@@ -2201,10 +2200,10 @@ export function WalletPage({
                     }}
                   >
                     {isInvesting || isProcessingUsdtBuy
-                      ? "PROCESSING SOLANA TRANSACTION..."
+                      ? t('processingSolanaTransaction', language)
                       : connected
-                        ? `PAY WITH SOLANA WALLET`
-                        : `CONNECT WALLET TO PAY`}
+                        ? t('payWithSolanaWallet', language)
+                        : t('connectWalletToPay', language)}
                   </Button>
                 </Box>
               </CardContent>
@@ -2224,7 +2223,7 @@ export function WalletPage({
         >
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h6" fontWeight="900" color="#fff" mb={2}>
-              Wallet Activity Ledger
+              {t('walletActivityLedger', language)}
             </Typography>
 
             {transactions && transactions.length > 0 ? (
