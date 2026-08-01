@@ -392,10 +392,10 @@ export function StakingPage({
 
             <Box>
               <Typography variant="overline" color="#D4AF37" sx={{ fontWeight: 900, letterSpacing: 1.5, fontSize: '10px', lineHeight: 1, display: 'block' }}>
-                SOLANA GOLD VAULT
+                {t('solanaGoldVault', language)}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '9px', fontWeight: 700, letterSpacing: 0.5 }}>
-                DEBIT & YIELD CARD
+                {t('debitAndYieldCard', language)}
               </Typography>
             </Box>
           </Stack>
