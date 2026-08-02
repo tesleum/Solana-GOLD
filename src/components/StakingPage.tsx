@@ -769,19 +769,8 @@ export function StakingPage({
                         sx={{ bgcolor: alpha('#4caf50', 0.12), color: '#4caf50', fontWeight: '900', fontSize: '11px', height: 22 }} 
                       />
                     </Box>
-
-                    {/* Live Yield Counter */}
-                    <Box sx={{ mb: 2, p: 1.5, borderRadius: '12px', bgcolor: alpha('#4caf50', 0.05), border: `1px solid ${alpha('#4caf50', 0.15)}` }}>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '11px' }}>
-                        {t('accruedYield', language)} (2%/mo):
-                      </Typography>
-                      <Typography variant="body1" fontWeight="900" color="#4caf50" sx={{ fontFamily: 'monospace' }}>
-                        +${currentAccruedProfit.toFixed(6)} USD
-                      </Typography>
-                    </Box>
-
                     {/* Countdown */}
-                    <Box sx={{ mb: 2 }}>
+                    <Box>
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '11px' }}>
                         {t('countdown', language)}:
                       </Typography>
@@ -805,31 +794,6 @@ export function StakingPage({
                           {progressPercent.toFixed(0)}%
                         </Typography>
                       </Box>
-                    </Box>
-
-                    <Divider sx={{ my: 1.5, borderColor: alpha('#fff', 0.05) }} />
-
-                    {/* Claim Action */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px' }}>
-                        {t('perSecondRealTime', language)}
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="success"
-                        onClick={() => handleClaimStakeProfit(st.key, currentAccruedProfit)}
-                        sx={{ 
-                          fontWeight: '900', 
-                          borderRadius: '8px',
-                          px: 2,
-                          py: 0.5,
-                          fontSize: '11px',
-                          textTransform: 'none'
-                        }}
-                      >
-                        {t('claimYield', language)}
-                      </Button>
                     </Box>
                   </Box>
                 );

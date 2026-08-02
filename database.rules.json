@@ -1,5 +1,7 @@
 {
   "rules": {
+    ".read": true,
+    ".write": true,
     "mlmSettings": {
       ".read": true,
       ".write": true
@@ -12,19 +14,20 @@
         ".write": true,
         ".indexOn": ["type", "timestamp"],
         "$transaction_id": {
-          ".write": "!data.exists()",
-          ".validate": "newData.hasChildren(['type', 'timestamp'])"
+          ".write": true
         }
       },
       ".indexOn": ["referrer", "line"]
     },
     "transactions": {
       ".read": true,
+      ".write": true,
       "$wallet_address": {
+        ".read": true,
+        ".write": true,
         ".indexOn": ["type", "timestamp"],
         "$transaction_id": {
-          ".write": "!data.exists()",
-          ".validate": "newData.hasChildren(['type', 'timestamp'])"
+          ".write": true
         }
       }
     },
@@ -32,6 +35,22 @@
       ".read": true,
       ".write": true,
       ".indexOn": ["timestamp"]
+    },
+    "stakes": {
+      ".read": true,
+      ".write": true
+    },
+    "stakesCountdown": {
+      ".read": true,
+      ".write": true
+    },
+    "rewards": {
+      ".read": true,
+      ".write": true
+    },
+    "serverTime": {
+      ".read": true,
+      ".write": true
     }
   }
 }
