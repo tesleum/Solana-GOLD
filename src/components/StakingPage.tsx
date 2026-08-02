@@ -405,7 +405,7 @@ export function StakingPage({
                     {customStakeAmount || 10}g
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.5)', fontWeight: 'bold', letterSpacing: 2 }}>
-                    STAKED VAULT
+                    {t('stakedVault', language)}
                   </Typography>
                 </Box>
                 <Box sx={{ 
@@ -575,7 +575,7 @@ export function StakingPage({
                   '&:hover': { backgroundColor: '#FFDF73' }
                 }}
               >
-                {isCreatingStake ? 'Creating Stake Vault...' : (t('stakeUsGoldNow', language) || "STAKE usGOLD NOW")}
+                {isCreatingStake ? t('creatingStakeVault', language) : (t('stakeUsGoldNow', language) || "STAKE usGOLD NOW")}
               </Button>
             )}
 
@@ -595,10 +595,10 @@ export function StakingPage({
         <Box sx={{ p: 3, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2), display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" fontWeight="800" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Activity color="#D4AF37" size={20} />
-            Active Staking Vaults
+            {t('activeStakingVaults', language)}
           </Typography>
           <Chip 
-            label={`${activeStakedList.length} Active`} 
+            label={`${activeStakedList.length} ${t('active', language)}`} 
             size="small" 
             sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', fontWeight: 'bold', fontSize: '11px' }} 
           />
@@ -609,10 +609,10 @@ export function StakingPage({
             <Box sx={{ py: 8, textAlign: 'center' }}>
               <Coins size={44} color="#D4AF37" style={{ opacity: 0.35, marginBottom: 16 }} />
               <Typography variant="body1" color="text.secondary" fontWeight="700" mb={1}>
-                No Active Vaults
+                {t('noActiveVaults', language)}
               </Typography>
               <Typography variant="body2" color="text.secondary" display="block" sx={{ maxWidth: 280, mx: 'auto' }}>
-                Stake usGOLD directly using SOL to start earning guaranteed 2% monthly yield.
+                {t('stakeUsGoldDirectly', language)}
               </Typography>
             </Box>
           ) : (
@@ -666,7 +666,7 @@ export function StakingPage({
                         </Box>
                       </Stack>
                       <Chip 
-                        label={`+${st.durationMonths * 2}% Total`} 
+                        label={`+${st.durationMonths * 2}% ${t('total', language)}`} 
                         size="small" 
                         sx={{ bgcolor: alpha('#4caf50', 0.12), color: '#4caf50', fontWeight: '900', fontSize: '11px', height: 22 }} 
                       />

@@ -248,7 +248,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "ES": {
     "investInUsGold": "Invertir en GOLD",
@@ -443,7 +450,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "usGOLD Líquido",
     "vaultStaked": "Bóveda Staked",
     "liveYieldTicker": "Ticker de Rendimiento en Vivo",
-    "perSecondRealTime": "En tiempo real por segundo",
+    "perSecondRealTime": "Tiempo real por segundo",
     "activeGoldVaultInterest": "Tasa de Interés de la Bóveda de Oro Activa: APY Perpetuo del 24%",
     "vaultCardWalletCopied": "¡Dirección de la cartera de la tarjeta de la bóveda copiada!",
     "instantSolanaDexSwap": "Swap Instantáneo en Solana DEX",
@@ -497,7 +504,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No hay transacciones recientes",
     "payWithSolanaWallet": "PAGAR CON BILLETERA SOLANA",
     "connectWalletToPay": "CONECTAR BILLETERA PARA PAGAR",
-    "processingSolanaTransaction": "PROCESANDO TRANSACCIÓN DE SOLANA..."
+    "processingSolanaTransaction": "PROCESANDO TRANSACCIÓN DE SOLANA...",
+    "goldReserveYield": "INGRESOS FIJOS SEGUROS",
+    "stakeUsGold": "HACER STAKING DE usGOLD",
+    "lockupYourHoldings": "Bloquea tu stablecoin usGOLD para ganar un rendimiento mensual fijo garantizado del 2%.",
+    "stakedVault": "BÓVEDA EN STAKING",
+    "adjustStakingAmount": "Ajustar cantidad de staking",
+    "stakeUsGoldNow": "HACER STAKING DE usGOLD AHORA",
+    "creatingStakeVault": "Creando bóveda de staking..."
   },
   "FR": {
     "investInUsGold": "Investir dans GOLD",
@@ -671,7 +685,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVault": "Coffre de Staking usGOLD",
     "stakeUsGoldReserve": "Staker la Réserve usGOLD",
     "openStakingVault": "Aller à la page de Staking",
-    "activeStakingVaults": "Coffres de Staking actifs",
+    "activeStakingVaults": "Coffres de staking actifs",
     "enterStakingAmount": "Entrez le montant à staker (usGOLD)",
     "selectDuration": "Sélectionnez la durée de Staking et le rendement",
     "guaranteedReturn": "Rendement fixe mensuel garanti",
@@ -729,7 +743,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "Liquid usGOLD",
     "vaultStaked": "Vault Staked",
     "liveYieldTicker": "Live Yield Ticker",
-    "perSecondRealTime": "Per-second real-time",
+    "perSecondRealTime": "Temps réel par seconde",
     "activeGoldVaultInterest": "Active Gold Vault Interest Rate: Perpetual 24% APY",
     "vaultCardWalletCopied": "Vault card wallet address copied!",
     "instantSolanaDexSwap": "Instant Solana DEX Swap",
@@ -746,7 +760,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "expectedSolCost": "Expected SOL cost",
     "shared": "Shared!",
     "copyVaultCardAddress": "Copy Vault Card Address",
-    "enhancedSolanaSwap": "Enhanced Solana Swap"
+    "enhancedSolanaSwap": "Enhanced Solana Swap",
+    "goldReserveYield": "REVENU FIXE SÉCURISÉ",
+    "stakeUsGold": "STAKER usGOLD",
+    "lockupYourHoldings": "Bloquez votre stablecoin usGOLD pour gagner un rendement mensuel fixe garanti de 2%.",
+    "stakedVault": "COFFRE STAKÉ",
+    "adjustStakingAmount": "Ajuster le montant du staking",
+    "stakeUsGoldNow": "STAKER usGOLD MAINTENANT",
+    "creatingStakeVault": "Création du coffre de staking..."
   },
   "ZH": {
     "investInUsGold": "投资 GOLD",
@@ -941,7 +962,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "流动性 usGOLD",
     "vaultStaked": "金库质押",
     "liveYieldTicker": "实时收益行情",
-    "perSecondRealTime": "每秒实时",
+    "perSecondRealTime": "每秒实时更新",
     "activeGoldVaultInterest": "活跃黄金金库利率：永续 24% APY",
     "vaultCardWalletCopied": "金库卡钱包地址已复制！",
     "instantSolanaDexSwap": "即时 Solana DEX 兑换",
@@ -995,7 +1016,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "processingSolanaTransaction": "正在处理 SOLANA 交易...",
     "shared": "Shared!",
     "copyVaultCardAddress": "Copy Vault Card Address",
-    "enhancedSolanaSwap": "Enhanced Solana Swap"
+    "enhancedSolanaSwap": "Enhanced Solana Swap",
+    "goldReserveYield": "安全固定收益",
+    "stakeUsGold": "质押 usGOLD",
+    "lockupYourHoldings": "锁定您的 usGOLD 稳定币，即可赚取每月 2% 的保证固定收益。",
+    "stakedVault": "质押金库",
+    "adjustStakingAmount": "调整质押金额",
+    "stakeUsGoldNow": "立即质押 usGOLD",
+    "creatingStakeVault": "正在创建质押金库..."
   },
   "AR": {
     "investInUsGold": "استثمر في GOLD",
@@ -1170,7 +1198,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVault": "خزينة تحصيص usGOLD",
     "stakeUsGoldReserve": "تحصيص احتياطي usGOLD",
     "openStakingVault": "الذهاب إلى صفحة التحصيص",
-    "activeStakingVaults": "خزائن التحصيص النشطة",
+    "activeStakingVaults": "خزائن الرهان النشطة",
     "enterStakingAmount": "أدخل مبلغ التحصيص (usGOLD)",
     "selectDuration": "حدد مدة التحصيص والعائد",
     "guaranteedReturn": "عائد شهري ثابت ومضمون",
@@ -1191,7 +1219,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "usGOLD السائل",
     "vaultStaked": "مخزن مخزن",
     "liveYieldTicker": "مؤشر العائد المباشر",
-    "perSecondRealTime": "في الوقت الحقيقي لكل ثانية",
+    "perSecondRealTime": "في الوقت الفعلي (بالثانية)",
     "activeGoldVaultInterest": "سعر الفائدة في خزنة الذهب النشطة: 24٪ سنويًا دائم",
     "vaultCardWalletCopied": "تم نسخ عنوان محفظة بطاقة الخزنة!",
     "instantSolanaDexSwap": "تبادل Solana DEX فوري",
@@ -1245,7 +1273,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "لا توجد معاملات حديثة",
     "payWithSolanaWallet": "الدفع باستخدام محفظة سولانا",
     "connectWalletToPay": "ربط المحفظة للدفع",
-    "processingSolanaTransaction": "جاري معالجة معاملة سولانا..."
+    "processingSolanaTransaction": "جاري معالجة معاملة سولانا...",
+    "goldReserveYield": "دخل ثابت آمن",
+    "stakeUsGold": "رهن usGOLD",
+    "lockupYourHoldings": "اقفل العملة المستقرة usGOLD الخاصة بك لكسب عائد شهري ثابت مضمون بنسبة 2%.",
+    "stakedVault": "خزنة مرهونة",
+    "adjustStakingAmount": "ضبط مبلغ الرهان",
+    "stakeUsGoldNow": "رهن usGOLD الآن",
+    "creatingStakeVault": "جاري إنشاء خزنة الرهان..."
   },
   "FA": {
     "investInUsGold": "سرمایه‌گذاری در GOLD",
@@ -1420,7 +1455,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVault": "خزانه استیکینگ usGOLD",
     "stakeUsGoldReserve": "استیکینگ ذخیره usGOLD",
     "openStakingVault": "ورود به صفحه استیکینگ",
-    "activeStakingVaults": "خزانه‌های فعال استیکینگ",
+    "activeStakingVaults": "گاوصندوق‌های سپرده فعال",
     "enterStakingAmount": "ورود مقدار استیک (usGOLD)",
     "selectDuration": "انتخاب مدت زمان و سود استیکینگ",
     "guaranteedReturn": "سود ثابت ماهانه تضمین شده",
@@ -1441,7 +1476,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "usGOLD نقد",
     "vaultStaked": "استیک شده در خزانه",
     "liveYieldTicker": "تیکر سود زنده",
-    "perSecondRealTime": "در لحظه هر ثانیه",
+    "perSecondRealTime": "در لحظه (ثانیه‌ای)",
     "activeGoldVaultInterest": "نرخ بهره خزانه طلای فعال: ۲۴٪ سالانه دائمی",
     "vaultCardWalletCopied": "آدرس کیف پول کارت خزانه کپی شد!",
     "instantSolanaDexSwap": "تبادل فوری در Solana DEX",
@@ -1459,19 +1494,19 @@ export const translations: Record<Lang, Record<string, string>> = {
     "shared": "به اشتراک گذاشته شد!",
     "copyVaultCardAddress": "کپی آدرس کارت خزانه",
     "enhancedSolanaSwap": "تبادل پیشرفته سولانا",
-    "stakingAmount": "مقدار استیکینگ",
+    "stakingAmount": "مقدار سپرده",
     "solanaRequired": "سولانا مورد نیاز",
     "rate": "نرخ",
     "fee": "کارمزد",
-    "selectLockupPeriod": "دوره قفل و نرخ سود ثابت را انتخاب کنید",
+    "selectLockupPeriod": "انتخاب دوره قفل و نرخ سود ثابت",
     "month": "ماه",
-    "connectWalletToStake": "برای استیکینگ usGOLD کیف پول را متصل کنید",
+    "connectWalletToStake": "اتصال کیف پول برای سپرده‌گذاری usGOLD",
     "dedicatedStakingDepositPool": "استخر واریز اختصاصی استیکینگ",
     "active": "فعال",
-    "noActiveVaults": "خزانه فعالی وجود ندارد",
-    "stakeUsGoldDirectly": "برای شروع کسب سود تضمینی ۲٪ ماهانه، usGOLD را مستقیماً با استفاده از SOL استیک کنید.",
+    "noActiveVaults": "هیچ گاوصندوق فعالی وجود ندارد",
+    "stakeUsGoldDirectly": "استیبل‌کوین usGOLD را مستقیماً با استفاده از SOL سپرده‌گذاری کنید تا کسب سود ماهانه ۲٪ تضمین‌شده آغاز شود.",
     "grams": "گرم",
-    "monthLockedVault": "ماه خزانه قفل شده",
+    "monthLockedVault": "گاوصندوق قفل‌شده ماهانه",
     "total": "کل",
     "accruedYield": "سود انباشته",
     "countdown": "شمارش معکوس",
@@ -1495,7 +1530,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "تراکنش اخیری وجود ندارد",
     "payWithSolanaWallet": "پرداخت با کیف پول سولانا",
     "connectWalletToPay": "اتصال کیف پول برای پرداخت",
-    "processingSolanaTransaction": "در حال پردازش تراکنش سولانا..."
+    "processingSolanaTransaction": "در حال پردازش تراکنش سولانا...",
+    "goldReserveYield": "درآمد ثابت امن",
+    "stakeUsGold": "سپرده‌گذاری usGOLD",
+    "lockupYourHoldings": "استیبل‌کوین usGOLD خود را قفل کنید تا سود ثابت ماهانه ۲٪ تضمین‌شده کسب کنید.",
+    "stakedVault": "گاوصندوق سپرده",
+    "adjustStakingAmount": "تنظیم مقدار سپرده",
+    "stakeUsGoldNow": "سپرده‌گذاری usGOLD اکنون",
+    "creatingStakeVault": "در حال ایجاد گاوصندوق سپرده..."
   },
   "RU": {
     "investInUsGold": "Инвестировать в GOLD",
@@ -1669,7 +1711,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVault": "Хранилище стейкинга usGOLD",
     "stakeUsGoldReserve": "Стейкинг резерва usGOLD",
     "openStakingVault": "Перейти на страницу стейкинга",
-    "activeStakingVaults": "Активные хранилища стейкинга",
+    "activeStakingVaults": "Активные стекинг-хранилища",
     "enterStakingAmount": "Введите сумму стейкинга (usGOLD)",
     "selectDuration": "Выберите срок стейкинга и доходность",
     "guaranteedReturn": "Гарантированная ежемесячная фиксированная доходность",
@@ -1690,7 +1732,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "liquidUsGold": "Ликвидный usGOLD",
     "vaultStaked": "Застейкано в хранилище",
     "liveYieldTicker": "Тикер текущей доходности",
-    "perSecondRealTime": "В реальном времени каждую секунду",
+    "perSecondRealTime": "В реальном времени (посекундно)",
     "activeGoldVaultInterest": "Процентная ставка активного хранилища золота: бессрочная 24% годовых",
     "vaultCardWalletCopied": "Адрес кошелька карты хранилища скопирован!",
     "instantSolanaDexSwap": "Мгновенный обмен на Solana DEX",
@@ -1744,7 +1786,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "processingSolanaTransaction": "ОБРАБОТКА ТРАНЗАКЦИИ SOLANA...",
     "shared": "Shared!",
     "copyVaultCardAddress": "Copy Vault Card Address",
-    "enhancedSolanaSwap": "Enhanced Solana Swap"
+    "enhancedSolanaSwap": "Enhanced Solana Swap",
+    "goldReserveYield": "БЕЗОПАСНЫЙ ФИКСИРОВАННЫЙ ДОХОД",
+    "stakeUsGold": "СТЕКИНГ usGOLD",
+    "lockupYourHoldings": "Заблокируйте свой стейблкоин usGOLD, чтобы получать гарантированный фиксированный доход 2% в месяц.",
+    "stakedVault": "СТЕКИНГ-ХРАНИЛИЩЕ",
+    "adjustStakingAmount": "Изменить сумму стекинга",
+    "stakeUsGoldNow": "СТЕКИРУЙТЕ usGOLD СЕЙЧАС",
+    "creatingStakeVault": "Создание стекинг-хранилища..."
   },
   "DE": {
     "investInUsGold": "In GOLD investieren",
@@ -1993,7 +2042,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "IT": {
     "investInUsGold": "Investi in GOLD",
@@ -2242,7 +2298,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "PL": {
     "investInUsGold": "Zainwestuj w GOLD",
@@ -2491,7 +2554,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "JA": {
     "investInUsGold": "GOLDに投資する",
@@ -2740,7 +2810,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "KO": {
     "investInUsGold": "GOLD 투자",
@@ -2989,7 +3066,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "ID": {
     "investInUsGold": "Investasi di GOLD",
@@ -3238,7 +3322,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "MS": {
     "investInUsGold": "Melabur dalam GOLD",
@@ -3487,7 +3578,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "SV": {
     "investInUsGold": "Investera i GOLD",
@@ -3736,7 +3834,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "CKB": {
     "investInUsGold": "Veberhênan di GOLD de",
@@ -3985,7 +4090,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   },
   "AZ": {
     "investInUsGold": "GOLD-a sərmayə qoyun",
@@ -4234,7 +4346,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "noRecentTransactions": "No recent transactions",
     "payWithSolanaWallet": "PAY WITH SOLANA WALLET",
     "connectWalletToPay": "CONNECT WALLET TO PAY",
-    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION..."
+    "processingSolanaTransaction": "PROCESSING SOLANA TRANSACTION...",
+    "goldReserveYield": "SECURE FIXED INCOME",
+    "stakeUsGold": "STAKE usGOLD",
+    "lockupYourHoldings": "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield.",
+    "stakedVault": "STAKED VAULT",
+    "adjustStakingAmount": "Adjust Staking Amount",
+    "stakeUsGoldNow": "STAKE usGOLD NOW",
+    "creatingStakeVault": "Creating Stake Vault..."
   }
 };
 
