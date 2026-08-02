@@ -175,24 +175,43 @@ export function StakingPage({
       return;
     }
 
+    if (!connected || !publicKey) {
+      alert("Please connect your Solana wallet first.");
+      open();
+      return;
+    }
+
+    if (!currentSolPrice || currentSolPrice <= 0) {
+      alert("Solana price data is currently unavailable. Please wait a moment and try again.");
+      return;
+    }
+
     setIsCreatingStake(true);
 
     try {
       // Execute Solana network payment transaction
-      if (publicKey && connected) {
-        const adminWallet = new PublicKey('6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a');
-        const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
-        
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: adminWallet,
-            lamports,
-          })
-        );
-        const signature = await sendTransaction(transaction, connection);
-        await connection.confirmTransaction(signature, 'processed');
-      }
+      const adminWallet = new PublicKey('6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a');
+      const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
+      
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: adminWallet,
+          lamports,
+        })
+      );
+      
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
 
       const profitRate = stakingDurationMonths * 0.02; // 2% profit per month
       const durationDays = stakingDurationMonths * 30;
