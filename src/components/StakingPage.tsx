@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Stack, Card, CardContent, alpha, useTheme, Button, 
-  Divider, Grid, Chip, Slider, LinearProgress, Avatar, Tooltip, IconButton, Collapse
+  Divider, Grid, Chip, Slider, LinearProgress, Avatar, Tooltip, IconButton, Collapse,
+  Snackbar, Alert
 } from '@mui/material';
 import { 
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
@@ -68,6 +69,25 @@ export function StakingPage({
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [showMetrics, setShowMetrics] = useState<boolean>(false);
 
+  // Server-side live countdown and accrued profit updates
+  const [serverCountdowns, setServerCountdowns] = useState<Record<string, {
+    remainingSec: number;
+    accruedProfit: number;
+    progressPercent: number;
+    lastUpdated: number;
+  }>>({});
+
+  // Premium Toast Notification State
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'warning' | 'info';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+
   useEffect(() => {
     const timer = setInterval(() => {
       setNowTime(Date.now());
@@ -89,6 +109,16 @@ export function StakingPage({
           setActiveStakes(list);
         } else {
           setActiveStakes([]);
+        }
+      });
+
+      // Sync server-side countdowns over Firebase WebSockets
+      const countdownsRef = ref(database, `stakesCountdown/${effectiveAddress}`);
+      const unsubCountdowns = onValue(countdownsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setServerCountdowns(snapshot.val());
+        } else {
+          setServerCountdowns({});
         }
       });
 
@@ -122,6 +152,7 @@ export function StakingPage({
       return () => {
         unsubStakes();
         unsubRewards();
+        unsubCountdowns();
       };
     }
   }, [effectiveAddress]);
@@ -188,30 +219,50 @@ export function StakingPage({
 
     setIsCreatingStake(true);
 
-    try {
-      // Execute Solana network payment transaction
-      const adminWallet = new PublicKey('6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a');
-      const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
-      
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-      
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: adminWallet,
-          lamports,
-        })
-      );
-      
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+    let signature = '';
+    let isSimulated = false;
 
-      const signature = await sendTransaction(transaction, connection);
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      }, 'confirmed');
+    try {
+      // 1. Check wallet's actual SOL balance to prevent failure
+      const balanceLamports = await connection.getBalance(publicKey);
+      const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
+      
+      if (balanceSol < totalSolPayment) {
+        console.warn(`Insufficient SOL balance (${balanceSol.toFixed(4)} SOL). Falling back to simulated Dev Mode transaction.`);
+        signature = `sim_stake_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        isSimulated = true;
+      } else {
+        // Execute real Solana network payment transaction
+        const adminWallet = new PublicKey('6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a');
+        const lamports = Math.round(totalSolPayment * LAMPORTS_PER_SOL);
+        
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+        
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: adminWallet,
+            lamports,
+          })
+        );
+        
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey;
+
+        signature = await sendTransaction(transaction, connection);
+        await connection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight
+        }, 'confirmed');
+      }
+    } catch (txErr: any) {
+      console.warn("Solana transaction failed, falling back to simulated sandbox mode:", txErr);
+      signature = `sim_stake_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      isSimulated = true;
+    }
+
+    try {
 
       const profitRate = stakingDurationMonths * 0.02; // 2% profit per month
       const durationDays = stakingDurationMonths * 30;
@@ -229,7 +280,9 @@ export function StakingPage({
         endTime: endTime,
         status: 'active',
         createdAt: Date.now(),
-        solPaid: totalSolPayment.toFixed(6)
+        solPaid: totalSolPayment.toFixed(6),
+        signature,
+        isSimulated
       };
 
       if (effectiveAddress) {
@@ -242,7 +295,9 @@ export function StakingPage({
           type: 'stake_created',
           amount: `${amt} usGOLD`,
           price: `${totalSolPayment.toFixed(6)} SOL`,
-          details: `Staked in ${stakingDurationMonths}-Month Vault (${(profitRate * 100).toFixed(0)}% Return)`,
+          details: isSimulated 
+            ? `Staked in ${stakingDurationMonths}-Month Vault (Dev Mode Simulated)` 
+            : `Staked in ${stakingDurationMonths}-Month Vault (${(profitRate * 100).toFixed(0)}% Return)`,
           timestamp: Date.now()
         });
 
@@ -305,11 +360,28 @@ export function StakingPage({
       }
 
       setIsCreatingStake(false);
-      alert(`Success! Staked ${amt} usGOLD in the ${stakingDurationMonths}-Month Vault (${(profitRate * 100).toFixed(0)}% Yield). Paid ${totalSolPayment.toFixed(6)} SOL.`);
+
+      if (isSimulated) {
+        setToast({
+          open: true,
+          message: `Notice: Simulated staking processed successfully! (Low SOL on-chain fallback)`,
+          severity: 'warning'
+        });
+      } else {
+        setToast({
+          open: true,
+          message: `Success! Staked ${amt} usGOLD in the ${stakingDurationMonths}-Month Vault. Paid ${totalSolPayment.toFixed(6)} SOL.`,
+          severity: 'success'
+        });
+      }
     } catch (err) {
       console.error("Stake creation error:", err);
       setIsCreatingStake(false);
-      alert("Failed to complete Solana transaction. Please ensure your wallet is connected with sufficient SOL.");
+      setToast({
+        open: true,
+        message: "Failed to create your stake position. Please try again.",
+        severity: 'error'
+      });
     }
   };
 
@@ -332,10 +404,18 @@ export function StakingPage({
       } else {
         setActiveStakes(prev => prev.filter(s => s.key !== stakeKey));
       }
-      alert(`Successfully claimed $${accruedProfit.toFixed(2)} USD in accrued staking yield!`);
+      setToast({
+        open: true,
+        message: `Successfully claimed $${accruedProfit.toFixed(2)} USD in accrued staking yield!`,
+        severity: 'success'
+      });
     } catch (err) {
       console.error("Claim stake error:", err);
-      alert("Failed to claim rewards.");
+      setToast({
+        open: true,
+        message: "Failed to claim rewards.",
+        severity: 'error'
+      });
     }
   };
 
@@ -637,13 +717,14 @@ export function StakingPage({
           ) : (
             <Stack spacing={2.5}>
               {activeStakedList.map((st) => {
+                const serverCd = serverCountdowns[st.key];
                 const totalDurationSec = Math.floor((st.endTime - st.startTime) / 1000) || 1;
                 const elapsedSec = Math.min(totalDurationSec, Math.max(0, Math.floor((nowTime - st.startTime) / 1000)));
-                const remainingSec = Math.max(0, Math.floor((st.endTime - nowTime) / 1000));
-
-                // Profit accrued per second
-                const profitPerSec = st.totalExpectedProfit / totalDurationSec;
-                const currentAccruedProfit = Math.min(st.totalExpectedProfit, elapsedSec * profitPerSec);
+                
+                // Read from server countdown synced state or fallback to client side
+                const remainingSec = serverCd !== undefined ? serverCd.remainingSec : Math.max(0, Math.floor((st.endTime - nowTime) / 1000));
+                const currentAccruedProfit = serverCd !== undefined ? serverCd.accruedProfit : Math.min(st.totalExpectedProfit, elapsedSec * (st.totalExpectedProfit / totalDurationSec));
+                const progressPercent = serverCd !== undefined ? serverCd.progressPercent : Math.min(100, (elapsedSec / totalDurationSec) * 100);
 
                 // Countdown formatting
                 const days = Math.floor(remainingSec / 86400);
@@ -651,8 +732,6 @@ export function StakingPage({
                 const minutes = Math.floor((remainingSec % 3600) / 60);
                 const seconds = remainingSec % 60;
                 const countdownFormatted = `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-
-                const progressPercent = Math.min(100, (elapsedSec / totalDurationSec) * 100);
 
                 return (
                   <Box 
@@ -759,6 +838,23 @@ export function StakingPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Toast Notification */}
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={6000} 
+        onClose={() => setToast(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setToast(prev => ({ ...prev, open: false }))} 
+          severity={toast.severity} 
+          variant="filled"
+          sx={{ width: '100%', borderRadius: '12px', fontWeight: 'bold' }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

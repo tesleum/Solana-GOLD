@@ -3,8 +3,83 @@ import path from "path";
 import fs from "fs";
 import OpenAI from "openai";
 import crypto from "crypto";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref as dbRef, get as dbGet, set as dbSet, update as dbUpdate } from "firebase/database";
 
 const __dirname = path.resolve();
+
+// Initialize Firebase for server-side staking countdown processing
+const firebaseConfig = {
+  apiKey: "AIzaSyADyi-9N9ewNhUE3xTPo78r9Yu1U2-UW-4",
+  authDomain: "smart-gold-2.firebaseapp.com",
+  projectId: "smart-gold-2",
+  storageBucket: "smart-gold-2.firebasestorage.app",
+  messagingSenderId: "909106359671",
+  appId: "1:909106359671:web:d7573b84fd7d5a5586c572",
+  databaseURL: "https://smart-gold-2-default-rtdb.europe-west1.firebasedatabase.app/"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const rtdb = getDatabase(firebaseApp);
+
+async function runStakingCountdownServerSide() {
+  try {
+    const stakesRef = dbRef(rtdb, "stakes");
+    const snapshot = await dbGet(stakesRef);
+    if (snapshot.exists()) {
+      const allStakes = snapshot.val();
+      const now = Date.now();
+      const updates: Record<string, any> = {};
+      
+      for (const userId of Object.keys(allStakes)) {
+        const userStakes = allStakes[userId];
+        if (!userStakes) continue;
+        for (const stakeId of Object.keys(userStakes)) {
+          const stake = userStakes[stakeId];
+          if (stake && stake.status === "active") {
+            const startTime = Number(stake.startTime) || now;
+            const endTime = Number(stake.endTime) || now;
+            const amount = Number(stake.amount) || 0;
+            const profitRate = Number(stake.profitRate) || 0;
+            const totalExpectedProfit = Number(stake.totalExpectedProfit) || (amount * profitRate);
+            
+            const totalDurationSec = Math.max(1, Math.floor((endTime - startTime) / 1000));
+            const elapsedSec = Math.min(totalDurationSec, Math.max(0, Math.floor((now - startTime) / 1000)));
+            const remainingSec = Math.max(0, Math.floor((endTime - now) / 1000));
+            const progressPercent = Number(Math.min(100, (elapsedSec / totalDurationSec) * 100).toFixed(2));
+            
+            const profitPerSec = totalExpectedProfit / totalDurationSec;
+            const accruedProfit = Number(Math.min(totalExpectedProfit, elapsedSec * profitPerSec).toFixed(6));
+            
+            updates[`stakesCountdown/${userId}/${stakeId}`] = {
+              remainingSec,
+              accruedProfit,
+              progressPercent,
+              lastUpdated: now
+            };
+            
+            // If the duration is fully finished, mark as complete
+            if (remainingSec <= 0) {
+              updates[`stakes/${userId}/${stakeId}/status`] = "completed";
+            }
+          }
+        }
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        await dbUpdate(dbRef(rtdb), updates);
+      }
+    }
+    
+    // Update global serverTime so clients can synchronize their clocks
+    await dbSet(dbRef(rtdb, "serverTime"), Date.now());
+  } catch (err) {
+    console.error("Error in server-side staking countdown updater:", err);
+  }
+}
+
+// Tick every 3 seconds to push real-time updates through Firebase WebSockets
+setInterval(runStakingCountdownServerSide, 3000);
 
 const tokenPriceCache: Record<string, { id: string; price: string; timestamp: number }> = {
   '24JPWnTUMmkFoK8L4Th2wqgo89VkbUyoqfMUJCVSGoLd': {
