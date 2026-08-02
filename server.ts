@@ -539,6 +539,72 @@ async function startServer() {
   });
   */
 
+  // Telegram Notifications API Proxy
+  app.post("/api/telegram/notify", async (req, res) => {
+    try {
+      const { message, target } = req.body;
+      
+      const configRef = dbRef(rtdb, "mlmSettings/telegramConfig");
+      const configSnap = await dbGet(configRef);
+      const telegramConfig = configSnap.exists() ? configSnap.val() : {};
+      
+      const botToken = telegramConfig.botToken || process.env.TELEGRAM_BOT_TOKEN;
+      const adminChatId = telegramConfig.adminChatId || process.env.TELEGRAM_ADMIN_CHAT_ID;
+      
+      if (!botToken) {
+        return res.status(400).json({ error: "Telegram Bot Token is not configured." });
+      }
+
+      const results = [];
+
+      const sendTgMessage = async (chatId: string, text: string) => {
+        try {
+          const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: text,
+              parse_mode: 'HTML'
+            })
+          });
+          const data = await response.json();
+          return { success: response.ok, chatId, data };
+        } catch (err: any) {
+          return { success: false, chatId, error: err.message };
+        }
+      };
+
+      if ((target === 'admin' || target === 'all' || !target) && adminChatId) {
+        const resAdmin = await sendTgMessage(adminChatId, message);
+        results.push({ target: 'admin', ...resAdmin });
+      }
+
+      if (target === 'users' || target === 'all') {
+        const usersRef = dbRef(rtdb, "users");
+        const usersSnap = await dbGet(usersRef);
+        if (usersSnap.exists()) {
+          const usersObj = usersSnap.val();
+          for (const uId of Object.keys(usersObj)) {
+            const userTgChatId = usersObj[uId]?.telegramChatId;
+            if (userTgChatId && userTgChatId !== adminChatId) {
+              const resUser = await sendTgMessage(userTgChatId, message);
+              results.push({ target: uId, ...resUser });
+            }
+          }
+        }
+      } else if (target && target !== 'admin' && target !== 'all') {
+        const resCustom = await sendTgMessage(target, message);
+        results.push({ target, ...resCustom });
+      }
+
+      res.json({ success: true, results });
+    } catch (err: any) {
+      console.error("Telegram Notification Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.join(process.cwd(), "dist", "index.html"));
   

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Stack, Card, CardContent, alpha, useTheme, Button, 
   Divider, Grid, Chip, Slider, LinearProgress, Avatar, Tooltip, IconButton, Collapse,
-  Snackbar, Alert
+  Snackbar, Alert, TextField
 } from '@mui/material';
 import { 
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
@@ -17,6 +17,7 @@ import { database } from '../firebase';
 import { ref, onValue, update, push, get } from 'firebase/database';
 import { TokenIcon } from './TokenIcon';
 import { triggerHaptic } from '../lib/haptic';
+import axios from 'axios';
 
 interface StakingPageProps {
   language: string;
@@ -49,6 +50,10 @@ export function StakingPage({
   const [customStakeAmount, setCustomStakeAmount] = useState<string>('100');
   const [stakingDurationMonths, setStakingDurationMonths] = useState<1 | 3 | 6 | 12>(3);
   const [isCreatingStake, setIsCreatingStake] = useState(false);
+
+  // User Telegram configuration
+  const [userTelegramChatId, setUserTelegramChatId] = useState<string>('');
+  const [savingTelegram, setSavingTelegram] = useState<boolean>(false);
 
   // Active Stakes from Firebase
   const [activeStakes, setActiveStakes] = useState<any[]>([]);
@@ -149,10 +154,22 @@ export function StakingPage({
         }
       });
 
+      // Sync user profile (telegram chat id)
+      const userProfileRef = ref(database, `users/${effectiveAddress}`);
+      const unsubProfile = onValue(userProfileRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          setUserTelegramChatId(val.telegramChatId || '');
+        } else {
+          setUserTelegramChatId('');
+        }
+      });
+
       return () => {
         unsubStakes();
         unsubRewards();
         unsubCountdowns();
+        unsubProfile();
       };
     }
   }, [effectiveAddress]);
@@ -300,6 +317,23 @@ export function StakingPage({
             : `Staked in ${stakingDurationMonths}-Month Vault (${(profitRate * 100).toFixed(0)}% Return)`,
           timestamp: Date.now()
         });
+
+        // Telegram Notifications trigger
+        try {
+          const tgMessage = `🚀 <b>New Stake Created!</b>\n\n` +
+            `👤 <b>Wallet:</b> <code>${effectiveAddress}</code>\n` +
+            `💰 <b>Staked:</b> <b>${amt} usGOLD</b>\n` +
+            `📅 <b>Term:</b> ${stakingDurationMonths} Months\n` +
+            `🪙 <b>Payment:</b> ${totalSolPayment.toFixed(6)} SOL\n` +
+            `🔗 <b>Signature:</b> <a href="https://solscan.io/tx/${signature}">${signature.substring(0, 10)}...</a>\n` +
+            `📈 <i>Yield accrual processed automatically by server clock.</i>`;
+          await axios.post("/api/telegram/notify", {
+            message: tgMessage,
+            target: "all"
+          });
+        } catch (tgErr) {
+          console.warn("Failed to deliver Telegram notification:", tgErr);
+        }
 
         // Referral reward unlocking logic: Referee completed staking payment
         try {
@@ -674,6 +708,91 @@ export function StakingPage({
 
         </CardContent>
       </Card>
+
+      {/* TELEGRAM NOTIFICATION ALERTS SETTING CARD */}
+      {connected && (
+        <Card sx={{ 
+          bgcolor: '#141518',
+          border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+          borderRadius: '28px',
+          boxShadow: `0 10px 30px ${alpha('#000', 0.5)}`,
+          overflow: 'hidden'
+        }}>
+          <Box sx={{ p: 3, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2), display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Zap color="#D4AF37" size={20} />
+            <Typography variant="h6" fontWeight="800" color="#fff">
+              Telegram Alerts Bot
+            </Typography>
+          </Box>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="body2" color="text.secondary" mb={3} lineHeight={1.6}>
+              Receive real-time automated alerts on your Telegram account whenever you create a staking vault, accrue daily yield, or receive referral rewards!
+            </Typography>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  label="Your Telegram Chat ID"
+                  placeholder="e.g. 583726485"
+                  value={userTelegramChatId}
+                  onChange={(e: any) => setUserTelegramChatId(e.target.value)}
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      bgcolor: alpha('#000', 0.15)
+                    }
+                  }}
+                  helperText={
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      To find your Chat ID, search and start <b>@userinfobot</b> or <b>@GetChatID_Bot</b> on Telegram.
+                    </Typography>
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled={savingTelegram || !userTelegramChatId.trim()}
+                  onClick={async () => {
+                    if (!effectiveAddress) return;
+                    setSavingTelegram(true);
+                    try {
+                      await update(ref(database, `users/${effectiveAddress}`), {
+                        telegramChatId: userTelegramChatId
+                      });
+                      
+                      // Notify via endpoint
+                      await axios.post("/api/telegram/notify", {
+                        message: `🔔 <b>Solana Gold Staking Alerts Connected!</b>\n\nYour wallet address <code>${effectiveAddress}</code> is now linked with this Telegram account for real-time notifications!`,
+                        target: userTelegramChatId
+                      });
+                      
+                      alert("Telegram Staking Alerts successfully enabled!");
+                    } catch (err: any) {
+                      console.error("Failed to link Telegram:", err);
+                      alert("Error setting up Telegram. Please verify your Chat ID is correct.");
+                    } finally {
+                      setSavingTelegram(false);
+                    }
+                  }}
+                  sx={{
+                    bgcolor: '#D4AF37',
+                    color: '#000',
+                    fontWeight: '900',
+                    borderRadius: '12px',
+                    py: 1.8,
+                    '&:hover': { bgcolor: '#FFDF73' }
+                  }}
+                >
+                  {savingTelegram ? "Connecting..." : "Enable Alerts"}
+                </Button>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 2. ACTIVE STAKES / PREVIOUS VAULTS SECTION */}
       <Card sx={{ 

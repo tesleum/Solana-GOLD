@@ -39,6 +39,7 @@ import {
   Collapse,
   TextField,
   Alert,
+  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -328,6 +329,7 @@ export default function AdminPanel() {
     { text: "Dashboard", icon: <LayoutDashboard />, path: "/admin" },
     { text: "Users", icon: <Users />, path: "/admin/users" },
     { text: "Unilevel MLM", icon: <Network />, path: "/admin/mlm" },
+    { text: "Staking", icon: <Layers />, path: "/admin/staking" },
     {
       text: "Transactions",
       icon: <ArrowRightLeft />,
@@ -443,6 +445,7 @@ export default function AdminPanel() {
             <Route path="/" element={<AdminDashboard />} />
             <Route path="users" element={<UsersManagement />} />
             <Route path="mlm" element={<UnilevelMLM />} />
+            <Route path="staking" element={<AdminStaking />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="approvals" element={<ReferralApprovals />} />
             <Route path="settings" element={<AdminSettings />} />
@@ -1918,6 +1921,815 @@ function ReferralApprovals() {
           </Table>
         </Paper>
       )}
+    </Box>
+  );
+}
+
+export function AdminStaking() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Real-time states
+  const [stakes, setStakes] = useState<any[]>([]);
+  const [countdowns, setCountdowns] = useState<any>({});
+  const [rewards, setRewards] = useState<any[]>([]);
+  const [users, setUsers] = useState<any>({});
+  const [tgConfig, setTgConfig] = useState({
+    botToken: "",
+    adminChatId: "",
+    userNotificationsEnabled: true
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "telegram">("stakes");
+
+  // Actions states
+  const [selectedStake, setSelectedStake] = useState<any | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDuration, setEditDuration] = useState("3");
+  const [actioningKey, setActioningKey] = useState<string | null>(null);
+
+  // Telegram states
+  const [savingTg, setSavingTg] = useState(false);
+  const [tgTestLoading, setTgTestLoading] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+
+  // Single notification state
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
+  const [notifyUserAddress, setNotifyUserAddress] = useState("");
+  const [customNotifyMsg, setCustomNotifyMsg] = useState("");
+  const [sendingNotify, setSendingNotify] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    const stakesRef = ref(database, "stakes");
+    const unsubStakes = onValue(stakesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const list: any[] = [];
+        Object.keys(val).forEach((userAddr) => {
+          const userStakes = val[userAddr];
+          if (userStakes) {
+            Object.keys(userStakes).forEach((stakeId) => {
+              list.push({
+                id: stakeId,
+                userAddress: userAddr,
+                ...userStakes[stakeId]
+              });
+            });
+          }
+        });
+        setStakes(list);
+      } else {
+        setStakes([]);
+      }
+      setLoading(false);
+    });
+
+    const countdownsRef = ref(database, "stakesCountdown");
+    const unsubCountdowns = onValue(countdownsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setCountdowns(snapshot.val());
+      } else {
+        setCountdowns({});
+      }
+    });
+
+    const rewardsRef = ref(database, "rewards");
+    const unsubRewards = onValue(rewardsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const list: any[] = [];
+        Object.keys(val).forEach((referrerId) => {
+          const userRewards = val[referrerId];
+          Object.keys(userRewards).forEach((rewardKey) => {
+            list.push({
+              key: rewardKey,
+              referrerId,
+              ...userRewards[rewardKey]
+            });
+          });
+        });
+        setRewards(list);
+      } else {
+        setRewards([]);
+      }
+    });
+
+    const usersRef = ref(database, "users");
+    const unsubUsers = onValue(usersRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setUsers(snapshot.val());
+      } else {
+        setUsers({});
+      }
+    });
+
+    const configRef = ref(database, "mlmSettings/telegramConfig");
+    const unsubConfig = onValue(configRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        setTgConfig({
+          botToken: val.botToken || "",
+          adminChatId: val.adminChatId || "",
+          userNotificationsEnabled: val.userNotificationsEnabled !== false
+        });
+      }
+    });
+
+    return () => {
+      unsubStakes();
+      unsubCountdowns();
+      unsubRewards();
+      unsubUsers();
+      unsubConfig();
+    };
+  }, []);
+
+  // Filter stakes
+  const filteredStakes = stakes.filter((st) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      st.userAddress.toLowerCase().includes(query) ||
+      st.id.toLowerCase().includes(query) ||
+      (st.status || "").toLowerCase().includes(query)
+    );
+  }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  // Filter pending rewards (referrals pending 1 usgold)
+  const pendingRewards = rewards.filter((r) => r.status === "pending" || r.status === "needs_approval");
+
+  // Actions
+  const handleCompleteEarly = async (st: any) => {
+    if (!window.confirm("Are you sure you want to complete this stake early? This sets the endTime to now, forcing the next server cycle to mark it complete.")) return;
+    try {
+      await update(ref(database, `stakes/${st.userAddress}/${st.id}`), {
+        endTime: Date.now()
+      });
+      alert("Successfully requested early completion. The server countdown processor will process this in a few seconds.");
+    } catch (err) {
+      console.error(err);
+      alert("Error completing stake early.");
+    }
+  };
+
+  const handleDeleteStake = async (st: any) => {
+    if (!window.confirm("Are you sure you want to delete this stake? This action cannot be undone.")) return;
+    try {
+      await set(ref(database, `stakes/${st.userAddress}/${st.id}`), null);
+      await set(ref(database, `stakesCountdown/${st.userAddress}/${st.id}`), null);
+      alert("Stake deleted successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting stake.");
+    }
+  };
+
+  const handleEditStake = (st: any) => {
+    setSelectedStake(st);
+    setEditAmount(st.amount.toString());
+    setEditDuration(st.durationMonths.toString());
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEditStake = async () => {
+    if (!selectedStake) return;
+    const amt = parseFloat(editAmount);
+    const months = parseInt(editDuration, 10);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    try {
+      const profitRate = months * 0.02;
+      const durationDays = months * 30;
+      const durationMs = durationDays * 86400 * 1000;
+      const endTime = (selectedStake.startTime || Date.now()) + durationMs;
+      const totalExpectedProfit = amt * profitRate;
+
+      await update(ref(database, `stakes/${selectedStake.userAddress}/${selectedStake.id}`), {
+        amount: amt,
+        durationMonths: months,
+        profitRate,
+        endTime,
+        totalExpectedProfit
+      });
+
+      setEditDialogOpen(false);
+      setSelectedStake(null);
+      alert("Stake updated successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update stake.");
+    }
+  };
+
+  const handleSaveTelegramConfig = async () => {
+    setSavingTg(true);
+    try {
+      await set(ref(database, "mlmSettings/telegramConfig"), tgConfig);
+      alert("Telegram Configuration saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save telegram configuration.");
+    } finally {
+      setSavingTg(false);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    if (!tgConfig.botToken || !tgConfig.adminChatId) {
+      alert("Please configure Bot Token and Admin Chat ID first.");
+      return;
+    }
+    setTgTestLoading(true);
+    try {
+      await axios.post("/api/telegram/notify", {
+        message: "🔔 <b>Solana Gold Staking bot active!</b>\n\nThis is a test notification confirming your Telegram Bot API link is working 100%!",
+        target: tgConfig.adminChatId
+      });
+      alert("Test message sent successfully! Please check your telegram channel/bot.");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Failed to send test message: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setTgTestLoading(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastMsg.trim()) {
+      alert("Please enter a message to broadcast.");
+      return;
+    }
+    if (!tgConfig.botToken) {
+      alert("Please configure Telegram Bot Token in Settings first.");
+      return;
+    }
+    setBroadcasting(true);
+    try {
+      const formattedMsg = `📢 <b>OFFICIAL ANNOUNCEMENT</b>\n\n${broadcastMsg}`;
+      const res = await axios.post("/api/telegram/notify", {
+        message: formattedMsg,
+        target: "all"
+      });
+      alert(`Broadcast sent! Targets contacted: ${res.data?.results?.length || 0}`);
+      setBroadcastMsg("");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Broadcast failed: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
+  const handleOpenNotifyUser = (userAddress: string) => {
+    setNotifyUserAddress(userAddress);
+    const userProfile = users[userAddress];
+    const userTgId = userProfile?.telegramChatId || "";
+    if (!userTgId) {
+      alert("Warning: This user has not registered a Telegram Chat ID yet in their profile. Notifications may not deliver.");
+    }
+    setCustomNotifyMsg(`Hello! This is an update regarding your Solana Gold usGOLD staking vault.`);
+    setNotifyDialogOpen(true);
+  };
+
+  const handleSendDirectNotify = async () => {
+    if (!customNotifyMsg.trim()) return;
+    const userProfile = users[notifyUserAddress];
+    const userTgId = userProfile?.telegramChatId;
+
+    if (!userTgId) {
+      alert("User does not have a telegramChatId configured.");
+      return;
+    }
+
+    setSendingNotify(true);
+    try {
+      await axios.post("/api/telegram/notify", {
+        message: `✉️ <b>Message from Solana Gold Support</b>\n\n${customNotifyMsg}`,
+        target: userTgId
+      });
+      alert("Message sent successfully!");
+      setNotifyDialogOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Failed to send: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setSendingNotify(false);
+    }
+  };
+
+  // Inline Referral Approval helper
+  const handleApproveReward = async (reward: any) => {
+    setActioningKey(reward.key);
+    try {
+      const rewardPath = `rewards/${reward.referrerId}/${reward.key}`;
+      await update(ref(database, rewardPath), {
+        status: "approved",
+        approvedAt: Date.now()
+      });
+
+      const txPath = `transactions/${reward.referrerId}`;
+      await push(ref(database, txPath), {
+        type: 'referral_reward',
+        amount: '1.0000 usGOLD',
+        price: 'Referral',
+        details: `Referral Reward for referee: ${reward.referee}`,
+        time: new Date().toLocaleString(),
+        timestamp: Date.now()
+      });
+
+      const userRef = ref(database, `users/${reward.referrerId}`);
+      const userSnap = await get(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.val();
+        await update(userRef, {
+          earnings: (userData.earnings || 0) + 1,
+          claimedCommissions: (userData.claimedCommissions || 0) + 1,
+          lastActive: Date.now()
+        });
+      }
+
+      await push(ref(database, `global_transactions`), {
+        type: 'referral_reward_redeemed',
+        user: reward.referrerId,
+        referee: reward.referee,
+        amount: 1,
+        timestamp: Date.now()
+      });
+
+      // Notify referrer on Telegram!
+      const referrerProfile = users[reward.referrerId];
+      if (referrerProfile && referrerProfile.telegramChatId) {
+        try {
+          await axios.post("/api/telegram/notify", {
+            message: `🎉 <b>Referral Reward Approved!</b>\n\nYour <b>1.0000 usGOLD</b> referral commission has been approved and credited to your wallet balance! Thank you for sharing Solana Gold.`,
+            target: referrerProfile.telegramChatId
+          });
+        } catch (tgErr) {
+          console.warn("Could not notify referrer on TG:", tgErr);
+        }
+      }
+
+      alert("Approved referral reward of 1 usGOLD and credited successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to approve reward.");
+    } finally {
+      setActioningKey(null);
+    }
+  };
+
+  // Calculations
+  const totalStakedVolume = stakes.reduce((sum, st) => sum + (parseFloat(st.amount) || 0), 0);
+  const activeStakesCount = stakes.filter(st => st.status === "active").length;
+
+  return (
+    <Box>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+          mb: 4, 
+          fontFamily: '"Cinzel", serif', 
+          fontWeight: 800,
+          fontSize: { xs: '1.5rem', sm: '2.125rem' } 
+        }}
+      >
+        Staking Management
+      </Typography>
+
+      {/* Metrics Dashboard */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ position: "relative" }}>
+              <Typography color="text.secondary" gutterBottom>Total usGOLD Staked</Typography>
+              <Typography variant="h4" color="primary.main">{totalStakedVolume.toLocaleString()} usGOLD</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ position: "relative" }}>
+              <Typography color="text.secondary" gutterBottom>Active Vaults</Typography>
+              <Typography variant="h4" color="success.main">{activeStakesCount}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ position: "relative" }}>
+              <Typography color="text.secondary" gutterBottom>Pending Referrals</Typography>
+              <Typography variant="h4" color="warning.main">{pendingRewards.length}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent sx={{ position: "relative" }}>
+              <Typography color="text.secondary" gutterBottom>Telegram Linked Users</Typography>
+              <Typography variant="h4" color="info.main">
+                {Object.values(users).filter((u: any) => !!u.telegramChatId).length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Section Tabs */}
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <Button 
+          variant={activeTab === "stakes" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("stakes")}
+          sx={{ borderRadius: 2 }}
+        >
+          User Stakes List
+        </Button>
+        <Button 
+          variant={activeTab === "pendingRewards" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("pendingRewards")}
+          sx={{ borderRadius: 2 }}
+        >
+          Referrals Pending ({pendingRewards.length})
+        </Button>
+        <Button 
+          variant={activeTab === "telegram" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("telegram")}
+          sx={{ borderRadius: 2 }}
+        >
+          Telegram Settings & Broadcasts
+        </Button>
+      </Stack>
+
+      {activeTab === "stakes" && (
+        <Box>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+            <TextField
+              size="small"
+              placeholder="Search by User Address, Stake ID, Status..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ flexGrow: 1 }}
+              InputProps={{
+                startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.5 }} />
+              }}
+            />
+          </Box>
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredStakes.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">No stakes found match this filter.</Typography>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper} sx={{ bgcolor: '#121214', borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>User Wallet</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Amount</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Duration</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Time Left / Countdown</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textAlign: 'right' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredStakes.map((st) => {
+                    const cd = countdowns[st.userAddress]?.[st.id] || {};
+                    const hoursLeft = cd.remainingSec ? Math.floor(cd.remainingSec / 3600) : 0;
+                    const daysLeft = Math.floor(hoursLeft / 24);
+                    const remHours = hoursLeft % 24;
+                    const isCompleted = st.status === "completed" || (cd.remainingSec !== undefined && cd.remainingSec <= 0);
+
+                    return (
+                      <TableRow key={st.id} hover>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                            {st.userAddress}
+                          </Typography>
+                          {users[st.userAddress]?.telegramChatId && (
+                            <Chip 
+                              label="Telegram Alerts Linked" 
+                              size="small" 
+                              color="info" 
+                              variant="outlined"
+                              sx={{ height: 16, fontSize: '8px', mt: 0.5 }} 
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, fontWeight: 700 }}>
+                          {st.amount} usGOLD
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          {st.durationMonths} Months
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Chip 
+                            label={isCompleted ? "Completed" : "Active"} 
+                            color={isCompleted ? "success" : "warning"} 
+                            size="small"
+                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          {isCompleted ? (
+                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 'bold' }}>Payout Complete</Typography>
+                          ) : cd.remainingSec !== undefined ? (
+                            <Box sx={{ width: '100%' }}>
+                              <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
+                                {daysLeft > 0 ? `${daysLeft}d ` : ""}{remHours}h remaining
+                              </Typography>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={cd.progressPercent || 0} 
+                                sx={{ height: 4, borderRadius: 2, bgcolor: alpha('#fff', 0.05) }} 
+                              />
+                            </Box>
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">Calibrating...</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Button 
+                              size="small" 
+                              variant="text" 
+                              onClick={() => handleOpenNotifyUser(st.userAddress)}
+                              sx={{ fontSize: '0.7rem', color: 'info.main' }}
+                            >
+                              Message
+                            </Button>
+                            {!isCompleted && (
+                              <Button 
+                                size="small" 
+                                variant="text" 
+                                color="success"
+                                onClick={() => handleCompleteEarly(st)}
+                                sx={{ fontSize: '0.7rem' }}
+                              >
+                                Finish early
+                              </Button>
+                            )}
+                            <Button 
+                              size="small" 
+                              variant="text" 
+                              onClick={() => handleEditStake(st)}
+                              sx={{ fontSize: '0.7rem', color: '#D4AF37' }}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              size="small" 
+                              variant="text" 
+                              color="error"
+                              onClick={() => handleDeleteStake(st)}
+                              sx={{ fontSize: '0.7rem' }}
+                            >
+                              Delete
+                            </Button>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
+
+      {activeTab === "pendingRewards" && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>Referrals Pending Approval (1 usGOLD Rewards)</Typography>
+          {pendingRewards.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">No pending referral rewards currently waiting.</Typography>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper} sx={{ bgcolor: '#121214', borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referrer (Recipient)</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referee (Invitee)</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Details</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textAlign: 'right' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pendingRewards.map((row) => (
+                    <TableRow key={row.key} hover>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                          {row.referrerId}
+                        </Typography>
+                        {users[row.referrerId]?.telegramChatId && (
+                          <Chip label="Referrer TG Linked" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
+                          {row.referee}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        {row.stakeAmount ? (
+                          <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold' }}>
+                            Staked {row.stakeAmount} usGOLD ({row.stakeDurationMonths}m) | {row.solPaid} SOL
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">Registered Referral Profile</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Chip 
+                          label={row.status === "needs_approval" ? "Waiting Approval" : "Pending Stake"} 
+                          size="small" 
+                          color={row.status === "needs_approval" ? "warning" : "default"}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                        {row.status === "needs_approval" ? (
+                          <Button 
+                            variant="contained" 
+                            size="small" 
+                            color="success" 
+                            disabled={actioningKey === row.key}
+                            onClick={() => handleApproveReward(row)}
+                            sx={{ borderRadius: '8px', fontSize: '11px', px: 2, py: 0.5 }}
+                          >
+                            {actioningKey === row.key ? "Crediting..." : "Approve & Credit"}
+                          </Button>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">Referee must stake first</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
+
+      {activeTab === "telegram" && (
+        <Grid container spacing={4}>
+          {/* Bot Setup Card */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Telegram Bot API Link</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Configure your Telegram Bot to deliver instant real-time alerts to the admin channel and individual users when they stake or unlock referral commissions.
+                </Typography>
+
+                <Stack spacing={2.5}>
+                  <TextField
+                    label="Telegram Bot Token"
+                    fullWidth
+                    value={tgConfig.botToken}
+                    onChange={(e) => setTgConfig({ ...tgConfig, botToken: e.target.value })}
+                    placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                  />
+                  <TextField
+                    label="Admin Channel/Group Chat ID"
+                    fullWidth
+                    value={tgConfig.adminChatId}
+                    onChange={(e) => setTgConfig({ ...tgConfig, adminChatId: e.target.value })}
+                    placeholder="e.g. -1001827364590 or 9827364"
+                    helperText="Prefix channel IDs with -100"
+                  />
+
+                  <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      color="primary" 
+                      onClick={handleSaveTelegramConfig} 
+                      disabled={savingTg}
+                    >
+                      {savingTg ? "Saving..." : "Save Config"}
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      color="info" 
+                      onClick={handleTestTelegram} 
+                      disabled={tgTestLoading}
+                    >
+                      {tgTestLoading ? "Testing..." : "Send Test Alert"}
+                    </Button>
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Broadcast Center Card */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Staking Broadcast Center</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Send a notification announcement to ALL users who have registered a Telegram Chat ID with Solana Gold.
+                </Typography>
+
+                <Stack spacing={2.5}>
+                  <TextField
+                    label="Broadcast Announcement Message"
+                    multiline
+                    rows={4}
+                    fullWidth
+                    value={broadcastMsg}
+                    onChange={(e) => setBroadcastMsg(e.target.value)}
+                    placeholder="Example: 🚀 Staking yields have been processed for all active pools! Check your accruals."
+                  />
+
+                  <Button 
+                    variant="contained" 
+                    color="warning" 
+                    onClick={handleSendBroadcast} 
+                    disabled={broadcasting || !broadcastMsg.trim()}
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    {broadcasting ? "Broadcasting..." : "Send Broadcast to All Users"}
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Edit Stake Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Edit Staking Vault Details</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="Staked Amount (usGOLD)"
+              type="number"
+              fullWidth
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Vault Duration</InputLabel>
+              <Select
+                value={editDuration}
+                label="Vault Duration"
+                onChange={(e) => setEditDuration(e.target.value)}
+              >
+                <MenuItem value="1">1 Month (2% Yield)</MenuItem>
+                <MenuItem value="3">3 Months (6% Yield)</MenuItem>
+                <MenuItem value="6">6 Months (12% Yield)</MenuItem>
+                <MenuItem value="12">12 Months (24% Yield)</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" onClick={handleSaveEditStake}>Save Changes</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Direct Notification Dialog */}
+      <Dialog open={notifyDialogOpen} onClose={() => setNotifyDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Direct Telegram User Notification</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Sending direct message to user: <b>{notifyUserAddress.substring(0, 8)}...</b>
+            </Typography>
+            <TextField
+              label="Telegram Chat Message"
+              multiline
+              rows={4}
+              fullWidth
+              value={customNotifyMsg}
+              onChange={(e) => setCustomNotifyMsg(e.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNotifyDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="info" onClick={handleSendDirectNotify} disabled={sendingNotify || !customNotifyMsg.trim()}>
+            {sendingNotify ? "Sending..." : "Send Message"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
