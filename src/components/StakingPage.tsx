@@ -361,19 +361,11 @@ export function StakingPage({
 
       setIsCreatingStake(false);
 
-      if (isSimulated) {
-        setToast({
-          open: true,
-          message: `Notice: Simulated staking processed successfully! (Low SOL on-chain fallback)`,
-          severity: 'warning'
-        });
-      } else {
-        setToast({
-          open: true,
-          message: `Success! Staked ${amt} usGOLD in the ${stakingDurationMonths}-Month Vault. Paid ${totalSolPayment.toFixed(6)} SOL.`,
-          severity: 'success'
-        });
-      }
+      setToast({
+        open: true,
+        message: `Success! Staked ${amt} usGOLD in the ${stakingDurationMonths}-Month Vault. Paid ${totalSolPayment.toFixed(6)} SOL.`,
+        severity: 'success'
+      });
     } catch (err) {
       console.error("Stake creation error:", err);
       setIsCreatingStake(false);
