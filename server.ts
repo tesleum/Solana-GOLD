@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import crypto from "crypto";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref as dbRef, get as dbGet, set as dbSet, update as dbUpdate } from "firebase/database";
+import { GoogleAuth } from "google-auth-library";
 
 const __dirname = path.resolve();
 
@@ -539,68 +540,148 @@ async function startServer() {
   });
   */
 
-  // Telegram Notifications API Proxy
+  // Helper to obtain FCM OAuth2 Access Token
+  async function getFcmAccessToken(): Promise<string> {
+    try {
+      const configRef = dbRef(rtdb, "mlmSettings/fcmConfig");
+      const configSnap = await dbGet(configRef);
+      const fcmConfig = configSnap.exists() ? configSnap.val() : {};
+      
+      let auth;
+      if (fcmConfig.serviceAccount) {
+        try {
+          const keys = JSON.parse(fcmConfig.serviceAccount);
+          auth = new GoogleAuth({
+            credentials: keys,
+            scopes: 'https://www.googleapis.com/auth/firebase.messaging'
+          });
+        } catch (jsonErr) {
+          console.error("FCM config service account JSON parse failed, falling back to ambient credentials:", jsonErr);
+          auth = new GoogleAuth({
+            scopes: 'https://www.googleapis.com/auth/firebase.messaging'
+          });
+        }
+      } else {
+        auth = new GoogleAuth({
+          scopes: 'https://www.googleapis.com/auth/firebase.messaging'
+        });
+      }
+      
+      const client = await auth.getClient();
+      const tokenResponse = await client.getAccessToken();
+      if (!tokenResponse.token) {
+        throw new Error("FCM access token is empty");
+      }
+      return tokenResponse.token;
+    } catch (err: any) {
+      console.error("Error retrieving FCM access token:", err);
+      throw err;
+    }
+  }
+
+  // Helper to deliver push notification via FCM V1 API
+  async function sendFcmNotification(token: string, title: string, body: string, data?: Record<string, string>) {
+    try {
+      const accessToken = await getFcmAccessToken();
+      const response = await fetch("https://fcm.googleapis.com/v1/projects/smart-gold-2/messages:send", {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: {
+            token: token,
+            notification: {
+              title: title,
+              body: body
+            },
+            data: data || {}
+          }
+        })
+      });
+      
+      const resData = await response.json();
+      return { success: response.ok, data: resData };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Firebase Cloud Messaging Notifications API Proxy
   app.post("/api/telegram/notify", async (req, res) => {
     try {
-      const { message, target } = req.body;
+      const { message, target, title } = req.body;
+      const finalTitle = title || "Solana Gold Alert";
       
-      const configRef = dbRef(rtdb, "mlmSettings/telegramConfig");
-      const configSnap = await dbGet(configRef);
-      const telegramConfig = configSnap.exists() ? configSnap.val() : {};
-      
-      const botToken = telegramConfig.botToken || process.env.TELEGRAM_BOT_TOKEN;
-      const adminChatId = telegramConfig.adminChatId || process.env.TELEGRAM_ADMIN_CHAT_ID;
-      
-      if (!botToken) {
-        return res.status(400).json({ error: "Telegram Bot Token is not configured." });
-      }
+      const results: any[] = [];
 
-      const results = [];
-
-      const sendTgMessage = async (chatId: string, text: string) => {
+      const sendToWallet = async (walletAddress: string) => {
         try {
-          const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: chatId,
-              text: text,
-              parse_mode: 'HTML'
-            })
-          });
-          const data = await response.json();
-          return { success: response.ok, chatId, data };
+          const userRef = dbRef(rtdb, `users/${walletAddress}`);
+          const userSnap = await dbGet(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.val();
+            // Single token support
+            if (userData.fcmToken) {
+              const resFcm = await sendFcmNotification(userData.fcmToken, finalTitle, message);
+              results.push({ walletAddress, token: userData.fcmToken, ...resFcm });
+            }
+            // Multi-token support
+            if (userData.fcmTokens) {
+              for (const tokenKey of Object.keys(userData.fcmTokens)) {
+                const tokenVal = userData.fcmTokens[tokenKey];
+                if (tokenVal && tokenVal !== userData.fcmToken) {
+                  const resFcm = await sendFcmNotification(tokenVal, finalTitle, message);
+                  results.push({ walletAddress, token: tokenVal, ...resFcm });
+                }
+              }
+            }
+          } else {
+            results.push({ walletAddress, success: false, error: "User profile does not exist" });
+          }
         } catch (err: any) {
-          return { success: false, chatId, error: err.message };
+          results.push({ walletAddress, success: false, error: err.message });
         }
       };
 
-      if ((target === 'admin' || target === 'all' || !target) && adminChatId) {
-        const resAdmin = await sendTgMessage(adminChatId, message);
-        results.push({ target: 'admin', ...resAdmin });
-      }
-
-      if (target === 'users' || target === 'all') {
+      if (target === 'all' || target === 'users') {
         const usersRef = dbRef(rtdb, "users");
         const usersSnap = await dbGet(usersRef);
         if (usersSnap.exists()) {
           const usersObj = usersSnap.val();
-          for (const uId of Object.keys(usersObj)) {
-            const userTgChatId = usersObj[uId]?.telegramChatId;
-            if (userTgChatId && userTgChatId !== adminChatId) {
-              const resUser = await sendTgMessage(userTgChatId, message);
-              results.push({ target: uId, ...resUser });
+          for (const wallet of Object.keys(usersObj)) {
+            const userData = usersObj[wallet];
+            if (userData?.fcmToken) {
+              const resFcm = await sendFcmNotification(userData.fcmToken, finalTitle, message);
+              results.push({ wallet, token: userData.fcmToken, ...resFcm });
             }
           }
         }
-      } else if (target && target !== 'admin' && target !== 'all') {
-        const resCustom = await sendTgMessage(target, message);
-        results.push({ target, ...resCustom });
+      } else if (target === 'admin') {
+        const configRef = dbRef(rtdb, "mlmSettings/fcmConfig");
+        const configSnap = await dbGet(configRef);
+        if (configSnap.exists()) {
+          const fcmConfig = configSnap.val();
+          if (fcmConfig.adminFcmToken) {
+            const resFcm = await sendFcmNotification(fcmConfig.adminFcmToken, finalTitle, message);
+            results.push({ target: 'admin', token: fcmConfig.adminFcmToken, ...resFcm });
+          }
+        }
+      } else if (target) {
+        if (target.length > 50) {
+          // It's a direct FCM device token
+          const resFcm = await sendFcmNotification(target, finalTitle, message);
+          results.push({ token: target, ...resFcm });
+        } else {
+          // It's a user's wallet address
+          await sendToWallet(target);
+        }
       }
 
       res.json({ success: true, results });
     } catch (err: any) {
-      console.error("Telegram Notification Error:", err);
+      console.error("FCM Notification Error:", err);
       res.status(500).json({ error: err.message });
     }
   });

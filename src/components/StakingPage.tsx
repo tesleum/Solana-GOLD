@@ -13,8 +13,9 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useAppKit } from '@reown/appkit/react';
 import { t } from '../translations';
-import { database } from '../firebase';
+import { database, messaging } from '../firebase';
 import { ref, onValue, update, push, get } from 'firebase/database';
+import { getToken, onMessage } from 'firebase/messaging';
 import { TokenIcon } from './TokenIcon';
 import { triggerHaptic } from '../lib/haptic';
 import axios from 'axios';
@@ -51,9 +52,10 @@ export function StakingPage({
   const [stakingDurationMonths, setStakingDurationMonths] = useState<1 | 3 | 6 | 12>(3);
   const [isCreatingStake, setIsCreatingStake] = useState(false);
 
-  // User Telegram configuration
-  const [userTelegramChatId, setUserTelegramChatId] = useState<string>('');
-  const [savingTelegram, setSavingTelegram] = useState<boolean>(false);
+  // Firebase Cloud Messaging configurations
+  const [fcmToken, setFcmToken] = useState<string>('');
+  const [notificationPermission, setNotificationPermission] = useState<'default' | 'granted' | 'denied'>('default');
+  const [savingFcm, setSavingFcm] = useState<boolean>(false);
 
   // Active Stakes from Firebase
   const [activeStakes, setActiveStakes] = useState<any[]>([]);
@@ -154,14 +156,14 @@ export function StakingPage({
         }
       });
 
-      // Sync user profile (telegram chat id)
+      // Sync user profile (FCM token)
       const userProfileRef = ref(database, `users/${effectiveAddress}`);
       const unsubProfile = onValue(userProfileRef, (snapshot) => {
         if (snapshot.exists()) {
           const val = snapshot.val();
-          setUserTelegramChatId(val.telegramChatId || '');
+          setFcmToken(val.fcmToken || '');
         } else {
-          setUserTelegramChatId('');
+          setFcmToken('');
         }
       });
 
@@ -173,6 +175,77 @@ export function StakingPage({
       };
     }
   }, [effectiveAddress]);
+
+  // Listen for FCM foreground notifications and track permission status
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+    
+    if (messaging) {
+      try {
+        const unsubOnMessage = onMessage(messaging, (payload) => {
+          console.log("Foreground message received:", payload);
+          // Standard browser alert or custom notification modal
+          alert(`🔔 Notification: ${payload.notification?.title || 'Solana Gold'}\n\n${payload.notification?.body || payload.data?.message || ''}`);
+        });
+        return () => unsubOnMessage();
+      } catch (err) {
+        console.warn("Error setting up foreground message listener:", err);
+      }
+    }
+  }, []);
+
+  const handleEnableFcmNotifications = async () => {
+    if (!effectiveAddress) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+    if (!messaging) {
+      alert("Push notifications are not supported in this browser environment or connection is unsafe (non-HTTPS).");
+      return;
+    }
+    
+    setSavingFcm(true);
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === 'granted') {
+        const token = await getToken(messaging, {
+          vapidKey: 'BJMkzhG0R1kBdo3WVaLd4rElismg-DgG3hNTfoVPvcnOAglMJSr6SZQHC953Dq4sT7EIVLWIEbHtf7v5iff30mA'
+        });
+        
+        if (token) {
+          // Save the token under the user's profile in RTDB
+          await update(ref(database, `users/${effectiveAddress}`), {
+            fcmToken: token,
+            fcmTokenUpdatedAt: Date.now()
+          });
+          
+          setFcmToken(token);
+          
+          // Send a welcome test notification via backend FCM endpoint
+          await axios.post("/api/telegram/notify", {
+            message: `🔔 Web Push Alerts successfully connected! Your wallet address ${effectiveAddress.substring(0, 6)}...${effectiveAddress.substring(effectiveAddress.length - 4)} is now linked for real-time Solana Gold alerts!`,
+            target: effectiveAddress, // Target by wallet address!
+            title: "Solana Gold Alerts Connected"
+          });
+          
+          alert("Push notifications successfully enabled!");
+        } else {
+          alert("Could not generate Web Push token. Please ensure your browser supports notifications.");
+        }
+      } else {
+        alert("Notification permission was denied. Please allow notifications in your browser settings to receive real-time alerts.");
+      }
+    } catch (err: any) {
+      console.error("FCM Token Error:", err);
+      alert(`Failed to set up notifications: ${err.message || err}`);
+    } finally {
+      setSavingFcm(false);
+    }
+  };
 
   // Handle Referral Share via Web API
   const handleShareReferral = async () => {
@@ -318,21 +391,16 @@ export function StakingPage({
           timestamp: Date.now()
         });
 
-        // Telegram Notifications trigger
+        // Notification trigger
         try {
-          const tgMessage = `🚀 <b>New Stake Created!</b>\n\n` +
-            `👤 <b>Wallet:</b> <code>${effectiveAddress}</code>\n` +
-            `💰 <b>Staked:</b> <b>${amt} usGOLD</b>\n` +
-            `📅 <b>Term:</b> ${stakingDurationMonths} Months\n` +
-            `🪙 <b>Payment:</b> ${totalSolPayment.toFixed(6)} SOL\n` +
-            `🔗 <b>Signature:</b> <a href="https://solscan.io/tx/${signature}">${signature.substring(0, 10)}...</a>\n` +
-            `📈 <i>Yield accrual processed automatically by server clock.</i>`;
+          const notificationMsg = `New Staking Vault opened: ${amt} usGOLD inside a ${stakingDurationMonths}-month term! Fee paid: ${totalSolPayment.toFixed(6)} SOL.`;
           await axios.post("/api/telegram/notify", {
-            message: tgMessage,
-            target: "all"
+            message: notificationMsg,
+            target: effectiveAddress, // Target the specific user's wallet
+            title: "🚀 New Staking Vault Created!"
           });
-        } catch (tgErr) {
-          console.warn("Failed to deliver Telegram notification:", tgErr);
+        } catch (fcmErr) {
+          console.warn("Failed to deliver push notification:", fcmErr);
         }
 
         // Referral reward unlocking logic: Referee completed staking payment
@@ -709,7 +777,7 @@ export function StakingPage({
         </CardContent>
       </Card>
 
-      {/* TELEGRAM NOTIFICATION ALERTS SETTING CARD */}
+      {/* FIREBASE CLOUD MESSAGING NOTIFICATION ALERTS SETTING CARD */}
       {connected && (
         <Card sx={{ 
           bgcolor: '#141518',
@@ -721,22 +789,35 @@ export function StakingPage({
           <Box sx={{ p: 3, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2), display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Zap color="#D4AF37" size={20} />
             <Typography variant="h6" fontWeight="800" color="#fff">
-              Telegram Alerts Bot
+              Firebase Push Notifications
             </Typography>
           </Box>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="body2" color="text.secondary" mb={3} lineHeight={1.6}>
-              Receive real-time automated alerts on your Telegram account whenever you create a staking vault, accrue daily yield, or receive referral rewards!
+              Receive real-time automated Web Push Notifications directly on your device whenever you open a staking vault, earn daily yields, or receive referral commission rewards!
             </Typography>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} sm={8}>
                 <TextField
                   fullWidth
+                  disabled
                   variant="outlined"
-                  label="Your Telegram Chat ID"
-                  placeholder="e.g. 583726485"
-                  value={userTelegramChatId}
-                  onChange={(e: any) => setUserTelegramChatId(e.target.value)}
+                  label="Your Push Notification Token"
+                  value={fcmToken ? `${fcmToken.substring(0, 30)}...` : "Not Subscribed Yet"}
+                  InputProps={{
+                    endAdornment: fcmToken ? (
+                      <IconButton 
+                        onClick={() => {
+                          navigator.clipboard.writeText(fcmToken);
+                          alert("FCM token copied to clipboard!");
+                        }}
+                        size="small"
+                        sx={{ color: '#D4AF37' }}
+                      >
+                        <Copy size={16} />
+                      </IconButton>
+                    ) : null
+                  }}
                   sx={{ 
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '12px',
@@ -745,7 +826,7 @@ export function StakingPage({
                   }}
                   helperText={
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      To find your Chat ID, search and start <b>@userinfobot</b> or <b>@GetChatID_Bot</b> on Telegram.
+                      Status: <b>{notificationPermission === 'granted' ? 'Allowed' : notificationPermission === 'denied' ? 'Blocked' : 'Requires Setup'}</b>
                     </Typography>
                   }
                 />
@@ -754,29 +835,8 @@ export function StakingPage({
                 <Button
                   fullWidth
                   variant="contained"
-                  disabled={savingTelegram || !userTelegramChatId.trim()}
-                  onClick={async () => {
-                    if (!effectiveAddress) return;
-                    setSavingTelegram(true);
-                    try {
-                      await update(ref(database, `users/${effectiveAddress}`), {
-                        telegramChatId: userTelegramChatId
-                      });
-                      
-                      // Notify via endpoint
-                      await axios.post("/api/telegram/notify", {
-                        message: `🔔 <b>Solana Gold Staking Alerts Connected!</b>\n\nYour wallet address <code>${effectiveAddress}</code> is now linked with this Telegram account for real-time notifications!`,
-                        target: userTelegramChatId
-                      });
-                      
-                      alert("Telegram Staking Alerts successfully enabled!");
-                    } catch (err: any) {
-                      console.error("Failed to link Telegram:", err);
-                      alert("Error setting up Telegram. Please verify your Chat ID is correct.");
-                    } finally {
-                      setSavingTelegram(false);
-                    }
-                  }}
+                  disabled={savingFcm}
+                  onClick={handleEnableFcmNotifications}
                   sx={{
                     bgcolor: '#D4AF37',
                     color: '#000',
@@ -786,7 +846,7 @@ export function StakingPage({
                     '&:hover': { bgcolor: '#FFDF73' }
                   }}
                 >
-                  {savingTelegram ? "Connecting..." : "Enable Alerts"}
+                  {savingFcm ? "Configuring..." : fcmToken ? "Refresh Token" : "Enable Push Alerts"}
                 </Button>
               </Grid>
             </Grid>

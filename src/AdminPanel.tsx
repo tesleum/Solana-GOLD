@@ -1934,15 +1934,15 @@ export function AdminStaking() {
   const [countdowns, setCountdowns] = useState<any>({});
   const [rewards, setRewards] = useState<any[]>([]);
   const [users, setUsers] = useState<any>({});
-  const [tgConfig, setTgConfig] = useState({
-    botToken: "",
-    adminChatId: "",
+  const [fcmConfig, setFcmConfig] = useState({
+    serviceAccount: "",
+    adminFcmToken: "",
     userNotificationsEnabled: true
   });
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "telegram">("stakes");
+  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "fcm">("stakes");
 
   // Actions states
   const [selectedStake, setSelectedStake] = useState<any | null>(null);
@@ -1951,9 +1951,9 @@ export function AdminStaking() {
   const [editDuration, setEditDuration] = useState("3");
   const [actioningKey, setActioningKey] = useState<string | null>(null);
 
-  // Telegram states
-  const [savingTg, setSavingTg] = useState(false);
-  const [tgTestLoading, setTgTestLoading] = useState(false);
+  // FCM states
+  const [savingFcm, setSavingFcm] = useState(false);
+  const [fcmTestLoading, setFcmTestLoading] = useState(false);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [broadcasting, setBroadcasting] = useState(false);
 
@@ -2028,13 +2028,13 @@ export function AdminStaking() {
       }
     });
 
-    const configRef = ref(database, "mlmSettings/telegramConfig");
+    const configRef = ref(database, "mlmSettings/fcmConfig");
     const unsubConfig = onValue(configRef, (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
-        setTgConfig({
-          botToken: val.botToken || "",
-          adminChatId: val.adminChatId || "",
+        setFcmConfig({
+          serviceAccount: val.serviceAccount || "",
+          adminFcmToken: val.adminFcmToken || "",
           userNotificationsEnabled: val.userNotificationsEnabled !== false
         });
       }
@@ -2129,36 +2129,37 @@ export function AdminStaking() {
     }
   };
 
-  const handleSaveTelegramConfig = async () => {
-    setSavingTg(true);
+  const handleSaveFcmConfig = async () => {
+    setSavingFcm(true);
     try {
-      await set(ref(database, "mlmSettings/telegramConfig"), tgConfig);
-      alert("Telegram Configuration saved successfully!");
+      await set(ref(database, "mlmSettings/fcmConfig"), fcmConfig);
+      alert("FCM Configuration saved successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to save telegram configuration.");
+      alert("Failed to save FCM configuration.");
     } finally {
-      setSavingTg(false);
+      setSavingFcm(false);
     }
   };
 
-  const handleTestTelegram = async () => {
-    if (!tgConfig.botToken || !tgConfig.adminChatId) {
-      alert("Please configure Bot Token and Admin Chat ID first.");
+  const handleTestFcm = async () => {
+    if (!fcmConfig.adminFcmToken) {
+      alert("Please configure Admin FCM Token first.");
       return;
     }
-    setTgTestLoading(true);
+    setFcmTestLoading(true);
     try {
       await axios.post("/api/telegram/notify", {
-        message: "🔔 <b>Solana Gold Staking bot active!</b>\n\nThis is a test notification confirming your Telegram Bot API link is working 100%!",
-        target: tgConfig.adminChatId
+        message: "This is a test notification confirming your Firebase Cloud Messaging API (V1) is working 100%!",
+        target: fcmConfig.adminFcmToken,
+        title: "🔔 Solana Gold Push active!"
       });
-      alert("Test message sent successfully! Please check your telegram channel/bot.");
+      alert("Test push notification sent successfully!");
     } catch (err: any) {
       console.error(err);
-      alert(`Failed to send test message: ${err.response?.data?.error || err.message}`);
+      alert(`Failed to send test push: ${err.response?.data?.error || err.message}`);
     } finally {
-      setTgTestLoading(false);
+      setFcmTestLoading(false);
     }
   };
 
@@ -2167,18 +2168,14 @@ export function AdminStaking() {
       alert("Please enter a message to broadcast.");
       return;
     }
-    if (!tgConfig.botToken) {
-      alert("Please configure Telegram Bot Token in Settings first.");
-      return;
-    }
     setBroadcasting(true);
     try {
-      const formattedMsg = `📢 <b>OFFICIAL ANNOUNCEMENT</b>\n\n${broadcastMsg}`;
       const res = await axios.post("/api/telegram/notify", {
-        message: formattedMsg,
-        target: "all"
+        message: broadcastMsg,
+        target: "all",
+        title: "📢 Official Announcement"
       });
-      alert(`Broadcast sent! Targets contacted: ${res.data?.results?.length || 0}`);
+      alert(`Broadcast sent successfully! Targets contacted: ${res.data?.results?.length || 0}`);
       setBroadcastMsg("");
     } catch (err: any) {
       console.error(err);
@@ -2191,9 +2188,9 @@ export function AdminStaking() {
   const handleOpenNotifyUser = (userAddress: string) => {
     setNotifyUserAddress(userAddress);
     const userProfile = users[userAddress];
-    const userTgId = userProfile?.telegramChatId || "";
-    if (!userTgId) {
-      alert("Warning: This user has not registered a Telegram Chat ID yet in their profile. Notifications may not deliver.");
+    const userFcm = userProfile?.fcmToken || userProfile?.fcmTokens;
+    if (!userFcm) {
+      alert("Warning: This user has not enabled push notifications yet on their device.");
     }
     setCustomNotifyMsg(`Hello! This is an update regarding your Solana Gold usGOLD staking vault.`);
     setNotifyDialogOpen(true);
@@ -2201,19 +2198,13 @@ export function AdminStaking() {
 
   const handleSendDirectNotify = async () => {
     if (!customNotifyMsg.trim()) return;
-    const userProfile = users[notifyUserAddress];
-    const userTgId = userProfile?.telegramChatId;
-
-    if (!userTgId) {
-      alert("User does not have a telegramChatId configured.");
-      return;
-    }
 
     setSendingNotify(true);
     try {
       await axios.post("/api/telegram/notify", {
-        message: `✉️ <b>Message from Solana Gold Support</b>\n\n${customNotifyMsg}`,
-        target: userTgId
+        message: customNotifyMsg,
+        target: notifyUserAddress,
+        title: "✉️ Support Message"
       });
       alert("Message sent successfully!");
       setNotifyDialogOpen(false);
@@ -2264,16 +2255,17 @@ export function AdminStaking() {
         timestamp: Date.now()
       });
 
-      // Notify referrer on Telegram!
+      // Notify referrer on FCM!
       const referrerProfile = users[reward.referrerId];
-      if (referrerProfile && referrerProfile.telegramChatId) {
+      if (referrerProfile && (referrerProfile.fcmToken || referrerProfile.fcmTokens)) {
         try {
           await axios.post("/api/telegram/notify", {
-            message: `🎉 <b>Referral Reward Approved!</b>\n\nYour <b>1.0000 usGOLD</b> referral commission has been approved and credited to your wallet balance! Thank you for sharing Solana Gold.`,
-            target: referrerProfile.telegramChatId
+            message: `Your 1.0000 usGOLD referral commission has been approved and credited to your wallet balance! Thank you for sharing Solana Gold.`,
+            target: reward.referrerId,
+            title: "🎉 Referral Reward Approved!"
           });
-        } catch (tgErr) {
-          console.warn("Could not notify referrer on TG:", tgErr);
+        } catch (fcmErr) {
+          console.warn("Could not notify referrer on FCM:", fcmErr);
         }
       }
 
@@ -2359,11 +2351,11 @@ export function AdminStaking() {
           Referrals Pending ({pendingRewards.length})
         </Button>
         <Button 
-          variant={activeTab === "telegram" ? "contained" : "outlined"}
-          onClick={() => setActiveTab("telegram")}
+          variant={activeTab === "fcm" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("fcm")}
           sx={{ borderRadius: 2 }}
         >
-          Telegram Settings & Broadcasts
+          FCM Settings & Broadcasts
         </Button>
       </Stack>
 
@@ -2417,9 +2409,9 @@ export function AdminStaking() {
                           <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
                             {st.userAddress}
                           </Typography>
-                          {users[st.userAddress]?.telegramChatId && (
+                          {users[st.userAddress]?.fcmToken && (
                             <Chip 
-                              label="Telegram Alerts Linked" 
+                              label="Push Alerts Linked" 
                               size="small" 
                               color="info" 
                               variant="outlined"
@@ -2535,8 +2527,8 @@ export function AdminStaking() {
                         <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
                           {row.referrerId}
                         </Typography>
-                        {users[row.referrerId]?.telegramChatId && (
-                          <Chip label="Referrer TG Linked" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
+                        {users[row.referrerId]?.fcmToken && (
+                          <Chip label="Referrer Push Linked" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
                         )}
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
@@ -2585,50 +2577,52 @@ export function AdminStaking() {
         </Box>
       )}
 
-      {activeTab === "telegram" && (
+      {activeTab === "fcm" && (
         <Grid container spacing={4}>
-          {/* Bot Setup Card */}
+          {/* FCM Setup Card */}
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Telegram Bot API Link</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Firebase Push Setup</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Configure your Telegram Bot to deliver instant real-time alerts to the admin channel and individual users when they stake or unlock referral commissions.
+                  Configure Firebase Cloud Messaging (FCM) API (V1) to deliver instant real-time push alerts to your users' browsers.
                 </Typography>
 
                 <Stack spacing={2.5}>
                   <TextField
-                    label="Telegram Bot Token"
+                    label="Google Service Account JSON"
+                    multiline
+                    rows={4}
                     fullWidth
-                    value={tgConfig.botToken}
-                    onChange={(e) => setTgConfig({ ...tgConfig, botToken: e.target.value })}
-                    placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                    value={fcmConfig.serviceAccount}
+                    onChange={(e) => setFcmConfig({ ...fcmConfig, serviceAccount: e.target.value })}
+                    placeholder='{"type": "service_account", "project_id": "smart-gold-2", ...}'
+                    helperText="Paste Google Cloud Service Account JSON for secure FCM V1 delivery."
                   />
                   <TextField
-                    label="Admin Channel/Group Chat ID"
+                    label="Admin FCM Device Token"
                     fullWidth
-                    value={tgConfig.adminChatId}
-                    onChange={(e) => setTgConfig({ ...tgConfig, adminChatId: e.target.value })}
-                    placeholder="e.g. -1001827364590 or 9827364"
-                    helperText="Prefix channel IDs with -100"
+                    value={fcmConfig.adminFcmToken}
+                    onChange={(e) => setFcmConfig({ ...fcmConfig, adminFcmToken: e.target.value })}
+                    placeholder="Enter device token to receive test alerts"
                   />
 
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     <Button 
                       variant="contained" 
                       color="primary" 
-                      onClick={handleSaveTelegramConfig} 
-                      disabled={savingTg}
+                      onClick={handleSaveFcmConfig} 
+                      disabled={savingFcm}
                     >
-                      {savingTg ? "Saving..." : "Save Config"}
+                      {savingFcm ? "Saving..." : "Save Config"}
                     </Button>
                     <Button 
                       variant="outlined" 
                       color="info" 
-                      onClick={handleTestTelegram} 
-                      disabled={tgTestLoading}
+                      onClick={handleTestFcm} 
+                      disabled={fcmTestLoading}
                     >
-                      {tgTestLoading ? "Testing..." : "Send Test Alert"}
+                      {fcmTestLoading ? "Testing..." : "Send Test Push"}
                     </Button>
                   </Stack>
                 </Stack>
@@ -2640,9 +2634,9 @@ export function AdminStaking() {
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Staking Broadcast Center</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Web Push Broadcast Center</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Send a notification announcement to ALL users who have registered a Telegram Chat ID with Solana Gold.
+                  Send a push notification announcement to ALL users who have active push tokens registered with Solana Gold.
                 </Typography>
 
                 <Stack spacing={2.5}>
@@ -2707,14 +2701,14 @@ export function AdminStaking() {
 
       {/* Direct Notification Dialog */}
       <Dialog open={notifyDialogOpen} onClose={() => setNotifyDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Direct Telegram User Notification</DialogTitle>
+        <DialogTitle>Direct Push User Notification</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
             <Typography variant="caption" color="text.secondary">
               Sending direct message to user: <b>{notifyUserAddress.substring(0, 8)}...</b>
             </Typography>
             <TextField
-              label="Telegram Chat Message"
+              label="Push Notification Message"
               multiline
               rows={4}
               fullWidth
