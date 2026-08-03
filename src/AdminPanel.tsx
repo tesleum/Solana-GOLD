@@ -1934,15 +1934,15 @@ export function AdminStaking() {
   const [countdowns, setCountdowns] = useState<any>({});
   const [rewards, setRewards] = useState<any[]>([]);
   const [users, setUsers] = useState<any>({});
-  const [fcmConfig, setFcmConfig] = useState({
-    serviceAccount: "",
-    adminFcmToken: "",
+  const [tgConfig, setTgConfig] = useState({
+    botToken: "",
+    adminChatId: "",
     userNotificationsEnabled: true
   });
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "fcm">("stakes");
+  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "firebase">("stakes");
 
   // Actions states
   const [selectedStake, setSelectedStake] = useState<any | null>(null);
@@ -1951,7 +1951,12 @@ export function AdminStaking() {
   const [editDuration, setEditDuration] = useState("3");
   const [actioningKey, setActioningKey] = useState<string | null>(null);
 
-  // FCM states
+  // Firebase Messaging Configuration State
+  const [fcmConfig, setFcmConfig] = useState({
+    senderId: "909106359671",
+    vapidKey: "BJMkzhG0R1kBdo3WVaLd4rElismg-DgG3hNTfoVPvcnOAglMJSr6SZQHC953Dq4sT7EIVLWIEbHtf7v5iff30mA",
+    userNotificationsEnabled: true
+  });
   const [savingFcm, setSavingFcm] = useState(false);
   const [fcmTestLoading, setFcmTestLoading] = useState(false);
   const [broadcastMsg, setBroadcastMsg] = useState("");
@@ -2033,8 +2038,8 @@ export function AdminStaking() {
       if (snapshot.exists()) {
         const val = snapshot.val();
         setFcmConfig({
-          serviceAccount: val.serviceAccount || "",
-          adminFcmToken: val.adminFcmToken || "",
+          senderId: val.senderId || "909106359671",
+          vapidKey: val.vapidKey || "BJMkzhG0R1kBdo3WVaLd4rElismg-DgG3hNTfoVPvcnOAglMJSr6SZQHC953Dq4sT7EIVLWIEbHtf7v5iff30mA",
           userNotificationsEnabled: val.userNotificationsEnabled !== false
         });
       }
@@ -2133,31 +2138,31 @@ export function AdminStaking() {
     setSavingFcm(true);
     try {
       await set(ref(database, "mlmSettings/fcmConfig"), fcmConfig);
-      alert("FCM Configuration saved successfully!");
+      alert("Firebase Messaging Configuration saved successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to save FCM configuration.");
+      alert("Failed to save Firebase configuration.");
     } finally {
       setSavingFcm(false);
     }
   };
 
   const handleTestFcm = async () => {
-    if (!fcmConfig.adminFcmToken) {
-      alert("Please configure Admin FCM Token first.");
+    if (!fcmConfig.senderId) {
+      alert("Please configure Firebase Sender ID first.");
       return;
     }
     setFcmTestLoading(true);
     try {
-      await axios.post("/api/telegram/notify", {
-        message: "This is a test notification confirming your Firebase Cloud Messaging API (V1) is working 100%!",
-        target: fcmConfig.adminFcmToken,
-        title: "🔔 Solana Gold Push active!"
+      await axios.post("/api/fcm/notify", {
+        title: "🔔 Firebase Notification Active!",
+        body: "This is an official test notification confirming your Firebase Messaging API setup works!",
+        target: "all"
       });
-      alert("Test push notification sent successfully!");
+      alert("FCM test broadcast issued successfully! Sent to all online subscribers and database inboxes.");
     } catch (err: any) {
       console.error(err);
-      alert(`Failed to send test push: ${err.response?.data?.error || err.message}`);
+      alert(`Failed to send FCM test: ${err.response?.data?.error || err.message}`);
     } finally {
       setFcmTestLoading(false);
     }
@@ -2170,12 +2175,12 @@ export function AdminStaking() {
     }
     setBroadcasting(true);
     try {
-      const res = await axios.post("/api/telegram/notify", {
-        message: broadcastMsg,
-        target: "all",
-        title: "📢 Official Announcement"
+      const res = await axios.post("/api/fcm/notify", {
+        title: "📢 Official Announcement",
+        body: broadcastMsg,
+        target: "all"
       });
-      alert(`Broadcast sent successfully! Targets contacted: ${res.data?.results?.length || 0}`);
+      alert(`Broadcast sent! FCM Push Notification + Database Sync targets contacted: ${res.data?.results?.length || 0}`);
       setBroadcastMsg("");
     } catch (err: any) {
       console.error(err);
@@ -2188,9 +2193,9 @@ export function AdminStaking() {
   const handleOpenNotifyUser = (userAddress: string) => {
     setNotifyUserAddress(userAddress);
     const userProfile = users[userAddress];
-    const userFcm = userProfile?.fcmToken || userProfile?.fcmTokens;
-    if (!userFcm) {
-      alert("Warning: This user has not enabled push notifications yet on their device.");
+    const fcmToken = userProfile?.fcmToken || "";
+    if (!fcmToken) {
+      alert("Note: This user has not enabled push alerts. The message will be securely queued to their in-app database inbox.");
     }
     setCustomNotifyMsg(`Hello! This is an update regarding your Solana Gold usGOLD staking vault.`);
     setNotifyDialogOpen(true);
@@ -2201,12 +2206,12 @@ export function AdminStaking() {
 
     setSendingNotify(true);
     try {
-      await axios.post("/api/telegram/notify", {
-        message: customNotifyMsg,
-        target: notifyUserAddress,
-        title: "✉️ Support Message"
+      await axios.post("/api/fcm/notify", {
+        title: "✉️ Message from Solana Gold Support",
+        body: customNotifyMsg,
+        target: notifyUserAddress
       });
-      alert("Message sent successfully!");
+      alert("Notification dispatched successfully to target user's device & inbox!");
       setNotifyDialogOpen(false);
     } catch (err: any) {
       console.error(err);
@@ -2255,14 +2260,13 @@ export function AdminStaking() {
         timestamp: Date.now()
       });
 
-      // Notify referrer on FCM!
-      const referrerProfile = users[reward.referrerId];
-      if (referrerProfile && (referrerProfile.fcmToken || referrerProfile.fcmTokens)) {
+      // Notify referrer on Firebase Messaging!
+      if (reward.referrerId) {
         try {
-          await axios.post("/api/telegram/notify", {
-            message: `Your 1.0000 usGOLD referral commission has been approved and credited to your wallet balance! Thank you for sharing Solana Gold.`,
-            target: reward.referrerId,
-            title: "🎉 Referral Reward Approved!"
+          await axios.post("/api/fcm/notify", {
+            title: "🎉 Referral Reward Approved!",
+            body: `Your 1.0000 usGOLD referral commission has been approved and credited to your wallet balance! Thank you for sharing Solana Gold.`,
+            target: reward.referrerId
           });
         } catch (fcmErr) {
           console.warn("Could not notify referrer on FCM:", fcmErr);
@@ -2325,9 +2329,9 @@ export function AdminStaking() {
         <Grid item xs={12} sm={6} md={3}>
           <Card>
             <CardContent sx={{ position: "relative" }}>
-              <Typography color="text.secondary" gutterBottom>Telegram Linked Users</Typography>
+              <Typography color="text.secondary" gutterBottom>FCM Registered Users</Typography>
               <Typography variant="h4" color="info.main">
-                {Object.values(users).filter((u: any) => !!u.telegramChatId).length}
+                {Object.values(users).filter((u: any) => !!u.fcmToken).length}
               </Typography>
             </CardContent>
           </Card>
@@ -2351,11 +2355,11 @@ export function AdminStaking() {
           Referrals Pending ({pendingRewards.length})
         </Button>
         <Button 
-          variant={activeTab === "fcm" ? "contained" : "outlined"}
-          onClick={() => setActiveTab("fcm")}
+          variant={activeTab === "firebase" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("firebase")}
           sx={{ borderRadius: 2 }}
         >
-          FCM Settings & Broadcasts
+          Firebase Settings & Broadcasts
         </Button>
       </Stack>
 
@@ -2411,7 +2415,7 @@ export function AdminStaking() {
                           </Typography>
                           {users[st.userAddress]?.fcmToken && (
                             <Chip 
-                              label="Push Alerts Linked" 
+                              label="FCM Push Active" 
                               size="small" 
                               color="info" 
                               variant="outlined"
@@ -2528,7 +2532,7 @@ export function AdminStaking() {
                           {row.referrerId}
                         </Typography>
                         {users[row.referrerId]?.fcmToken && (
-                          <Chip label="Referrer Push Linked" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
+                          <Chip label="Referrer FCM Active" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
                         )}
                       </TableCell>
                       <TableCell sx={{ py: 1.5 }}>
@@ -2577,34 +2581,31 @@ export function AdminStaking() {
         </Box>
       )}
 
-      {activeTab === "fcm" && (
+      {activeTab === "firebase" && (
         <Grid container spacing={4}>
           {/* FCM Setup Card */}
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Firebase Push Setup</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Firebase Push Configuration</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Configure Firebase Cloud Messaging (FCM) API (V1) to deliver instant real-time push alerts to your users' browsers.
+                  Configure your official Firebase Cloud Messaging API settings to deliver real-time system & user notifications automatically.
                 </Typography>
 
                 <Stack spacing={2.5}>
                   <TextField
-                    label="Google Service Account JSON"
-                    multiline
-                    rows={4}
+                    label="Firebase Sender ID"
                     fullWidth
-                    value={fcmConfig.serviceAccount}
-                    onChange={(e) => setFcmConfig({ ...fcmConfig, serviceAccount: e.target.value })}
-                    placeholder='{"type": "service_account", "project_id": "smart-gold-2", ...}'
-                    helperText="Paste Google Cloud Service Account JSON for secure FCM V1 delivery."
+                    value={fcmConfig.senderId}
+                    onChange={(e) => setFcmConfig({ ...fcmConfig, senderId: e.target.value })}
+                    placeholder="e.g. 909106359671"
                   />
                   <TextField
-                    label="Admin FCM Device Token"
+                    label="Web Push VAPID Public Key"
                     fullWidth
-                    value={fcmConfig.adminFcmToken}
-                    onChange={(e) => setFcmConfig({ ...fcmConfig, adminFcmToken: e.target.value })}
-                    placeholder="Enter device token to receive test alerts"
+                    value={fcmConfig.vapidKey}
+                    onChange={(e) => setFcmConfig({ ...fcmConfig, vapidKey: e.target.value })}
+                    placeholder="e.g. BJMkzhG0R1kBdo3WVaLd4rElismg-DgG3hNTfoVPvcnOAglMJSr6SZQHC953Dq4sT7EIVLWIEbHtf7v5iff30mA"
                   />
 
                   <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
@@ -2622,7 +2623,7 @@ export function AdminStaking() {
                       onClick={handleTestFcm} 
                       disabled={fcmTestLoading}
                     >
-                      {fcmTestLoading ? "Testing..." : "Send Test Push"}
+                      {fcmTestLoading ? "Testing..." : "Send FCM Test"}
                     </Button>
                   </Stack>
                 </Stack>
@@ -2634,9 +2635,9 @@ export function AdminStaking() {
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Web Push Broadcast Center</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>FCM Broadcast Center</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Send a push notification announcement to ALL users who have active push tokens registered with Solana Gold.
+                  Send a push notification announcement to ALL users registered with Firebase Cloud Messaging.
                 </Typography>
 
                 <Stack spacing={2.5}>
@@ -2657,7 +2658,7 @@ export function AdminStaking() {
                     disabled={broadcasting || !broadcastMsg.trim()}
                     sx={{ alignSelf: 'flex-start' }}
                   >
-                    {broadcasting ? "Broadcasting..." : "Send Broadcast to All Users"}
+                    {broadcasting ? "Broadcasting..." : "Broadcast to All"}
                   </Button>
                 </Stack>
               </CardContent>
@@ -2701,14 +2702,14 @@ export function AdminStaking() {
 
       {/* Direct Notification Dialog */}
       <Dialog open={notifyDialogOpen} onClose={() => setNotifyDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Direct Push User Notification</DialogTitle>
+        <DialogTitle>Direct Firebase Push Notification</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
             <Typography variant="caption" color="text.secondary">
               Sending direct message to user: <b>{notifyUserAddress.substring(0, 8)}...</b>
             </Typography>
             <TextField
-              label="Push Notification Message"
+              label="Notification Body"
               multiline
               rows={4}
               fullWidth

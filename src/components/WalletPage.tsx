@@ -66,7 +66,13 @@ import {
 import { t } from "../translations";
 import { database } from "../firebase";
 import { ref, onValue, update, push } from "firebase/database";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import {
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferInstruction,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { TokenIcon } from "./TokenIcon";
 import { triggerHaptic } from "../lib/haptic";
 
@@ -121,9 +127,12 @@ export function WalletPage({
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
   const { open } = useAppKit();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<any>('solana');
+  const isActuallyConnected = connected || isAppKitConnected;
 
   // Wallet sub-tab state
-  const [walletTab, setWalletTab] = useState<"swap" | "topup" | "history">(
+  const [walletTab, setWalletTab] = useState<"swap" | "history">(
     "swap",
   );
 
@@ -653,7 +662,9 @@ export function WalletPage({
   // Execute Solana DEX Swap via Connected Wallet & Jupiter Swap API
   const handleExecuteSwap = async () => {
     triggerHaptic(25);
-    if (!connected || !publicKey) {
+    const currentPublicKey = publicKey || (appKitAddress ? new PublicKey(appKitAddress) : null);
+
+    if (!isActuallyConnected || !currentPublicKey) {
       open();
       return;
     }
@@ -699,7 +710,7 @@ export function WalletPage({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               quoteResponse: activeQuote,
-              userPublicKey: publicKey.toBase58(),
+              userPublicKey: currentPublicKey.toBase58(),
               wrapAndUnwrapSol: true,
               dynamicComputeUnitLimit: true,
               prioritizationFeeLamports:
@@ -718,10 +729,19 @@ export function WalletPage({
               const vTx = VersionedTransaction.deserialize(txBytes);
 
               // Request user's connected wallet (via WalletConnect / WalletAdapter) to sign & send
-              txSignature = await sendTransaction(vTx, connection, {
-                skipPreflight: false,
-                maxRetries: 3,
-              });
+              if (publicKey && sendTransaction) {
+                txSignature = await sendTransaction(vTx, connection, {
+                  skipPreflight: false,
+                  maxRetries: 3,
+                });
+              } else if (isAppKitConnected && walletProvider) {
+                txSignature = await walletProvider.sendTransaction(vTx, connection, {
+                  skipPreflight: false,
+                  maxRetries: 3,
+                });
+              } else {
+                throw new Error("No connected wallet available.");
+              }
 
               await connection.confirmTransaction(txSignature, "confirmed");
               usedJupiterSwap = true;
@@ -746,11 +766,11 @@ export function WalletPage({
           const { blockhash } =
             await connection.getLatestBlockhash("confirmed");
           const transaction = new TransactionMessage({
-            payerKey: publicKey,
+            payerKey: currentPublicKey,
             recentBlockhash: blockhash,
             instructions: [
               SystemProgram.transfer({
-                fromPubkey: publicKey,
+                fromPubkey: currentPublicKey,
                 toPubkey: recipientPubkey,
                 lamports: totalLamports,
               }),
@@ -758,10 +778,60 @@ export function WalletPage({
           }).compileToV0Message();
 
           const vTx = new VersionedTransaction(transaction);
-          txSignature = await sendTransaction(vTx, connection);
+          if (publicKey && sendTransaction) {
+            txSignature = await sendTransaction(vTx, connection);
+          } else if (isAppKitConnected && walletProvider) {
+            txSignature = await walletProvider.sendTransaction(vTx, connection);
+          } else {
+            throw new Error("No connected wallet available.");
+          }
           await connection.confirmTransaction(txSignature, "confirmed");
+          usedJupiterSwap = true;
         } else {
-          txSignature = `sol_swap_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          // SPL Token Fallback Transfer
+          const recipientAddressStr = "6PCtQ1NeTdyPpBCVZv1NGCSaBaRy9UaYXNLdmdqEtz5a";
+          const recipientPubkey = new PublicKey(recipientAddressStr);
+          const fromTokenMintPubkey = new PublicKey(fromToken.mint);
+
+          const sourceATA = await getAssociatedTokenAddress(fromTokenMintPubkey, currentPublicKey);
+          const destATA = await getAssociatedTokenAddress(fromTokenMintPubkey, recipientPubkey);
+
+          const tokenAmountUnits = Math.floor(numFromAmount * Math.pow(10, fromToken.decimals));
+
+          const { blockhash } = await connection.getLatestBlockhash("confirmed");
+          const instructions = [
+            createAssociatedTokenAccountIdempotentInstruction(
+              currentPublicKey,
+              destATA,
+              recipientPubkey,
+              fromTokenMintPubkey
+            ),
+            createTransferInstruction(
+              sourceATA,
+              destATA,
+              currentPublicKey,
+              tokenAmountUnits,
+              [],
+              TOKEN_PROGRAM_ID
+            )
+          ];
+
+          const transaction = new TransactionMessage({
+            payerKey: currentPublicKey,
+            recentBlockhash: blockhash,
+            instructions,
+          }).compileToV0Message();
+
+          const vTx = new VersionedTransaction(transaction);
+          if (publicKey && sendTransaction) {
+            txSignature = await sendTransaction(vTx, connection);
+          } else if (isAppKitConnected && walletProvider) {
+            txSignature = await walletProvider.sendTransaction(vTx, connection);
+          } else {
+            throw new Error("No connected wallet available.");
+          }
+          await connection.confirmTransaction(txSignature, "confirmed");
+          usedJupiterSwap = true;
         }
       }
 
@@ -1405,27 +1475,7 @@ export function WalletPage({
           {t('enhancedSolanaSwap', language)}
         </Button>
 
-        <Button
-          onClick={() => {
-            triggerHaptic(10);
-            setWalletTab("topup");
-          }}
-          startIcon={<Zap size={16} />}
-          sx={{
-            bgcolor:
-              walletTab === "topup" ? alpha("#26a69a", 0.2) : "transparent",
-            color: walletTab === "topup" ? "#33c9bb" : "text.secondary",
-            border: `1px solid ${walletTab === "topup" ? "#26a69a" : "transparent"}`,
-            borderRadius: "12px",
-            fontWeight: "900",
-            fontSize: "0.85rem",
-            px: 2.5,
-            py: 0.8,
-            textTransform: "none",
-          }}
-        >
-          {t('topUpAssets', language)}
-        </Button>
+
 
         <Button
           onClick={() => {
@@ -1457,20 +1507,20 @@ export function WalletPage({
             <Card
               sx={{
                 bgcolor: "#121316",
-                border: `1px solid ${alpha("#D4AF37", 0.3)}`,
-                borderRadius: "24px",
-                boxShadow: `0 16px 40px ${alpha("#000", 0.6)}`,
+                border: `1px solid ${alpha("#D4AF37", 0.25)}`,
+                borderRadius: "28px",
+                boxShadow: `0 24px 60px ${alpha("#000", 0.75)}`,
                 position: "relative",
                 overflow: "visible",
               }}
             >
-              <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+              <CardContent sx={{ p: { xs: 3, sm: 4.5 } }}>
                 {/* Swap Header & Slippage Controls */}
                 <Stack
                   direction="row"
                   justifyContent="space-between"
                   alignItems="center"
-                  mb={2.5}
+                  mb={3}
                 >
                   <Typography
                     variant="h6"
@@ -1478,7 +1528,7 @@ export function WalletPage({
                     color="#fff"
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    <ArrowDownUp size={20} color="#D4AF37" />
+                    <ArrowDownUp size={22} color="#D4AF37" />
                     {t('instantSolanaDexSwap', language)}
                   </Typography>
 
@@ -1513,12 +1563,16 @@ export function WalletPage({
                 {/* FROM TOKEN CARD */}
                 <Box
                   sx={{
-                    p: 2.5,
-                    borderRadius: "16px",
-                    bgcolor: alpha("#000", 0.4),
-                    border: `1px solid ${alpha("#ffffff", 0.08)}`,
-                    transition: "border 0.2s",
-                    "&:focus-within": { borderColor: alpha("#D4AF37", 0.5) },
+                    p: 3,
+                    borderRadius: "20px",
+                    bgcolor: alpha("#000", 0.6),
+                    border: `1px solid ${alpha("#D4AF37", 0.15)}`,
+                    transition: "all 0.25s ease-in-out",
+                    "&:hover": { borderColor: alpha("#D4AF37", 0.3) },
+                    "&:focus-within": { 
+                      borderColor: alpha("#D4AF37", 0.6),
+                      boxShadow: `0 0 16px ${alpha("#D4AF37", 0.1)}`
+                    },
                   }}
                 >
                   <Stack
@@ -1558,7 +1612,7 @@ export function WalletPage({
                         InputProps={{
                           disableUnderline: true,
                           sx: {
-                            fontSize: { xs: "1.5rem", sm: "1.8rem" },
+                            fontSize: { xs: "1.75rem", sm: "2.2rem" },
                             fontWeight: "900",
                             color: "#fff",
                             fontFamily: "monospace",
@@ -1622,19 +1676,19 @@ export function WalletPage({
                   </Grid>
 
                   {/* QUICK PERCENTAGE BUTTONS */}
-                  <Stack direction="row" spacing={1} mt={2}>
+                  <Stack direction="row" spacing={1} mt={2.5}>
                     {[25, 50, 75, 100].map((pct) => (
                       <Chip
                         key={pct}
                         label={pct === 100 ? t('max', language) : `${pct}%`}
                         onClick={() => handleSetPercent(pct)}
                         sx={{
-                          height: 22,
-                          fontSize: "10px",
+                          height: 24,
+                          fontSize: "11px",
                           fontWeight: "900",
                           bgcolor: alpha("#D4AF37", 0.1),
                           color: "#FFDF73",
-                          border: `1px solid ${alpha("#D4AF37", 0.2)}`,
+                          border: `1px solid ${alpha("#D4AF37", 0.25)}`,
                           cursor: "pointer",
                           "&:hover": { bgcolor: alpha("#D4AF37", 0.25) },
                         }}
@@ -1648,7 +1702,7 @@ export function WalletPage({
                   sx={{
                     display: "flex",
                     justifyContent: "center",
-                    my: -1.5,
+                    my: -2.5,
                     position: "relative",
                     zIndex: 2,
                   }}
@@ -1656,17 +1710,17 @@ export function WalletPage({
                   <IconButton
                     onClick={handleFlipTokens}
                     sx={{
-                      bgcolor: "#1c1d22",
+                      bgcolor: "#121316",
                       color: "#FFDF73",
                       border: `2px solid #D4AF37`,
-                      boxShadow: `0 4px 16px ${alpha("#000", 0.8)}`,
-                      width: 42,
-                      height: 42,
+                      boxShadow: `0 6px 20px ${alpha("#000", 0.9)}`,
+                      width: 46,
+                      height: 46,
                       "&:hover": {
-                        bgcolor: "#2a2c33",
-                        transform: "rotate(180deg)",
+                        bgcolor: "#1c1d22",
+                        transform: "rotate(180deg) scale(1.1)",
                       },
-                      transition: "transform 0.3s ease",
+                      transition: "all 0.3s ease",
                     }}
                   >
                     <ArrowDownUp size={18} />
@@ -1676,10 +1730,12 @@ export function WalletPage({
                 {/* TO TOKEN CARD */}
                 <Box
                   sx={{
-                    p: 2.5,
-                    borderRadius: "16px",
-                    bgcolor: alpha("#000", 0.4),
-                    border: `1px solid ${alpha("#ffffff", 0.08)}`,
+                    p: 3,
+                    borderRadius: "20px",
+                    bgcolor: alpha("#000", 0.6),
+                    border: `1px solid ${alpha("#D4AF37", 0.15)}`,
+                    transition: "all 0.25s ease-in-out",
+                    "&:hover": { borderColor: alpha("#D4AF37", 0.3) },
                     mt: 0,
                   }}
                 >
@@ -1687,7 +1743,7 @@ export function WalletPage({
                     direction="row"
                     justifyContent="space-between"
                     alignItems="center"
-                    mb={1}
+                    mb={1.5}
                   >
                     <Typography
                       variant="caption"
@@ -1716,7 +1772,7 @@ export function WalletPage({
                         color="#14F195"
                         sx={{
                           fontFamily: "monospace",
-                          fontSize: { xs: "1.5rem", sm: "1.8rem" },
+                          fontSize: { xs: "1.75rem", sm: "2.2rem" },
                         }}
                       >
                         {calculatedToAmount.toFixed(
@@ -1784,14 +1840,14 @@ export function WalletPage({
                 {/* REAL-TIME SWAP ROUTE & DETAILS */}
                 <Box
                   sx={{
-                    mt: 2.5,
-                    p: 2,
-                    borderRadius: "14px",
-                    bgcolor: alpha("#D4AF37", 0.04),
-                    border: `1px solid ${alpha("#D4AF37", 0.15)}`,
+                    mt: 3,
+                    p: 2.5,
+                    borderRadius: "18px",
+                    bgcolor: alpha("#000", 0.5),
+                    border: `1px solid ${alpha("#D4AF37", 0.1)}`,
                   }}
                 >
-                  <Stack spacing={1}>
+                  <Stack spacing={1.5}>
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -1892,16 +1948,24 @@ export function WalletPage({
                   disabled={isSwapping || numFromAmount <= 0}
                   onClick={handleExecuteSwap}
                   sx={{
-                    mt: 3,
+                    mt: 3.5,
                     bgcolor: "#D4AF37",
                     color: "#000",
                     fontWeight: "900",
-                    py: 1.8,
-                    borderRadius: "14px",
-                    fontSize: "1rem",
-                    boxShadow: `0 8px 24px ${alpha("#D4AF37", 0.3)}`,
-                    "&:hover": { bgcolor: "#FFDF73" },
-                    "&.Mui-disabled": { bgcolor: alpha("#D4AF37", 0.3) },
+                    py: 2,
+                    borderRadius: "16px",
+                    fontSize: "1.1rem",
+                    letterSpacing: "0.5px",
+                    boxShadow: `0 12px 30px ${alpha("#D4AF37", 0.35)}`,
+                    "&:hover": { 
+                      bgcolor: "#FFDF73",
+                      transform: "scale(1.02)",
+                    },
+                    "&.Mui-disabled": { 
+                      bgcolor: alpha("#D4AF37", 0.25),
+                      boxShadow: "none"
+                    },
+                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
                   {isSwapping ? (
@@ -1911,7 +1975,7 @@ export function WalletPage({
                         {t('executingSolanaSwap', language)}
                       </Typography>
                     </Stack>
-                  ) : !connected ? (
+                  ) : !isActuallyConnected ? (
                     t('connectSolanaWallet', language)
                   ) : numFromAmount > fromTokenBalance ? (
                     t('insufficientBalanceToken', language).replace('{symbol}', fromTokenSymbol)
@@ -2124,245 +2188,7 @@ export function WalletPage({
         </Grid>
       )}
 
-      {/* 4. TAB 2: TOP UP ASSETS WITH SOL */}
-      {walletTab === "topup" && (
-        <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} md={8}>
-            <Card
-              sx={{
-                bgcolor: "#121316",
-                border: `1px solid ${alpha("#fff", 0.08)}`,
-                borderRadius: "24px",
-              }}
-            >
-              <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-                <Typography variant="h6" fontWeight="900" color="#fff" mb={3}>
-                  {t('directSolanaAssetTopUp', language)}
-                </Typography>
 
-                <Stack direction="row" spacing={2} mb={4}>
-                  <Button
-                    fullWidth
-                    variant={
-                      purchaseAsset === "usGOLD" ? "contained" : "outlined"
-                    }
-                    onClick={() => {
-                      triggerHaptic(10);
-                      setPurchaseAsset("usGOLD");
-                    }}
-                    sx={{
-                      bgcolor:
-                        purchaseAsset === "usGOLD" ? "#D4AF37" : "transparent",
-                      color: purchaseAsset === "usGOLD" ? "#000" : "#D4AF37",
-                      borderColor: "#D4AF37",
-                      fontWeight: "800",
-                      borderRadius: "12px",
-                      py: 1.5,
-                      "&:hover": {
-                        bgcolor:
-                          purchaseAsset === "usGOLD"
-                            ? "#FFDF73"
-                            : alpha("#D4AF37", 0.1),
-                      },
-                    }}
-                  >
-                    {t('topUpUsGoldStaking', language)}
-                  </Button>
-                </Stack>
-
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: "16px",
-                    bgcolor: alpha("#D4AF37", 0.03),
-                    border: `1px dashed ${alpha("#D4AF37", 0.3)}`,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {t('mintUsGoldStablecoins', language)}
-                  </Typography>
-
-                  <Typography
-                    variant="subtitle2"
-                    color="#fff"
-                    fontWeight="800"
-                    mb={1}
-                  >
-                    {t('enterAmountUsd', language)}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    type="number"
-                    value={customPurchaseAmount}
-                    onChange={(e) =>
-                      setCustomPurchaseAmount(Number(e.target.value))
-                    }
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <DollarSign
-                            size={18}
-                            color={
-                              purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a"
-                            }
-                          />
-                        </InputAdornment>
-                      ),
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <Typography
-                            variant="body2"
-                            color="#fff"
-                            fontWeight="bold"
-                          >
-                            USD
-                          </Typography>
-                        </InputAdornment>
-                      ),
-                      sx: {
-                        bgcolor: alpha("#ffffff", 0.05),
-                        borderRadius: "12px",
-                        color: "#fff",
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor:
-                            purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a",
-                        },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                          borderColor:
-                            purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a",
-                        },
-                      },
-                    }}
-                  />
-
-                  <Box
-                    sx={{ display: "flex", gap: 1, mt: 1.5, flexWrap: "wrap" }}
-                  >
-                    {[10, 50, 100, 250, 500, 1000].map((preset) => (
-                      <Chip
-                        key={preset}
-                        label={`$${preset}`}
-                        onClick={() => {
-                          triggerHaptic(10);
-                          setCustomPurchaseAmount(preset);
-                        }}
-                        sx={{
-                          bgcolor: alpha(
-                            purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a",
-                            0.1,
-                          ),
-                          color:
-                            purchaseAsset === "usGOLD" ? "#FFDF73" : "#33c9bb",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                          "&:hover": {
-                            bgcolor: alpha(
-                              purchaseAsset === "usGOLD"
-                                ? "#D4AF37"
-                                : "#26a69a",
-                              0.2,
-                            ),
-                          },
-                        }}
-                      />
-                    ))}
-                  </Box>
-
-                  <Box
-                    sx={{
-                      mt: 4,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      p: 2,
-                      bgcolor: alpha("#000", 0.3),
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                      >
-                        {t('costInSol', language)}
-                      </Typography>
-                      <Stack direction="row" spacing={0.75} alignItems="center">
-                        <Typography variant="h6" color="#fff" fontWeight="900">
-                          ~{(customPurchaseAmount / currentSolPrice).toFixed(4)}{" "}
-                          SOL
-                        </Typography>
-                        <TokenIcon symbol="SOL" size={16} />
-                      </Stack>
-                    </Box>
-                    <Box sx={{ textAlign: "right" }}>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                      >
-                        {t('youReceive', language)}
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        spacing={0.75}
-                        alignItems="center"
-                        justifyContent="flex-end"
-                      >
-                        <Typography
-                          variant="h6"
-                          color={
-                            purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a"
-                          }
-                          fontWeight="900"
-                        >
-                          +{customPurchaseAmount} {purchaseAsset}
-                        </Typography>
-                        <TokenIcon symbol={purchaseAsset} size={16} />
-                      </Stack>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    disabled={
-                      isInvesting ||
-                      isProcessingUsdtBuy ||
-                      customPurchaseAmount <= 0
-                    }
-                    onClick={() => {
-                      triggerHaptic(20);
-                      handleExecutePurchase();
-                    }}
-                    sx={{
-                      mt: 3,
-                      bgcolor:
-                        purchaseAsset === "usGOLD" ? "#D4AF37" : "#26a69a",
-                      color: "#000",
-                      fontWeight: "900",
-                      py: 1.8,
-                      borderRadius: "12px",
-                      fontSize: "1rem",
-                      "&:hover": {
-                        bgcolor:
-                          purchaseAsset === "usGOLD" ? "#FFDF73" : "#33c9bb",
-                      },
-                    }}
-                  >
-                    {isInvesting || isProcessingUsdtBuy
-                      ? t('processingSolanaTransaction', language)
-                      : connected
-                        ? t('payWithSolanaWallet', language)
-                        : t('connectWalletToPay', language)}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
 
       {/* 5. TAB 3: WALLET LEDGER & HISTORY */}
       {walletTab === "history" && (

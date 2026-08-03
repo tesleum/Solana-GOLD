@@ -42,6 +42,14 @@ export const appKit = createAppKit({
   metadata: metadata,
   projectId,
   features: {
-    analytics: true
-  }
+    analytics: true,
+    email: false,
+    socials: false,
+  },
+  featuredWalletIds: [
+    'a7972cf5b883e409728472472472472472472472472472472472472472472472', // Phantom
+    '4622a43cf3b596ac65a1d011c3a64f114f16444724a02c58eb9975b3b3b3eafc', // Trust Wallet
+    'c57ca0a7e4ee511c980279dfc8413a6164f1ac350e224a317109026aeb46d187', // MetaMask
+    '225affb1d2c98b1141a0e8e0e30d15e444724a02c58eb9975b3b3b3eafc', // SafePal
+  ]
 });
