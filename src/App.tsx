@@ -1291,7 +1291,7 @@ function Dashboard() {
       bgcolor: 'background.default', 
       minWidth: 0, 
       overflowX: 'hidden',
-      maxWidth: 500,
+      maxWidth: { xs: '100%', sm: 600, md: 880, lg: 1080 },
       mx: 'auto',
       borderLeft: { sm: `1px solid ${alpha('#D4AF37', 0.15)}` },
       borderRight: { sm: `1px solid ${alpha('#D4AF37', 0.15)}` },
@@ -1307,7 +1307,7 @@ function Dashboard() {
           left: '50%',
           transform: 'translateX(-50%)',
           width: { xs: 'calc(100% - 16px)', sm: 'calc(100% - 32px)' },
-          maxWidth: 480,
+          maxWidth: { xs: 480, sm: 560, md: 820, lg: 1020 },
           borderRadius: '32px',
           bgcolor: alpha('#121214', 0.7),
           backdropFilter: 'blur(20px) saturate(180%)',
@@ -1538,7 +1538,7 @@ function Dashboard() {
         </DialogActions>
       </Dialog>
 
-      <Container maxWidth="sm" sx={{ mt: 12, mb: 16, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth={false} sx={{ mt: { xs: 10, sm: 12, md: 14 }, mb: 16, px: { xs: 2, sm: 3, md: 4 }, maxWidth: { xs: '100%', sm: 580, md: 840, lg: 1040 }, mx: 'auto' }}>
         {activeTab === 'vault' && (
           <Stack spacing={3} sx={{ animation: 'fadeIn 0.4s ease-out' }}>
             {/* Gold Bar Investment UI */}
@@ -2889,7 +2889,7 @@ function Dashboard() {
           left: '50%', 
           transform: 'translateX(-50%)',
           width: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 48px)' },
-          maxWidth: 480,
+          maxWidth: { xs: 480, sm: 540, md: 760, lg: 920 },
           zIndex: 1100,
           borderRadius: '32px',
           overflow: 'hidden',

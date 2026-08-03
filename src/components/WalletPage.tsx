@@ -1503,7 +1503,7 @@ export function WalletPage({
       {/* 3. TAB 1: ENHANCED SOLANA TOKEN SWAP INTERFACE */}
       {walletTab === "swap" && (
         <Grid container spacing={3} justifyContent="center">
-          <Grid item xs={12} md={7} lg={6}>
+          <Grid item xs={12} md={10} lg={9}>
             <Card
               sx={{
                 bgcolor: "#121316",
@@ -1514,7 +1514,7 @@ export function WalletPage({
                 overflow: "visible",
               }}
             >
-              <CardContent sx={{ p: { xs: 3, sm: 4.5 } }}>
+              <CardContent sx={{ p: { xs: 2.5, sm: 3.5, md: 4.5 } }}>
                 {/* Swap Header & Slippage Controls */}
                 <Stack
                   direction="row"
