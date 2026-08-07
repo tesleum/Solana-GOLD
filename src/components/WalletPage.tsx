@@ -56,6 +56,7 @@ import {
   UserPlus,
   Hourglass,
   Share2,
+  XCircle,
 } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -2572,82 +2573,128 @@ export function WalletPage({
 
             {transactions && transactions.length > 0 ? (
               <Stack spacing={1.5}>
-                {transactions.map((tx: any, idx: number) => (
-                  <Box
-                    key={tx.id || idx}
-                    sx={{
-                      p: 2,
-                      borderRadius: "14px",
-                      bgcolor: alpha("#fff", 0.02),
-                      border: `1px solid ${alpha("#fff", 0.06)}`,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 1,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar
-                        sx={{
-                          bgcolor: alpha("#D4AF37", 0.12),
-                          color: "#D4AF37",
-                          width: 36,
-                          height: 36,
-                        }}
-                      >
-                        <Activity size={18} />
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          fontWeight="800"
-                          color="#fff"
-                        >
-                          {tx.type === "token_swap"
-                            ? "Solana Token Swap"
-                            : tx.details || "Transaction"}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {tx.timestamp
-                            ? new Date(tx.timestamp).toLocaleString()
-                            : tx.time || "Recent"}
-                        </Typography>
-                      </Box>
-                    </Stack>
+                {transactions.map((tx: any, idx: number) => {
+                  const isStakeCreated = tx.type === 'stake_created';
+                  const isStakeClaimed = tx.type === 'stake_claimed';
+                  const isStakeCanceled = tx.type === 'stake_canceled';
+                  const isReferral = tx.type?.includes('referral');
+                  const isSwap = tx.type === 'token_swap';
 
-                    <Box sx={{ textAlign: "right" }}>
-                      <Typography
-                        variant="body2"
-                        fontWeight="900"
-                        color="#D4AF37"
-                      >
-                        {tx.amount || "+0"}
-                      </Typography>
-                      {tx.txId && (
-                        <Button
-                          size="small"
-                          startIcon={<ExternalLink size={10} />}
-                          onClick={() =>
-                            window.open(
-                              `https://solscan.io/tx/${tx.txId}`,
-                              "_blank",
-                            )
-                          }
+                  const badgeLabel = isStakeCreated
+                    ? '🟢 Vault Created'
+                    : isStakeClaimed
+                    ? '⚡ Yield Claimed'
+                    : isStakeCanceled
+                    ? '🔴 Vault Cancelled (-10%)'
+                    : isReferral
+                    ? '🟡 Referral Bonus'
+                    : isSwap
+                    ? '🔄 Solana Swap'
+                    : 'Activity';
+
+                  const badgeColor = isStakeCreated ? 'primary' : isStakeClaimed ? 'success' : isStakeCanceled ? 'error' : isReferral ? 'warning' : 'info';
+
+                  return (
+                    <Box
+                      key={tx.id || tx.key || idx}
+                      sx={{
+                        p: 2,
+                        borderRadius: "16px",
+                        bgcolor: alpha("#fff", 0.02),
+                        border: `1px solid ${
+                          isStakeCanceled ? alpha('#f44336', 0.3) :
+                          isStakeClaimed ? alpha('#4caf50', 0.3) :
+                          isStakeCreated ? alpha('#14F195', 0.3) :
+                          alpha("#fff", 0.08)
+                        }`,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar
                           sx={{
-                            fontSize: "10px",
-                            color: "#14F195",
-                            p: 0,
-                            textTransform: "none",
-                            "&:hover": { textDecoration: "underline" },
+                            bgcolor: isStakeCanceled
+                              ? alpha('#f44336', 0.15)
+                              : isStakeClaimed
+                              ? alpha('#4caf50', 0.15)
+                              : isStakeCreated
+                              ? alpha('#14F195', 0.15)
+                              : alpha("#D4AF37", 0.15),
+                            color: isStakeCanceled ? '#f44336' : isStakeClaimed ? '#4caf50' : isStakeCreated ? '#14F195' : "#FFDF73",
+                            width: 38,
+                            height: 38,
                           }}
                         >
-                          View Solscan
-                        </Button>
-                      )}
+                          {isStakeCanceled ? <XCircle size={18} /> : isStakeClaimed ? <Sparkles size={18} /> : isStakeCreated ? <Coins size={18} /> : <Activity size={18} />}
+                        </Avatar>
+
+                        <Box>
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.3 }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight="800"
+                              color="#fff"
+                            >
+                              {tx.type === "token_swap"
+                                ? "Solana Token Swap"
+                                : tx.details || "Wallet Transaction"}
+                            </Typography>
+                            <Chip
+                              label={badgeLabel}
+                              size="small"
+                              color={badgeColor as any}
+                              variant="filled"
+                              sx={{ height: 20, fontSize: "10px", fontWeight: "800" }}
+                            />
+                          </Stack>
+
+                          <Typography variant="caption" color="text.secondary">
+                            {tx.timestamp
+                              ? new Date(tx.timestamp).toLocaleString()
+                              : tx.time || "Recent"}
+                            {tx.price && ` | Rate/Payment: ${tx.price}`}
+                          </Typography>
+                        </Box>
+                      </Stack>
+
+                      <Box sx={{ textAlign: "right" }}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="900"
+                          color="#FFDF73"
+                          sx={{ fontFamily: "monospace" }}
+                        >
+                          {tx.amount || "+0"}
+                        </Typography>
+                        {(tx.txId || tx.signature) && (
+                          <Button
+                            size="small"
+                            startIcon={<ExternalLink size={10} />}
+                            onClick={() =>
+                              window.open(
+                                `https://solscan.io/tx/${tx.txId || tx.signature}`,
+                                "_blank",
+                              )
+                            }
+                            sx={{
+                              fontSize: "10px",
+                              color: "#14F195",
+                              p: 0,
+                              textTransform: "none",
+                              "&:hover": { textDecoration: "underline" },
+                            }}
+                          >
+                            View Solscan
+                          </Button>
+                        )}
+                      </Box>
                     </Box>
-                  </Box>
-                ))}
+                  );
+                })}
               </Stack>
             ) : (
               <Box sx={{ py: 6, textAlign: "center" }}>

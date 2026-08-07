@@ -102,6 +102,9 @@ export function StakingPage({
   const [selectedStakeToCancel, setSelectedStakeToCancel] = useState<any | null>(null);
   const [isCancelingStake, setIsCancelingStake] = useState<boolean>(false);
 
+  // Staking Transactions History State
+  const [stakingTransactions, setStakingTransactions] = useState<any[]>([]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setNowTime(Date.now());
@@ -182,11 +185,27 @@ export function StakingPage({
         }
       });
 
+      // Sync staking transactions ledger
+      const txRef = ref(database, `transactions/${effectiveAddress}`);
+      const unsubTx = onValue(txRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          const list = Object.keys(val).map(key => ({
+            key,
+            ...val[key]
+          })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          setStakingTransactions(list);
+        } else {
+          setStakingTransactions([]);
+        }
+      });
+
       return () => {
         unsubStakes();
         unsubRewards();
         unsubCountdowns();
         unsubProfile();
+        unsubTx();
       };
     }
   }, [effectiveAddress]);
@@ -1130,7 +1149,141 @@ export function StakingPage({
         </CardContent>
       </Card>
 
-      {/* 3. EARLY STAKING CANCELLATION CONFIRMATION DIALOG POPUP */}
+      {/* 3. STAKING TRANSACTIONS & ACTIVITY HISTORY CARD */}
+      <Card sx={{ bgcolor: '#121316', border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px' }}>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', width: 38, height: 38 }}>
+                <Activity size={20} />
+              </Avatar>
+              <Box>
+                <Typography variant="h6" fontWeight="900" color="#fff">
+                  Staking Transactions Ledger
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Complete history of all vault deposits, yield payouts, early cancellations, and referral bonuses
+                </Typography>
+              </Box>
+            </Box>
+
+            <Chip 
+              label={`${stakingTransactions.length} Record${stakingTransactions.length === 1 ? '' : 's'}`}
+              size="small"
+              sx={{ bgcolor: alpha('#fff', 0.08), color: '#FFDF73', fontWeight: '800' }}
+            />
+          </Stack>
+
+          {stakingTransactions.length === 0 ? (
+            <Box sx={{ py: 5, textAlign: 'center' }}>
+              <Coins size={36} color="#D4AF37" style={{ opacity: 0.3, marginBottom: 8 }} />
+              <Typography variant="body2" color="text.secondary">
+                No staking transactions recorded yet. Stake usGOLD above to launch your first vault!
+              </Typography>
+            </Box>
+          ) : (
+            <Stack spacing={1.5}>
+              {stakingTransactions.map((tx: any, idx: number) => {
+                const isStakeCreated = tx.type === 'stake_created';
+                const isStakeClaimed = tx.type === 'stake_claimed';
+                const isStakeCanceled = tx.type === 'stake_canceled';
+
+                const chipColor = isStakeCreated ? 'primary' : isStakeClaimed ? 'success' : isStakeCanceled ? 'error' : 'warning';
+                const chipLabel = isStakeCreated 
+                  ? '🟢 Vault Created' 
+                  : isStakeClaimed 
+                  ? '⚡ Yield Claimed' 
+                  : isStakeCanceled 
+                  ? '🔴 Early Cancelled (-10%)' 
+                  : '🟡 Referral Bonus';
+
+                return (
+                  <Box
+                    key={tx.key || tx.id || idx}
+                    sx={{
+                      p: 2,
+                      borderRadius: '16px',
+                      bgcolor: alpha('#fff', 0.02),
+                      border: `1px solid ${
+                        isStakeCanceled ? alpha('#f44336', 0.3) :
+                        isStakeClaimed ? alpha('#4caf50', 0.3) :
+                        isStakeCreated ? alpha('#14F195', 0.3) :
+                        alpha('#fff', 0.08)
+                      }`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 1.5
+                    }}
+                  >
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Avatar
+                        sx={{
+                          bgcolor: isStakeCanceled 
+                            ? alpha('#f44336', 0.15) 
+                            : isStakeClaimed 
+                            ? alpha('#4caf50', 0.15) 
+                            : alpha('#D4AF37', 0.15),
+                          color: isStakeCanceled ? '#f44336' : isStakeClaimed ? '#4caf50' : '#FFDF73',
+                          width: 38,
+                          height: 38
+                        }}
+                      >
+                        {isStakeCanceled ? <XCircle size={18} /> : isStakeClaimed ? <Sparkles size={18} /> : <Coins size={18} />}
+                      </Avatar>
+
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.3 }}>
+                          <Typography variant="body2" fontWeight="800" color="#fff">
+                            {tx.details || "Vault Transaction"}
+                          </Typography>
+                          <Chip 
+                            label={chipLabel} 
+                            size="small" 
+                            color={chipColor}
+                            variant="filled" 
+                            sx={{ height: 20, fontSize: '10px', fontWeight: '800' }} 
+                          />
+                        </Stack>
+
+                        <Typography variant="caption" color="text.secondary">
+                          {tx.timestamp ? new Date(tx.timestamp).toLocaleString() : (tx.time || "Recent")}
+                          {tx.price && ` | Payment/Rate: ${tx.price}`}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="subtitle2" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace' }}>
+                        {tx.amount || "+0"}
+                      </Typography>
+                      {tx.signature && (
+                        <Button
+                          size="small"
+                          startIcon={<ExternalLink size={10} />}
+                          onClick={() => window.open(`https://solscan.io/tx/${tx.signature}`, '_blank')}
+                          sx={{
+                            fontSize: '10px',
+                            color: '#14F195',
+                            p: 0,
+                            textTransform: 'none',
+                            '&:hover': { textDecoration: 'underline' }
+                          }}
+                        >
+                          Solscan Tx
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 4. EARLY STAKING CANCELLATION CONFIRMATION DIALOG POPUP */}
       <Dialog
         open={cancelDialogOpen}
         onClose={() => setCancelDialogOpen(false)}

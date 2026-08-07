@@ -1945,7 +1945,8 @@ export function AdminStaking() {
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "firebase">("stakes");
+  const [activeTab, setActiveTab] = useState<"stakes" | "pendingRewards" | "stakingLedger" | "firebase">("stakes");
+  const [allTransactions, setAllTransactions] = useState<any[]>([]);
 
   // Actions states
   const [selectedStake, setSelectedStake] = useState<any | null>(null);
@@ -2130,12 +2131,36 @@ export function AdminStaking() {
       }
     });
 
+    const txsRef = ref(database, "transactions");
+    const unsubTxs = onValue(txsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const list: any[] = [];
+        Object.keys(val).forEach((userAddr) => {
+          const userTxs = val[userAddr];
+          if (userTxs) {
+            Object.keys(userTxs).forEach((txId) => {
+              list.push({
+                id: txId,
+                userAddress: userAddr,
+                ...userTxs[txId]
+              });
+            });
+          }
+        });
+        setAllTransactions(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
+      } else {
+        setAllTransactions([]);
+      }
+    });
+
     return () => {
       unsubStakes();
       unsubCountdowns();
       unsubRewards();
       unsubUsers();
       unsubConfig();
+      unsubTxs();
     };
   }, []);
 
@@ -2438,6 +2463,13 @@ export function AdminStaking() {
           sx={{ borderRadius: 2 }}
         >
           Referrals Pending ({pendingRewards.length})
+        </Button>
+        <Button 
+          variant={activeTab === "stakingLedger" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("stakingLedger")}
+          sx={{ borderRadius: 2 }}
+        >
+          All Staking Transactions ({allTransactions.length})
         </Button>
         <Button 
           variant={activeTab === "firebase" ? "contained" : "outlined"}
@@ -2800,6 +2832,106 @@ export function AdminStaking() {
                                 Force Approve 1 usGOLD
                               </Button>
                             )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      )}
+
+      {activeTab === "stakingLedger" && (
+        <Box>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+            <TextField
+              size="small"
+              placeholder="Search by User Address, Transaction Type, Amount..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ flexGrow: 1 }}
+              InputProps={{
+                startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.5 }} />
+              }}
+            />
+          </Box>
+
+          {allTransactions.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">No staking transactions recorded in database ledger yet.</Typography>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper} sx={{ bgcolor: '#121214', borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>User Wallet Address</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Amount / Payment</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Details</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Timestamp</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allTransactions
+                    .filter(tx => {
+                      if (!searchQuery) return true;
+                      const q = searchQuery.toLowerCase();
+                      return (
+                        (tx.userAddress || "").toLowerCase().includes(q) ||
+                        (tx.type || "").toLowerCase().includes(q) ||
+                        (tx.details || "").toLowerCase().includes(q) ||
+                        String(tx.amount || "").toLowerCase().includes(q)
+                      );
+                    })
+                    .map((tx, idx) => {
+                      const isStakeCreated = tx.type === 'stake_created';
+                      const isStakeClaimed = tx.type === 'stake_claimed';
+                      const isStakeCanceled = tx.type === 'stake_canceled';
+                      const isReferral = tx.type?.includes('referral');
+
+                      const chipLabel = isStakeCreated
+                        ? '🟢 Vault Created'
+                        : isStakeClaimed
+                        ? '⚡ Yield Claimed'
+                        : isStakeCanceled
+                        ? '🔴 Vault Cancelled (-10%)'
+                        : isReferral
+                        ? '🟡 Referral Bonus'
+                        : tx.type || 'Activity';
+
+                      const chipColor = isStakeCreated ? 'primary' : isStakeClaimed ? 'success' : isStakeCanceled ? 'error' : isReferral ? 'warning' : 'info';
+
+                      return (
+                        <TableRow key={tx.id || idx} hover>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800 }}>
+                              {tx.userAddress}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Chip 
+                              label={chipLabel} 
+                              size="small" 
+                              color={chipColor as any} 
+                              variant="filled" 
+                              sx={{ fontWeight: '800', fontSize: '10px' }} 
+                            />
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5, fontWeight: 800, color: '#FFDF73' }}>
+                            {tx.amount || tx.price || "+0"}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {tx.details || "Vault Activity"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {tx.timestamp ? new Date(tx.timestamp).toLocaleString() : (tx.time || "Recent")}
+                            </Typography>
                           </TableCell>
                         </TableRow>
                       );
