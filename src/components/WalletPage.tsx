@@ -1290,8 +1290,35 @@ export function WalletPage({
             </Box>
           </Stack>
 
-          {/* TOP RIGHT REDESIGNED REFERRAL STATUS */}
+          {/* TOP RIGHT REDESIGNED REFERRAL STATUS & STAKING INTEGRATION */}
           <Stack direction="row" alignItems="center" spacing={1}>
+            <Button
+              size="small"
+              onClick={() => {
+                triggerHaptic(10);
+                setActiveTab('staking');
+              }}
+              startIcon={<Coins size={13} color="#D4AF37" />}
+              sx={{
+                bgcolor: alpha('#D4AF37', 0.1),
+                border: `1px solid ${alpha('#D4AF37', 0.45)}`,
+                color: '#FFDF73',
+                fontSize: '11px',
+                fontWeight: 800,
+                py: 0.5,
+                px: 1.5,
+                borderRadius: '12px',
+                textTransform: 'none',
+                transition: 'all 0.2s',
+                '&:hover': { 
+                  bgcolor: alpha('#D4AF37', 0.25),
+                  borderColor: '#FFDF73'
+                }
+              }}
+            >
+              {t('openStakingVaults', language)}
+            </Button>
+
             <Tooltip 
               title={`${t('referralRewards', language)}: 1 usGOLD/ref (${t('earned', language)}: ${pendingReferralRewards.toFixed(2)} usGOLD | ${t('pending', language)}: ${pendingCount} | ${t('needsApproval', language)}: ${needsApprovalCount} | ${t('redeemed', language)}: ${approvedCount})`}
               arrow
@@ -1301,6 +1328,9 @@ export function WalletPage({
                 onClick={() => {
                   triggerHaptic(10);
                   setWalletTab("invite");
+                  setTimeout(() => {
+                    document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }, 100);
                 }}
                 startIcon={<Gift size={13} color="#D4AF37" />}
                 sx={{
@@ -1403,19 +1433,35 @@ export function WalletPage({
         </Grid>
 
         {/* ADMIN APPROVED REWARD CLAIM BAR ON TOP CARD */}
-        <Box sx={{ 
-          mb: 2, 
-          p: 1.5, 
-          borderRadius: '16px', 
-          bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.12) : alpha('#000', 0.45),
-          border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.5) : alpha('#D4AF37', 0.25)}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 1.5,
-          transition: 'all 0.3s ease'
-        }}>
+        <Box 
+          onClick={() => {
+            if (approvedToClaimAmount === 0) {
+              triggerHaptic(10);
+              setWalletTab("invite");
+              setTimeout(() => {
+                document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 100);
+            }
+          }}
+          sx={{ 
+            cursor: approvedToClaimAmount === 0 ? 'pointer' : 'default',
+            mb: 2, 
+            p: 1.5, 
+            borderRadius: '16px', 
+            bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.12) : alpha('#000', 0.45),
+            border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.5) : alpha('#D4AF37', 0.25)}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
+            transition: 'all 0.3s ease',
+            '&:hover': approvedToClaimAmount === 0 ? {
+              borderColor: alpha('#D4AF37', 0.6),
+              bgcolor: alpha('#D4AF37', 0.08)
+            } : {}
+          }}
+        >
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Avatar sx={{ 
               bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.2) : alpha('#D4AF37', 0.15),
@@ -1427,14 +1473,16 @@ export function WalletPage({
             </Avatar>
             <Box>
               <Typography variant="body2" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#FFDF73', fontSize: '13px' }}>
-                {approvedToClaimAmount > 0 ? `${approvedToClaimAmount.toFixed(2)} usGOLD Approved by Admin` : "Admin Approved usGOLD Rewards"}
+                {approvedToClaimAmount > 0 
+                  ? t('approvedUsGoldByAdmin', language).replace('{amount}', approvedToClaimAmount.toFixed(2))
+                  : t('adminApprovedRewards', language)}
               </Typography>
               <Typography variant="caption" sx={{ color: alpha('#fff', 0.8), fontSize: '11px', display: 'block' }}>
                 {approvedToClaimAmount > 0 
-                  ? "Withdraw your admin-approved referral usGOLD directly into your wallet balance!"
+                  ? t('withdrawApprovedUsGoldDesc', language)
                   : needsApprovalCount > 0
-                  ? `${needsApprovalCount} referral reward(s) pending admin review.`
-                  : "Invite friends who stake usGOLD to earn 1 usGOLD per friend!"}
+                  ? t('pendingAdminReviewCount', language).replace('{count}', needsApprovalCount.toString())
+                  : t('inviteFriendsToStakeDesc', language)}
               </Typography>
             </Box>
           </Stack>
@@ -1443,7 +1491,18 @@ export function WalletPage({
             size="small"
             variant={approvedToClaimAmount > 0 ? "contained" : "outlined"}
             disabled={isClaimingUsGold}
-            onClick={handleClaimApprovedUsGold}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (approvedToClaimAmount > 0) {
+                handleClaimApprovedUsGold();
+              } else {
+                triggerHaptic(10);
+                setWalletTab("invite");
+                setTimeout(() => {
+                  document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 100);
+              }
+            }}
             startIcon={isClaimingUsGold ? <CircularProgress size={14} color="inherit" /> : <Gift size={15} />}
             sx={{
               fontWeight: 900,
@@ -1470,7 +1529,11 @@ export function WalletPage({
               })
             }}
           >
-            {isClaimingUsGold ? "Claiming..." : approvedToClaimAmount > 0 ? `Claim ${approvedToClaimAmount.toFixed(2)} usGOLD` : "Claim Rewards"}
+            {isClaimingUsGold 
+              ? t('claiming', language) 
+              : approvedToClaimAmount > 0 
+              ? t('claimUsGoldAmount', language).replace('{amount}', approvedToClaimAmount.toFixed(2)) 
+              : t('claimRewards', language)}
           </Button>
         </Box>
 
@@ -1706,6 +1769,9 @@ export function WalletPage({
           onClick={() => {
             triggerHaptic(10);
             setWalletTab("invite");
+            setTimeout(() => {
+              document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
           }}
           startIcon={<Gift size={16} />}
           sx={{
@@ -1722,10 +1788,10 @@ export function WalletPage({
             position: "relative"
           }}
         >
-          Invite & Earn 1 usGOLD
+          {t('inviteAndEarn1UsGold', language)}
           {needsApprovalCount > 0 && (
             <Chip
-              label={`${needsApprovalCount} Pending`}
+              label={`${needsApprovalCount} ${t('pending', language)}`}
               size="small"
               sx={{
                 ml: 1,
@@ -2454,7 +2520,7 @@ export function WalletPage({
 
       {/* 2. TAB 2: INVITE & EARN 1 usGOLD REWARDS HUB */}
       {walletTab === "invite" && (
-        <Stack spacing={3}>
+        <Stack spacing={3} id="invite-earn-section">
           {/* Main Hero Card */}
           <Card
             sx={{
@@ -2479,15 +2545,15 @@ export function WalletPage({
                     </Avatar>
                     <Box>
                       <Typography variant="h5" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
-                        Invite Friends & Earn 1 usGOLD Reward
+                        {t('inviteFriendsEarnReward', language)}
                       </Typography>
                       <Typography variant="caption" color="#D4AF37" fontWeight="700">
-                        1 usGOLD per friend who joins & creates a staking vault
+                        {t('inviteFriendsSub', language)}
                       </Typography>
                     </Box>
                   </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
-                    Share your unique referral link below. When a friend registers via your link and completes a usGOLD vault stake, a <strong>1 usGOLD reward</strong> is submitted to Admin for approval and credited directly to your wallet balance.
+                    {t('shareReferralLinkDesc', language)}
                   </Typography>
                 </Grid>
 
@@ -2502,13 +2568,13 @@ export function WalletPage({
                     }}
                   >
                     <Typography variant="caption" color="text.secondary" fontWeight="700" display="block">
-                      YOUR REFERRAL EARNINGS
+                      {t('yourReferralEarnings', language)}
                     </Typography>
                     <Typography variant="h4" fontWeight="900" color="#FFDF73" sx={{ my: 0.5, fontFamily: '"Cinzel", serif' }}>
                       {(approvedCount * 1).toFixed(2)} <Typography component="span" variant="subtitle2" color="#D4AF37">usGOLD</Typography>
                     </Typography>
                     <Typography variant="caption" color="#4caf50" fontWeight="800">
-                      ✅ Paid to Wallet: {approvedCount} Rewards
+                      ✅ {t('claimedAndPaid', language)}: {approvedCount}
                     </Typography>
                   </Card>
                 </Grid>
@@ -2525,7 +2591,7 @@ export function WalletPage({
                 }}
               >
                 <Typography variant="caption" color="#D4AF37" fontWeight="800" sx={{ mb: 1, display: "block" }}>
-                  YOUR UNIQUE REFERRAL LINK
+                  {t('yourUniqueReferralLink', language)}
                 </Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
                   <TextField
@@ -2560,7 +2626,7 @@ export function WalletPage({
                         "&:hover": { bgcolor: "#FFDF73" }
                       }}
                     >
-                      {copiedLink ? "Copied!" : "Copy Link"}
+                      {copiedLink ? t('copied', language) : t('copyLink', language)}
                     </Button>
 
                     <Button
@@ -2576,7 +2642,7 @@ export function WalletPage({
                         textTransform: "none"
                       }}
                     >
-                      Share
+                      {t('share', language) || "Share"}
                     </Button>
                   </Stack>
                 </Stack>
@@ -2588,29 +2654,29 @@ export function WalletPage({
           <Grid container spacing={2}>
             <Grid item xs={6} sm={3}>
               <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#fff", 0.1)}`, borderRadius: "18px", p: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">Total Invited</Typography>
+                <Typography variant="caption" color="text.secondary" fontWeight="700">{t('totalInvited', language)}</Typography>
                 <Typography variant="h5" fontWeight="900" color="#fff" sx={{ mt: 0.5 }}>{referralsCount}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>Friends joined via link</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>{t('friendsJoinedLink', language)}</Typography>
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#fff", 0.1)}`, borderRadius: "18px", p: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight="700">Awaiting Friend Stake</Typography>
+                <Typography variant="caption" color="text.secondary" fontWeight="700">{t('awaitingFriendStake', language)}</Typography>
                 <Typography variant="h5" fontWeight="900" color="#ffb74d" sx={{ mt: 0.5 }}>{pendingCount}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>Joined, hasn't staked yet</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>{t('joinedHasntStaked', language)}</Typography>
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card sx={{ border: `1px solid ${alpha("#ff9800", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#ff9800", 0.05) }}>
-                <Typography variant="caption" color="#ffb74d" fontWeight="800">Pending Admin Approval</Typography>
+                <Typography variant="caption" color="#ffb74d" fontWeight="800">{t('pendingAdminApproval', language)}</Typography>
                 <Typography variant="h5" fontWeight="900" color="#ff9800" sx={{ mt: 0.5 }}>{needsApprovalCount}</Typography>
-                <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{(needsApprovalCount * 1).toFixed(2)} usGOLD pending review</Typography>
+                <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{t('usGoldPendingReview', language).replace('{amount}', (needsApprovalCount * 1).toFixed(2))}</Typography>
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card sx={{ border: `1px solid ${approvedToClaimAmount > 0 ? alpha("#14F195", 0.6) : alpha("#4caf50", 0.3)}`, borderRadius: "18px", p: 2, bgcolor: approvedToClaimAmount > 0 ? alpha("#14F195", 0.1) : alpha("#4caf50", 0.05) }}>
                 <Typography variant="caption" color={approvedToClaimAmount > 0 ? "#14F195" : "#81c784"} fontWeight="800">
-                  {approvedToClaimAmount > 0 ? "Approved Ready to Claim" : "Claimed & Paid"}
+                  {approvedToClaimAmount > 0 ? t('approvedReadyToClaim', language) : t('claimedAndPaid', language)}
                 </Typography>
                 <Typography variant="h5" fontWeight="900" color={approvedToClaimAmount > 0 ? "#14F195" : "#4caf50"} sx={{ mt: 0.5 }}>
                   {approvedToClaimAmount > 0 ? approvedToClaimCount : approvedCount}
@@ -2633,10 +2699,10 @@ export function WalletPage({
                       textTransform: 'none'
                     }}
                   >
-                    Claim {approvedToClaimAmount.toFixed(1)} usGOLD
+                    {t('claimUsGoldAmount', language).replace('{amount}', approvedToClaimAmount.toFixed(1))}
                   </Button>
                 ) : (
-                  <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{(approvedCount * 1).toFixed(2)} usGOLD in wallet balance</Typography>
+                  <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{t('usGoldInWalletBalance', language).replace('{amount}', (approvedCount * 1).toFixed(2))}</Typography>
                 )}
               </Card>
             </Grid>
@@ -2647,17 +2713,17 @@ export function WalletPage({
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6" fontWeight="900" color="#fff">
-                  Your Invited Friends & 1 usGOLD Rewards Log
+                  {t('invitedFriendsRewardsLog', language)}
                 </Typography>
-                <Chip label={`${userRewardsList.length} Total Referrals`} size="small" variant="outlined" sx={{ color: '#D4AF37', borderColor: '#D4AF37' }} />
+                <Chip label={t('totalReferrals', language).replace('{count}', userRewardsList.length.toString())} size="small" variant="outlined" sx={{ color: '#D4AF37', borderColor: '#D4AF37' }} />
               </Stack>
 
               {userRewardsList.length === 0 ? (
                 <Box sx={{ p: 4, textAlign: "center", bgcolor: alpha("#fff", 0.01), borderRadius: "16px", border: `1px dashed ${alpha("#fff", 0.1)}` }}>
                   <UserPlus size={40} color="#D4AF37" style={{ opacity: 0.6, marginBottom: 12 }} />
-                  <Typography variant="subtitle1" fontWeight="800" color="#fff">No Invites Yet</Typography>
+                  <Typography variant="subtitle1" fontWeight="800" color="#fff">{t('noInvitesYet', language)}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto", mt: 0.5, mb: 2 }}>
-                    Copy your unique referral link above and share it with friends. When they join and create a staking vault, you'll earn 1 usGOLD per staking friend!
+                    {t('noInvitesDesc', language)}
                   </Typography>
                   <Button
                     variant="contained"
@@ -2670,7 +2736,7 @@ export function WalletPage({
                     startIcon={<Copy size={16} />}
                     sx={{ bgcolor: "#D4AF37", color: "#000", fontWeight: "900", textTransform: "none" }}
                   >
-                    {copiedLink ? "Copied!" : "Copy Referral Link"}
+                    {copiedLink ? t('copied', language) : t('copyReferralLink', language)}
                   </Button>
                 </Box>
               ) : (

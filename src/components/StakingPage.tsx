@@ -654,15 +654,45 @@ export function StakingPage({
         
         <CardContent sx={{ p: {xs: 3, md: 5}, position: 'relative', zIndex: 1 }}>
           
+          {/* Top Wallet Navigation Bar */}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+            <Chip 
+              label={`${t('balance', language)}: ${usGoldBalance.toFixed(2)} usGOLD`} 
+              sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', border: `1px solid ${alpha('#D4AF37', 0.4)}`, fontWeight: 800 }} 
+            />
+            <Button
+              size="small"
+              onClick={() => {
+                triggerHaptic(10);
+                setActiveTab('wallet');
+              }}
+              startIcon={<Gift size={14} color="#D4AF37" />}
+              sx={{
+                bgcolor: alpha('#D4AF37', 0.15),
+                border: `1px solid ${alpha('#D4AF37', 0.5)}`,
+                color: '#FFDF73',
+                fontSize: '11px',
+                fontWeight: 800,
+                py: 0.6,
+                px: 2,
+                borderRadius: '12px',
+                textTransform: 'none',
+                '&:hover': { bgcolor: alpha('#D4AF37', 0.3), borderColor: '#FFDF73' }
+              }}
+            >
+              {t('goToWalletBalance', language)}
+            </Button>
+          </Stack>
+
           <Box textAlign="center" mb={4}>
             <Typography variant="overline" color="text.secondary" fontWeight="700" letterSpacing={3} sx={{ opacity: 0.8 }}>
-              {t('goldReserveYield', language) || "SECURE FIXED INCOME"}
+              {t('goldReserveYield', language)}
             </Typography>
             <Typography variant="h3" fontWeight="900" sx={{ mt: 1, fontFamily: '"Cinzel", serif', background: 'linear-gradient(45deg, #FFDF73, #D4AF37, #996515)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
-              {t('stakeUsGold', language) || "STAKE usGOLD"}
+              {t('stakeUsGold', language)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: '80%', mx: 'auto' }}>
-              {t('lockupYourHoldings', language) || "Lock up your usGOLD stablecoin to earn guaranteed 2% monthly fixed yield."}
+              {t('lockupYourHoldings', language)}
             </Typography>
           </Box>
 
