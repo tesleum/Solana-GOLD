@@ -53,6 +53,9 @@ import {
   ChevronRight,
   ChevronUp,
   Award,
+  UserPlus,
+  Hourglass,
+  Share2,
 } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -132,7 +135,7 @@ export function WalletPage({
   const isActuallyConnected = connected || isAppKitConnected;
 
   // Wallet sub-tab state
-  const [walletTab, setWalletTab] = useState<"swap" | "history">(
+  const [walletTab, setWalletTab] = useState<"swap" | "invite" | "history">(
     "swap",
   );
 
@@ -143,6 +146,7 @@ export function WalletPage({
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [needsApprovalCount, setNeedsApprovalCount] = useState<number>(0);
   const [approvedCount, setApprovedCount] = useState<number>(0);
+  const [userRewardsList, setUserRewardsList] = useState<any[]>([]);
   const [nowTime, setNowTime] = useState<number>(Date.now());
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
@@ -176,7 +180,10 @@ export function WalletPage({
       const unsubRewards = onValue(rewardRef, (snapshot) => {
         if (snapshot.exists()) {
           const val = snapshot.val();
-          const list = Object.values(val) as any[];
+          const list = Object.keys(val).map(key => ({
+            key,
+            ...val[key]
+          }));
           
           const pCount = list.filter(r => r.status === 'pending').length;
           const nCount = list.filter(r => r.status === 'needs_approval').length;
@@ -186,6 +193,7 @@ export function WalletPage({
           setNeedsApprovalCount(nCount);
           setApprovedCount(aCount);
           setReferralsCount(list.length);
+          setUserRewardsList(list);
           
           const legacyPending = list.filter(r => r.type === 'referral_stake_completed').reduce((sum, item) => sum + (item.amount || 1), 0);
           setPendingReferralRewards((aCount * 1) || legacyPending || 0);
@@ -194,6 +202,7 @@ export function WalletPage({
           setNeedsApprovalCount(0);
           setApprovedCount(0);
           setReferralsCount(0);
+          setUserRewardsList([]);
           setPendingReferralRewards(0);
         }
       });
@@ -1148,7 +1157,10 @@ export function WalletPage({
             >
               <Button
                 size="small"
-                onClick={handleShareReferral}
+                onClick={() => {
+                  triggerHaptic(10);
+                  setWalletTab("invite");
+                }}
                 startIcon={<Gift size={13} color="#D4AF37" />}
                 sx={{
                   bgcolor: alpha('#D4AF37', 0.1),
@@ -1443,7 +1455,7 @@ export function WalletPage({
         </Collapse>
       </Card>
 
-      {/* 2. SUB-TAB NAVIGATION: ENHANCED SWAP / TOP UP / HISTORY */}
+      {/* 2. SUB-TAB NAVIGATION: ENHANCED SWAP / INVITE & EARN / HISTORY */}
       <Stack
         direction="row"
         spacing={1}
@@ -1451,6 +1463,8 @@ export function WalletPage({
           mb: 3,
           borderBottom: `1px solid ${alpha("#fff", 0.08)}`,
           pb: 1.5,
+          flexWrap: "wrap",
+          gap: 1
         }}
       >
         <Button
@@ -1475,7 +1489,42 @@ export function WalletPage({
           {t('enhancedSolanaSwap', language)}
         </Button>
 
-
+        <Button
+          onClick={() => {
+            triggerHaptic(10);
+            setWalletTab("invite");
+          }}
+          startIcon={<Gift size={16} />}
+          sx={{
+            bgcolor:
+              walletTab === "invite" ? alpha("#D4AF37", 0.2) : "transparent",
+            color: walletTab === "invite" ? "#FFDF73" : "text.secondary",
+            border: `1px solid ${walletTab === "invite" ? "#D4AF37" : "transparent"}`,
+            borderRadius: "12px",
+            fontWeight: "900",
+            fontSize: "0.85rem",
+            px: 2.5,
+            py: 0.8,
+            textTransform: "none",
+            position: "relative"
+          }}
+        >
+          Invite & Earn 1 usGOLD
+          {needsApprovalCount > 0 && (
+            <Chip
+              label={`${needsApprovalCount} Pending`}
+              size="small"
+              sx={{
+                ml: 1,
+                height: 18,
+                fontSize: "10px",
+                bgcolor: "#ff9800",
+                color: "#000",
+                fontWeight: "800"
+              }}
+            />
+          )}
+        </Button>
 
         <Button
           onClick={() => {
@@ -2189,6 +2238,323 @@ export function WalletPage({
       )}
 
 
+
+      {/* 2. TAB 2: INVITE & EARN 1 usGOLD REWARDS HUB */}
+      {walletTab === "invite" && (
+        <Stack spacing={3}>
+          {/* Main Hero Card */}
+          <Card
+            sx={{
+              bgcolor: "#121316",
+              border: `1px solid ${alpha("#D4AF37", 0.3)}`,
+              borderRadius: "28px",
+              boxShadow: `0 20px 50px ${alpha("#000", 0.6)}`,
+              overflow: "hidden"
+            }}
+          >
+            <Box
+              sx={{
+                p: { xs: 2.5, sm: 3.5, md: 4 },
+                background: `linear-gradient(135deg, ${alpha("#D4AF37", 0.15)} 0%, ${alpha("#000", 0.8)} 100%)`
+              }}
+            >
+              <Grid container spacing={3} alignItems="center">
+                <Grid item xs={12} md={8}>
+                  <Stack direction="row" spacing={1.5} alignItems="center" mb={1}>
+                    <Avatar sx={{ bgcolor: alpha("#D4AF37", 0.2), color: "#FFDF73", width: 42, height: 42 }}>
+                      <Gift size={24} />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
+                        Invite Friends & Earn 1 usGOLD Reward
+                      </Typography>
+                      <Typography variant="caption" color="#D4AF37" fontWeight="700">
+                        1 usGOLD per friend who joins & creates a staking vault
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
+                    Share your unique referral link below. When a friend registers via your link and completes a usGOLD vault stake, a <strong>1 usGOLD reward</strong> is submitted to Admin for approval and credited directly to your wallet balance.
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      bgcolor: alpha("#000", 0.6),
+                      border: `1px solid ${alpha("#D4AF37", 0.25)}`,
+                      borderRadius: "18px",
+                      textAlign: "center"
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" fontWeight="700" display="block">
+                      YOUR REFERRAL EARNINGS
+                    </Typography>
+                    <Typography variant="h4" fontWeight="900" color="#FFDF73" sx={{ my: 0.5, fontFamily: '"Cinzel", serif' }}>
+                      {(approvedCount * 1).toFixed(2)} <Typography component="span" variant="subtitle2" color="#D4AF37">usGOLD</Typography>
+                    </Typography>
+                    <Typography variant="caption" color="#4caf50" fontWeight="800">
+                      ✅ Paid to Wallet: {approvedCount} Rewards
+                    </Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Referral Link Box */}
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  bgcolor: alpha("#000", 0.5),
+                  border: `1px dashed ${alpha("#D4AF37", 0.4)}`,
+                  borderRadius: "16px"
+                }}
+              >
+                <Typography variant="caption" color="#D4AF37" fontWeight="800" sx={{ mb: 1, display: "block" }}>
+                  YOUR UNIQUE REFERRAL LINK
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
+                  <TextField
+                    fullWidth
+                    size="small"
+                    readOnly
+                    value={`${window.location.origin}?ref=${effectiveAddress || 'YOUR_WALLET'}`}
+                    sx={{
+                      bgcolor: alpha("#fff", 0.03),
+                      borderRadius: "10px",
+                      input: { color: "#fff", fontFamily: "monospace", fontSize: "12px", py: 1 }
+                    }}
+                  />
+                  <Stack direction="row" spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}?ref=${effectiveAddress || 'YOUR_WALLET'}`);
+                        setCopiedLink(true);
+                        triggerHaptic(10);
+                        setTimeout(() => setCopiedLink(false), 2500);
+                      }}
+                      startIcon={<Copy size={16} />}
+                      sx={{
+                        bgcolor: "#D4AF37",
+                        color: "#000",
+                        fontWeight: "900",
+                        borderRadius: "10px",
+                        px: 2.5,
+                        textTransform: "none",
+                        "&:hover": { bgcolor: "#FFDF73" }
+                      }}
+                    >
+                      {copiedLink ? "Copied!" : "Copy Link"}
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      onClick={handleShareReferral}
+                      startIcon={<Share2 size={16} />}
+                      sx={{
+                        borderColor: alpha("#D4AF37", 0.5),
+                        color: "#FFDF73",
+                        fontWeight: "800",
+                        borderRadius: "10px",
+                        px: 2,
+                        textTransform: "none"
+                      }}
+                    >
+                      Share
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
+          </Card>
+
+          {/* 4 Summary Stat Cards */}
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#fff", 0.1)}`, borderRadius: "18px", p: 2 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight="700">Total Invited</Typography>
+                <Typography variant="h5" fontWeight="900" color="#fff" sx={{ mt: 0.5 }}>{referralsCount}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>Friends joined via link</Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#fff", 0.1)}`, borderRadius: "18px", p: 2 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight="700">Awaiting Friend Stake</Typography>
+                <Typography variant="h5" fontWeight="900" color="#ffb74d" sx={{ mt: 0.5 }}>{pendingCount}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>Joined, hasn't staked yet</Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#ff9800", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#ff9800", 0.05) }}>
+                <Typography variant="caption" color="#ffb74d" fontWeight="800">Pending 1 usGOLD Approval</Typography>
+                <Typography variant="h5" fontWeight="900" color="#ff9800" sx={{ mt: 0.5 }}>{needsApprovalCount}</Typography>
+                <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{(needsApprovalCount * 1).toFixed(2)} usGOLD waiting payout</Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#4caf50", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#4caf50", 0.05) }}>
+                <Typography variant="caption" color="#81c784" fontWeight="800">Approved & Paid</Typography>
+                <Typography variant="h5" fontWeight="900" color="#4caf50" sx={{ mt: 0.5 }}>{approvedCount}</Typography>
+                <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{(approvedCount * 1).toFixed(2)} usGOLD in wallet</Typography>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Detailed Invited Friends & Rewards Table */}
+          <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#fff", 0.1)}`, borderRadius: "24px" }}>
+            <CardContent sx={{ p: 3 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" fontWeight="900" color="#fff">
+                  Your Invited Friends & 1 usGOLD Rewards Log
+                </Typography>
+                <Chip label={`${userRewardsList.length} Total Referrals`} size="small" variant="outlined" sx={{ color: '#D4AF37', borderColor: '#D4AF37' }} />
+              </Stack>
+
+              {userRewardsList.length === 0 ? (
+                <Box sx={{ p: 4, textAlign: "center", bgcolor: alpha("#fff", 0.01), borderRadius: "16px", border: `1px dashed ${alpha("#fff", 0.1)}` }}>
+                  <UserPlus size={40} color="#D4AF37" style={{ opacity: 0.6, marginBottom: 12 }} />
+                  <Typography variant="subtitle1" fontWeight="800" color="#fff">No Invites Yet</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto", mt: 0.5, mb: 2 }}>
+                    Copy your unique referral link above and share it with friends. When they join and create a staking vault, you'll earn 1 usGOLD per staking friend!
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}?ref=${effectiveAddress || 'YOUR_WALLET'}`);
+                      setCopiedLink(true);
+                      triggerHaptic(10);
+                      setTimeout(() => setCopiedLink(false), 2500);
+                    }}
+                    startIcon={<Copy size={16} />}
+                    sx={{ bgcolor: "#D4AF37", color: "#000", fontWeight: "900", textTransform: "none" }}
+                  >
+                    {copiedLink ? "Copied!" : "Copy Referral Link"}
+                  </Button>
+                </Box>
+              ) : (
+                <Stack spacing={1.5}>
+                  {userRewardsList.map((rw: any, idx: number) => {
+                    const isNeedsApproval = rw.status === "needs_approval";
+                    const isApproved = rw.status === "approved" || rw.status === "redeemed" || rw.type === "referral_stake_completed";
+                    const isPendingStake = rw.status === "pending";
+
+                    return (
+                      <Box
+                        key={rw.key || idx}
+                        sx={{
+                          p: 2,
+                          borderRadius: "16px",
+                          bgcolor: alpha("#fff", 0.02),
+                          border: `1px solid ${
+                            isNeedsApproval ? alpha("#ff9800", 0.4) :
+                            isApproved ? alpha("#4caf50", 0.3) :
+                            alpha("#fff", 0.08)
+                          }`,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 1.5
+                        }}
+                      >
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Avatar
+                            sx={{
+                              bgcolor: isNeedsApproval ? alpha("#ff9800", 0.15) : isApproved ? alpha("#4caf50", 0.15) : alpha("#fff", 0.08),
+                              color: isNeedsApproval ? "#ff9800" : isApproved ? "#4caf50" : "#fff",
+                              width: 38,
+                              height: 38
+                            }}
+                          >
+                            {isApproved ? <CheckCircle2 size={20} /> : isNeedsApproval ? <Hourglass size={20} /> : <UserPlus size={20} />}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" fontWeight="800" color="#fff" sx={{ fontFamily: "monospace" }}>
+                              {rw.referee ? `${rw.referee.slice(0, 6)}...${rw.referee.slice(-6)}` : "Invitee Wallet"}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Joined: {new Date(rw.timestamp || Date.now()).toLocaleDateString()}
+                              {rw.completedAt && ` | Staked: ${new Date(rw.completedAt).toLocaleDateString()}`}
+                            </Typography>
+                            {rw.stakeAmount && (
+                              <Typography variant="caption" color="#D4AF37" fontWeight="bold">
+                                Staked: {rw.stakeAmount} usGOLD ({rw.stakeDurationMonths}m) | {rw.solPaid} SOL
+                              </Typography>
+                            )}
+                          </Box>
+                        </Stack>
+
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Box sx={{ textAlign: "right" }}>
+                            <Typography variant="subtitle2" fontWeight="900" color="#FFDF73">
+                              +1.0000 usGOLD
+                            </Typography>
+                            {isNeedsApproval && (
+                              <Chip
+                                label="🟡 Pending Admin Approval & Payout"
+                                size="small"
+                                color="warning"
+                                variant="filled"
+                                sx={{ height: 20, fontSize: "10px", fontWeight: "800", mt: 0.5 }}
+                              />
+                            )}
+                            {isPendingStake && (
+                              <Chip
+                                label="⏳ Awaiting Friend Stake"
+                                size="small"
+                                sx={{ height: 20, fontSize: "10px", fontWeight: "700", bgcolor: alpha("#fff", 0.1), color: "text.secondary", mt: 0.5 }}
+                              />
+                            )}
+                            {isApproved && (
+                              <Chip
+                                label="✅ 1 usGOLD Paid to Wallet"
+                                size="small"
+                                color="success"
+                                variant="filled"
+                                sx={{ height: 20, fontSize: "10px", fontWeight: "800", mt: 0.5 }}
+                              />
+                            )}
+                          </Box>
+                        </Stack>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* How it works info card */}
+          <Card sx={{ bgcolor: alpha("#000", 0.4), border: `1px solid ${alpha("#D4AF37", 0.2)}`, borderRadius: "20px", p: 3 }}>
+            <Typography variant="subtitle1" fontWeight="900" color="#FFDF73" mb={1.5}>
+              How 1 usGOLD Referral Rewards Work
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 1: Share Link</Typography>
+                  <Typography variant="body2" color="text.secondary">Send your link to friends or social channels. Anyone visiting via your link is attributed to you.</Typography>
+                </Stack>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 2: Friend Stakes</Typography>
+                  <Typography variant="body2" color="text.secondary">When your friend connects their wallet and stakes usGOLD in a vault, a 1 usGOLD pending reward is queued.</Typography>
+                </Stack>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 3: Receive 1 usGOLD</Typography>
+                  <Typography variant="body2" color="text.secondary">Admin verifies the referee stake and approves payment. 1 usGOLD is credited directly to your wallet balance!</Typography>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Card>
+        </Stack>
+      )}
 
       {/* 5. TAB 3: WALLET LEDGER & HISTORY */}
       {walletTab === "history" && (

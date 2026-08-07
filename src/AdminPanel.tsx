@@ -79,6 +79,9 @@ import {
   Coins,
   Search,
   RefreshCw,
+  Copy,
+  Gift,
+  Check,
 } from "lucide-react";
 
 const drawerWidth = 240;
@@ -1968,6 +1971,88 @@ export function AdminStaking() {
   const [customNotifyMsg, setCustomNotifyMsg] = useState("");
   const [sendingNotify, setSendingNotify] = useState(false);
 
+  // Manual Reward Grant State
+  const [manualGrantOpen, setManualGrantOpen] = useState(false);
+  const [manualReferrer, setManualReferrer] = useState("");
+  const [manualReferee, setManualReferee] = useState("");
+  const [manualAmount, setManualAmount] = useState("1");
+  const [grantingReward, setGrantingReward] = useState(false);
+  const [pendingRewardSearch, setPendingRewardSearch] = useState("");
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  const handleGrantManualReward = async () => {
+    const referrerAddr = manualReferrer.trim();
+    if (!referrerAddr) {
+      alert("Please enter a Referrer Wallet Address.");
+      return;
+    }
+    const amt = parseFloat(manualAmount) || 1;
+    setGrantingReward(true);
+    try {
+      const rewardRef = ref(database, `rewards/${referrerAddr}`);
+      const newRewardRef = push(rewardRef);
+      await set(newRewardRef, {
+        type: "referral_reward",
+        amount: amt,
+        referee: manualReferee.trim() || "Manual Admin Grant",
+        status: "approved",
+        timestamp: Date.now(),
+        approvedAt: Date.now(),
+        stakeAmount: "Manual Admin Payout"
+      });
+
+      const txPath = `transactions/${referrerAddr}`;
+      await push(ref(database, txPath), {
+        type: 'referral_reward',
+        amount: `${amt.toFixed(4)} usGOLD`,
+        price: 'Referral',
+        details: `Manual Referral Reward for referee: ${manualReferee.trim() || 'Manual Grant'}`,
+        time: new Date().toLocaleString(),
+        timestamp: Date.now()
+      });
+
+      const userRef = ref(database, `users/${referrerAddr}`);
+      const userSnap = await get(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.val();
+        await update(userRef, {
+          earnings: (userData.earnings || 0) + amt,
+          claimedCommissions: (userData.claimedCommissions || 0) + amt,
+          lastActive: Date.now()
+        });
+      }
+
+      await push(ref(database, `global_transactions`), {
+        type: 'referral_reward_redeemed',
+        user: referrerAddr,
+        referee: manualReferee.trim() || 'Manual Grant',
+        amount: amt,
+        timestamp: Date.now()
+      });
+
+      try {
+        await axios.post("/api/fcm/notify", {
+          title: "🎉 1 usGOLD Referral Reward Credited!",
+          body: `Your ${amt} usGOLD referral commission has been credited directly to your wallet balance by Admin!`,
+          target: referrerAddr
+        });
+      } catch (fcmErr) {
+        console.warn("Could not notify referrer via FCM:", fcmErr);
+      }
+
+      alert(`Successfully credited ${amt} usGOLD referral reward to ${referrerAddr}!`);
+      setManualGrantOpen(false);
+      setManualReferrer("");
+      setManualReferee("");
+      setManualAmount("1");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Failed to grant manual reward: ${err.message}`);
+    } finally {
+      setGrantingReward(false);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     const stakesRef = ref(database, "stakes");
@@ -2507,10 +2592,94 @@ export function AdminStaking() {
 
       {activeTab === "pendingRewards" && (
         <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Referrals Pending Approval (1 usGOLD Rewards)</Typography>
+          {/* Header & Actions */}
+          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={2} sx={{ mb: 3 }}>
+            <Box>
+              <Typography variant="h6" fontWeight="900" sx={{ color: "#fff", fontFamily: '"Cinzel", serif' }}>
+                Referral Rewards & 1 usGOLD Approvals
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Review pending referral rewards generated when invited friends stake in vaults. Approve rewards to pay 1 usGOLD directly to the referrer's wallet.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<Gift size={18} />}
+              onClick={() => setManualGrantOpen(true)}
+              sx={{ borderRadius: "10px", fontWeight: "800", textTransform: "none", px: 2.5, py: 1 }}
+            >
+              + Manual Grant 1 usGOLD
+            </Button>
+          </Stack>
+
+          {/* Stat Summary Cards */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <Paper sx={{ p: 2, bgcolor: "#141518", borderRadius: "14px", border: `1px solid ${alpha("#ff9800", 0.3)}` }}>
+                <Typography variant="caption" color="warning.main" fontWeight="800">
+                  Awaiting Admin Approval
+                </Typography>
+                <Typography variant="h4" fontWeight="900" color="#ff9800" sx={{ my: 0.5 }}>
+                  {pendingRewards.filter(r => r.status === "needs_approval").length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Referees staked usGOLD! Admin action required
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Paper sx={{ p: 2, bgcolor: "#141518", borderRadius: "14px", border: `1px solid ${alpha("#D4AF37", 0.3)}` }}>
+                <Typography variant="caption" color="#FFDF73" fontWeight="800">
+                  Total Pending usGOLD Value
+                </Typography>
+                <Typography variant="h4" fontWeight="900" color="#D4AF37" sx={{ my: 0.5 }}>
+                  {(pendingRewards.filter(r => r.status === "needs_approval").length * 1).toFixed(2)} usGOLD
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Ready to be credited to referrers
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Paper sx={{ p: 2, bgcolor: "#141518", borderRadius: "14px", border: `1px solid ${alpha("#fff", 0.1)}` }}>
+                <Typography variant="caption" color="text.secondary" fontWeight="800">
+                  Awaiting Referee Stake
+                </Typography>
+                <Typography variant="h4" fontWeight="900" color="#fff" sx={{ my: 0.5 }}>
+                  {pendingRewards.filter(r => r.status === "pending").length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Friends registered but haven't staked yet
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Search Filter Bar */}
+          <Paper sx={{ p: 2, mb: 3, bgcolor: "#141518", borderRadius: "14px" }}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Search by Referrer Address or Referee Address..."
+              value={pendingRewardSearch}
+              onChange={(e) => setPendingRewardSearch(e.target.value)}
+              InputProps={{
+                startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.6 }} />
+              }}
+            />
+          </Paper>
+
+          {/* Rewards List Table */}
           {pendingRewards.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">No pending referral rewards currently waiting.</Typography>
+            <Paper sx={{ p: 4, textAlign: 'center', bgcolor: "#141518", borderRadius: "16px" }}>
+              <Gift size={40} color="#D4AF37" style={{ opacity: 0.5, marginBottom: 12 }} />
+              <Typography variant="h6" fontWeight="800" color="#fff">No Pending Referral Rewards</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                No referee stakes are currently waiting for admin approval. You can use "+ Manual Grant 1 usGOLD" to manually credit any user.
+              </Typography>
             </Paper>
           ) : (
             <TableContainer component={Paper} sx={{ bgcolor: '#121214', borderRadius: 3, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
@@ -2518,62 +2687,123 @@ export function AdminStaking() {
                 <TableHead sx={{ bgcolor: alpha('#fff', 0.05) }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referrer (Recipient)</TableCell>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referee (Invitee)</TableCell>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Details</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referee (Invitee Friend)</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Referee Stake Details</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Reward</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main' }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: 'primary.main', textAlign: 'right' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {pendingRewards.map((row) => (
-                    <TableRow key={row.key} hover>
-                      <TableCell sx={{ py: 1.5 }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                          {row.referrerId}
-                        </Typography>
-                        {users[row.referrerId]?.fcmToken && (
-                          <Chip label="Referrer FCM Active" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ py: 1.5 }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
-                          {row.referee}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ py: 1.5 }}>
-                        {row.stakeAmount ? (
-                          <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold' }}>
-                            Staked {row.stakeAmount} usGOLD ({row.stakeDurationMonths}m) | {row.solPaid} SOL
-                          </Typography>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">Registered Referral Profile</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ py: 1.5 }}>
-                        <Chip 
-                          label={row.status === "needs_approval" ? "Waiting Approval" : "Pending Stake"} 
-                          size="small" 
-                          color={row.status === "needs_approval" ? "warning" : "default"}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
-                        {row.status === "needs_approval" ? (
-                          <Button 
-                            variant="contained" 
-                            size="small" 
-                            color="success" 
-                            disabled={actioningKey === row.key}
-                            onClick={() => handleApproveReward(row)}
-                            sx={{ borderRadius: '8px', fontSize: '11px', px: 2, py: 0.5 }}
-                          >
-                            {actioningKey === row.key ? "Crediting..." : "Approve & Credit"}
-                          </Button>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">Referee must stake first</Typography>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {pendingRewards
+                    .filter(r => {
+                      if (!pendingRewardSearch.trim()) return true;
+                      const q = pendingRewardSearch.toLowerCase();
+                      return (
+                        (r.referrerId && r.referrerId.toLowerCase().includes(q)) ||
+                        (r.referee && r.referee.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((row) => {
+                      const isNeedsApproval = row.status === "needs_approval";
+                      return (
+                        <TableRow key={row.key} hover>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: "bold" }}>
+                                {row.referrerId}
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(row.referrerId);
+                                  setCopiedAddress(row.referrerId);
+                                  setTimeout(() => setCopiedAddress(null), 2000);
+                                }}
+                              >
+                                {copiedAddress === row.referrerId ? <Check size={12} color="#4caf50" /> : <Copy size={12} />}
+                              </IconButton>
+                            </Stack>
+                            {users[row.referrerId]?.fcmToken && (
+                              <Chip label="FCM Active" size="small" color="info" variant="outlined" sx={{ height: 16, fontSize: '8px', mt: 0.5 }} />
+                            )}
+                          </TableCell>
+
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
+                              {row.referee}
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell sx={{ py: 1.5 }}>
+                            {row.stakeAmount ? (
+                              <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 'bold', display: 'block' }}>
+                                Staked {row.stakeAmount} usGOLD ({row.stakeDurationMonths}m) | {row.solPaid} SOL
+                              </Typography>
+                            ) : (
+                              <Typography variant="caption" color="text.secondary">
+                                Registered via Referral Link
+                              </Typography>
+                            )}
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: "10px" }}>
+                              {new Date(row.timestamp || Date.now()).toLocaleString()}
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" fontWeight="900" color="#FFDF73">
+                              1.0000 usGOLD
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell sx={{ py: 1.5 }}>
+                            {isNeedsApproval ? (
+                              <Chip 
+                                label="🟡 Waiting Admin Approval" 
+                                size="small" 
+                                color="warning"
+                                variant="filled"
+                                sx={{ fontWeight: "800", fontSize: "10px" }}
+                              />
+                            ) : (
+                              <Chip 
+                                label="⏳ Pending Friend Stake" 
+                                size="small" 
+                                variant="outlined"
+                                sx={{ fontSize: "10px" }}
+                              />
+                            )}
+                          </TableCell>
+
+                          <TableCell sx={{ py: 1.5, textAlign: 'right' }}>
+                            {isNeedsApproval ? (
+                              <Button 
+                                variant="contained" 
+                                size="small" 
+                                color="success" 
+                                disabled={actioningKey === row.key}
+                                onClick={() => handleApproveReward(row)}
+                                startIcon={<Check size={14} />}
+                                sx={{ borderRadius: '8px', fontSize: '11px', px: 2, py: 0.6, fontWeight: "900" }}
+                              >
+                                {actioningKey === row.key ? "Crediting..." : "Approve & Pay 1 usGOLD"}
+                              </Button>
+                            ) : (
+                              <Button 
+                                variant="outlined" 
+                                size="small" 
+                                color="warning" 
+                                disabled={actioningKey === row.key}
+                                onClick={() => handleApproveReward(row)}
+                                sx={{ borderRadius: '8px', fontSize: '10px', px: 1.5, py: 0.4 }}
+                              >
+                                Force Approve 1 usGOLD
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -2722,6 +2952,58 @@ export function AdminStaking() {
           <Button onClick={() => setNotifyDialogOpen(false)}>Cancel</Button>
           <Button variant="contained" color="info" onClick={handleSendDirectNotify} disabled={sendingNotify || !customNotifyMsg.trim()}>
             {sendingNotify ? "Sending..." : "Send Message"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Manual Referral Reward Grant Dialog */}
+      <Dialog open={manualGrantOpen} onClose={() => setManualGrantOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: "900", fontFamily: '"Cinzel", serif' }}>
+          Manual 1 usGOLD Referral Reward Credit
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <Alert severity="info">
+              Manually credit 1 usGOLD (or custom amount) referral reward directly to any referrer wallet. This will immediately update their earnings balance, log a transaction, and notify them.
+            </Alert>
+
+            <TextField
+              label="Referrer Wallet Address (Recipient)"
+              fullWidth
+              placeholder="e.g. 5x8Q... or Solana/Web3 Address"
+              value={manualReferrer}
+              onChange={(e) => setManualReferrer(e.target.value)}
+              required
+            />
+
+            <TextField
+              label="Referee Wallet Address (Invited Friend - Optional)"
+              fullWidth
+              placeholder="e.g. Friend address or 'Manual Admin Grant'"
+              value={manualReferee}
+              onChange={(e) => setManualReferee(e.target.value)}
+            />
+
+            <TextField
+              label="Reward Amount (usGOLD)"
+              fullWidth
+              type="number"
+              value={manualAmount}
+              onChange={(e) => setManualAmount(e.target.value)}
+              inputProps={{ step: "0.1", min: "0.1" }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setManualGrantOpen(false)} color="inherit">Cancel</Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleGrantManualReward}
+            disabled={grantingReward || !manualReferrer.trim()}
+            sx={{ fontWeight: "900", px: 3 }}
+          >
+            {grantingReward ? "Crediting..." : "Approve & Pay usGOLD"}
           </Button>
         </DialogActions>
       </Dialog>
