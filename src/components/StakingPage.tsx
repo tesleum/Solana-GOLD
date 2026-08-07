@@ -8,7 +8,7 @@ import {
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
   Copy, Check, TrendingUp, Award, Sparkles, CheckCircle2, Zap, Users, Lock, ArrowUpRight,
   Wifi, Cpu, CreditCard, Gift, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  AlertTriangle, XCircle, RotateCcw
+  AlertTriangle, XCircle, RotateCcw, ExternalLink
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
