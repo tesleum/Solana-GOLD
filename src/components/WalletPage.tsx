@@ -69,7 +69,7 @@ import {
 } from "@solana/web3.js";
 import { t } from "../translations";
 import { database } from "../firebase";
-import { ref, onValue, update, push } from "firebase/database";
+import { ref, onValue, update, push, get } from "firebase/database";
 import { useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import {
   getAssociatedTokenAddress,
@@ -147,6 +147,9 @@ export function WalletPage({
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [needsApprovalCount, setNeedsApprovalCount] = useState<number>(0);
   const [approvedCount, setApprovedCount] = useState<number>(0);
+  const [approvedToClaimCount, setApprovedToClaimCount] = useState<number>(0);
+  const [approvedToClaimAmount, setApprovedToClaimAmount] = useState<number>(0);
+  const [isClaimingUsGold, setIsClaimingUsGold] = useState<boolean>(false);
   const [userRewardsList, setUserRewardsList] = useState<any[]>([]);
   const [nowTime, setNowTime] = useState<number>(Date.now());
   const [copiedLink, setCopiedLink] = useState(false);
@@ -188,20 +191,28 @@ export function WalletPage({
           
           const pCount = list.filter(r => r.status === 'pending').length;
           const nCount = list.filter(r => r.status === 'needs_approval').length;
-          const aCount = list.filter(r => r.status === 'approved' || r.status === 'redeemed' || r.type === 'referral_stake_completed').length;
-          
+          const approvedUnclaimedList = list.filter(r => r.status === 'approved');
+          const claimedList = list.filter(r => r.status === 'claimed' || r.status === 'redeemed');
+
+          const approvedUnclaimedAmt = approvedUnclaimedList.reduce((sum, item) => sum + (item.amount || 1), 0);
+          const totalClaimedAmt = claimedList.reduce((sum, item) => sum + (item.amount || 1), 0);
+
           setPendingCount(pCount);
           setNeedsApprovalCount(nCount);
-          setApprovedCount(aCount);
+          setApprovedCount(claimedList.length);
+          setApprovedToClaimCount(approvedUnclaimedList.length);
+          setApprovedToClaimAmount(approvedUnclaimedAmt);
           setReferralsCount(list.length);
           setUserRewardsList(list);
-          
-          const legacyPending = list.filter(r => r.type === 'referral_stake_completed').reduce((sum, item) => sum + (item.amount || 1), 0);
-          setPendingReferralRewards((aCount * 1) || legacyPending || 0);
+
+          const totalEarnedUsGold = totalClaimedAmt + approvedUnclaimedAmt;
+          setPendingReferralRewards(totalEarnedUsGold || (nCount * 1) || 0);
         } else {
           setPendingCount(0);
           setNeedsApprovalCount(0);
           setApprovedCount(0);
+          setApprovedToClaimCount(0);
+          setApprovedToClaimAmount(0);
           setReferralsCount(0);
           setUserRewardsList([]);
           setPendingReferralRewards(0);
@@ -214,6 +225,135 @@ export function WalletPage({
       };
     }
   }, [effectiveAddress]);
+
+  const handleClaimApprovedUsGold = async () => {
+    if (!effectiveAddress || isClaimingUsGold) return;
+
+    const approvedList = userRewardsList.filter(r => r.status === 'approved');
+    const amountToClaim = approvedList.reduce((sum, r) => sum + (r.amount || 1), 0);
+
+    if (amountToClaim <= 0 || approvedList.length === 0) {
+      alert("No admin-approved usGOLD rewards available to claim at this time. Once admin approves your referee rewards, they will appear here!");
+      return;
+    }
+
+    try {
+      setIsClaimingUsGold(true);
+      const timestamp = Date.now();
+
+      // Mark each approved reward as 'claimed' in Firebase
+      for (const rewardItem of approvedList) {
+        if (rewardItem.key) {
+          await update(ref(database, `rewards/${effectiveAddress}/${rewardItem.key}`), {
+            status: 'claimed',
+            claimedAt: timestamp
+          });
+        }
+      }
+
+      // Add claimed amount to usGoldBalance in users/${effectiveAddress}
+      const userRef = ref(database, `users/${effectiveAddress}`);
+      const userSnap = await get(userRef);
+      let currentUsGoldBal = usGoldBalance;
+      if (userSnap.exists()) {
+        const uData = userSnap.val();
+        currentUsGoldBal = uData.usGoldBalance ?? uData.goldTokenBalance ?? usGoldBalance ?? 0;
+      }
+      const newUsGoldBal = currentUsGoldBal + amountToClaim;
+
+      await update(userRef, {
+        usGoldBalance: newUsGoldBal,
+        goldTokenBalance: newUsGoldBal,
+        lastActive: timestamp
+      });
+
+      // Log transaction in user's transactions ledger
+      const txRef = ref(database, `transactions/${effectiveAddress}`);
+      await push(txRef, {
+        type: 'referral_claim',
+        amount: `+${amountToClaim.toFixed(4)} usGOLD`,
+        price: '$1.00 / usGOLD',
+        details: `Claimed ${amountToClaim} usGOLD admin-approved referral reward(s)`,
+        timestamp: timestamp,
+        time: new Date().toLocaleString()
+      });
+
+      // Log in global transactions
+      await push(ref(database, `global_transactions`), {
+        type: 'referral_reward_claimed',
+        user: effectiveAddress,
+        amount: amountToClaim,
+        timestamp: timestamp
+      });
+
+      triggerHaptic(20);
+      alert(`🎉 Success! Claimed ${amountToClaim.toFixed(2)} usGOLD approved referral reward(s) directly into your usGOLD balance!`);
+    } catch (err: any) {
+      console.error("Error claiming approved usGOLD:", err);
+      alert(`Failed to claim usGOLD: ${err.message || err}`);
+    } finally {
+      setIsClaimingUsGold(false);
+    }
+  };
+
+  const handleClaimSingleReward = async (rewardItem: any) => {
+    if (!effectiveAddress || isClaimingUsGold || !rewardItem.key) return;
+
+    const rewardAmount = rewardItem.amount || 1;
+
+    try {
+      setIsClaimingUsGold(true);
+      const timestamp = Date.now();
+
+      // Mark reward as 'claimed'
+      await update(ref(database, `rewards/${effectiveAddress}/${rewardItem.key}`), {
+        status: 'claimed',
+        claimedAt: timestamp
+      });
+
+      // Add to usGoldBalance
+      const userRef = ref(database, `users/${effectiveAddress}`);
+      const userSnap = await get(userRef);
+      let currentUsGoldBal = usGoldBalance;
+      if (userSnap.exists()) {
+        const uData = userSnap.val();
+        currentUsGoldBal = uData.usGoldBalance ?? uData.goldTokenBalance ?? usGoldBalance ?? 0;
+      }
+      const newUsGoldBal = currentUsGoldBal + rewardAmount;
+
+      await update(userRef, {
+        usGoldBalance: newUsGoldBal,
+        goldTokenBalance: newUsGoldBal,
+        lastActive: timestamp
+      });
+
+      // Log transaction
+      const txRef = ref(database, `transactions/${effectiveAddress}`);
+      await push(txRef, {
+        type: 'referral_claim',
+        amount: `+${rewardAmount.toFixed(4)} usGOLD`,
+        price: '$1.00 / usGOLD',
+        details: `Claimed 1 usGOLD admin-approved referral reward for referee ${rewardItem.referee || 'friend'}`,
+        timestamp: timestamp,
+        time: new Date().toLocaleString()
+      });
+
+      await push(ref(database, `global_transactions`), {
+        type: 'referral_reward_claimed',
+        user: effectiveAddress,
+        amount: rewardAmount,
+        timestamp: timestamp
+      });
+
+      triggerHaptic(20);
+      alert(`🎉 Successfully claimed 1 usGOLD into your wallet balance!`);
+    } catch (err: any) {
+      console.error("Error claiming single reward:", err);
+      alert(`Failed to claim usGOLD: ${err.message || err}`);
+    } finally {
+      setIsClaimingUsGold(false);
+    }
+  };
 
   const handleShareReferral = async () => {
     triggerHaptic(15);
@@ -1261,6 +1401,78 @@ export function WalletPage({
             </Box>
           </Grid>
         </Grid>
+
+        {/* ADMIN APPROVED REWARD CLAIM BAR ON TOP CARD */}
+        <Box sx={{ 
+          mb: 2, 
+          p: 1.5, 
+          borderRadius: '16px', 
+          bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.12) : alpha('#000', 0.45),
+          border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.5) : alpha('#D4AF37', 0.25)}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          transition: 'all 0.3s ease'
+        }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Avatar sx={{ 
+              bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.2) : alpha('#D4AF37', 0.15),
+              color: approvedToClaimAmount > 0 ? '#14F195' : '#D4AF37',
+              width: 38,
+              height: 38
+            }}>
+              <Sparkles size={20} />
+            </Avatar>
+            <Box>
+              <Typography variant="body2" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#FFDF73', fontSize: '13px' }}>
+                {approvedToClaimAmount > 0 ? `${approvedToClaimAmount.toFixed(2)} usGOLD Approved by Admin` : "Admin Approved usGOLD Rewards"}
+              </Typography>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.8), fontSize: '11px', display: 'block' }}>
+                {approvedToClaimAmount > 0 
+                  ? "Withdraw your admin-approved referral usGOLD directly into your wallet balance!"
+                  : needsApprovalCount > 0
+                  ? `${needsApprovalCount} referral reward(s) pending admin review.`
+                  : "Invite friends who stake usGOLD to earn 1 usGOLD per friend!"}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Button
+            size="small"
+            variant={approvedToClaimAmount > 0 ? "contained" : "outlined"}
+            disabled={isClaimingUsGold}
+            onClick={handleClaimApprovedUsGold}
+            startIcon={isClaimingUsGold ? <CircularProgress size={14} color="inherit" /> : <Gift size={15} />}
+            sx={{
+              fontWeight: 900,
+              fontSize: '12px',
+              px: 2.5,
+              py: 0.8,
+              borderRadius: '12px',
+              textTransform: 'none',
+              ...(approvedToClaimAmount > 0 ? {
+                background: 'linear-gradient(135deg, #14F195 0%, #00E676 100%)',
+                color: '#000',
+                boxShadow: `0 4px 14px ${alpha('#14F195', 0.4)}`,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #00E676 0%, #14F195 100%)',
+                  boxShadow: `0 6px 18px ${alpha('#14F195', 0.6)}`
+                }
+              } : {
+                borderColor: alpha('#D4AF37', 0.5),
+                color: '#FFDF73',
+                '&:hover': {
+                  borderColor: '#FFDF73',
+                  bgcolor: alpha('#D4AF37', 0.15)
+                }
+              })
+            }}
+          >
+            {isClaimingUsGold ? "Claiming..." : approvedToClaimAmount > 0 ? `Claim ${approvedToClaimAmount.toFixed(2)} usGOLD` : "Claim Rewards"}
+          </Button>
+        </Box>
 
         {/* EXPANDABLE SLIDE DOWN TOGGLE BUTTON */}
         <Box sx={{ 
@@ -2390,16 +2602,42 @@ export function WalletPage({
             </Grid>
             <Grid item xs={6} sm={3}>
               <Card sx={{ border: `1px solid ${alpha("#ff9800", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#ff9800", 0.05) }}>
-                <Typography variant="caption" color="#ffb74d" fontWeight="800">Pending 1 usGOLD Approval</Typography>
+                <Typography variant="caption" color="#ffb74d" fontWeight="800">Pending Admin Approval</Typography>
                 <Typography variant="h5" fontWeight="900" color="#ff9800" sx={{ mt: 0.5 }}>{needsApprovalCount}</Typography>
-                <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{(needsApprovalCount * 1).toFixed(2)} usGOLD waiting payout</Typography>
+                <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{(needsApprovalCount * 1).toFixed(2)} usGOLD pending review</Typography>
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card sx={{ border: `1px solid ${alpha("#4caf50", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#4caf50", 0.05) }}>
-                <Typography variant="caption" color="#81c784" fontWeight="800">Approved & Paid</Typography>
-                <Typography variant="h5" fontWeight="900" color="#4caf50" sx={{ mt: 0.5 }}>{approvedCount}</Typography>
-                <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{(approvedCount * 1).toFixed(2)} usGOLD in wallet</Typography>
+              <Card sx={{ border: `1px solid ${approvedToClaimAmount > 0 ? alpha("#14F195", 0.6) : alpha("#4caf50", 0.3)}`, borderRadius: "18px", p: 2, bgcolor: approvedToClaimAmount > 0 ? alpha("#14F195", 0.1) : alpha("#4caf50", 0.05) }}>
+                <Typography variant="caption" color={approvedToClaimAmount > 0 ? "#14F195" : "#81c784"} fontWeight="800">
+                  {approvedToClaimAmount > 0 ? "Approved Ready to Claim" : "Claimed & Paid"}
+                </Typography>
+                <Typography variant="h5" fontWeight="900" color={approvedToClaimAmount > 0 ? "#14F195" : "#4caf50"} sx={{ mt: 0.5 }}>
+                  {approvedToClaimAmount > 0 ? approvedToClaimCount : approvedCount}
+                </Typography>
+                {approvedToClaimAmount > 0 ? (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={isClaimingUsGold}
+                    onClick={handleClaimApprovedUsGold}
+                    sx={{
+                      mt: 0.5,
+                      background: 'linear-gradient(135deg, #14F195 0%, #00E676 100%)',
+                      color: '#000',
+                      fontWeight: '900',
+                      fontSize: '9px',
+                      py: 0.2,
+                      px: 1,
+                      borderRadius: '6px',
+                      textTransform: 'none'
+                    }}
+                  >
+                    Claim {approvedToClaimAmount.toFixed(1)} usGOLD
+                  </Button>
+                ) : (
+                  <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{(approvedCount * 1).toFixed(2)} usGOLD in wallet balance</Typography>
+                )}
               </Card>
             </Grid>
           </Grid>
@@ -2439,7 +2677,8 @@ export function WalletPage({
                 <Stack spacing={1.5}>
                   {userRewardsList.map((rw: any, idx: number) => {
                     const isNeedsApproval = rw.status === "needs_approval";
-                    const isApproved = rw.status === "approved" || rw.status === "redeemed" || rw.type === "referral_stake_completed";
+                    const isApprovedUnclaimed = rw.status === "approved";
+                    const isClaimed = rw.status === "claimed" || rw.status === "redeemed";
                     const isPendingStake = rw.status === "pending";
 
                     return (
@@ -2451,7 +2690,8 @@ export function WalletPage({
                           bgcolor: alpha("#fff", 0.02),
                           border: `1px solid ${
                             isNeedsApproval ? alpha("#ff9800", 0.4) :
-                            isApproved ? alpha("#4caf50", 0.3) :
+                            isApprovedUnclaimed ? alpha("#14F195", 0.5) :
+                            isClaimed ? alpha("#4caf50", 0.3) :
                             alpha("#fff", 0.08)
                           }`,
                           display: "flex",
@@ -2464,13 +2704,13 @@ export function WalletPage({
                         <Stack direction="row" spacing={1.5} alignItems="center">
                           <Avatar
                             sx={{
-                              bgcolor: isNeedsApproval ? alpha("#ff9800", 0.15) : isApproved ? alpha("#4caf50", 0.15) : alpha("#fff", 0.08),
-                              color: isNeedsApproval ? "#ff9800" : isApproved ? "#4caf50" : "#fff",
+                              bgcolor: isNeedsApproval ? alpha("#ff9800", 0.15) : isApprovedUnclaimed ? alpha("#14F195", 0.15) : isClaimed ? alpha("#4caf50", 0.15) : alpha("#fff", 0.08),
+                              color: isNeedsApproval ? "#ff9800" : isApprovedUnclaimed ? "#14F195" : isClaimed ? "#4caf50" : "#fff",
                               width: 38,
                               height: 38
                             }}
                           >
-                            {isApproved ? <CheckCircle2 size={20} /> : isNeedsApproval ? <Hourglass size={20} /> : <UserPlus size={20} />}
+                            {isClaimed ? <CheckCircle2 size={20} /> : isApprovedUnclaimed ? <Sparkles size={20} /> : isNeedsApproval ? <Hourglass size={20} /> : <UserPlus size={20} />}
                           </Avatar>
                           <Box>
                             <Typography variant="body2" fontWeight="800" color="#fff" sx={{ fontFamily: "monospace" }}>
@@ -2495,7 +2735,7 @@ export function WalletPage({
                             </Typography>
                             {isNeedsApproval && (
                               <Chip
-                                label="🟡 Pending Admin Approval & Payout"
+                                label="🟡 Pending Admin Approval"
                                 size="small"
                                 color="warning"
                                 variant="filled"
@@ -2509,9 +2749,31 @@ export function WalletPage({
                                 sx={{ height: 20, fontSize: "10px", fontWeight: "700", bgcolor: alpha("#fff", 0.1), color: "text.secondary", mt: 0.5 }}
                               />
                             )}
-                            {isApproved && (
+                            {isApprovedUnclaimed && (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={isClaimingUsGold}
+                                onClick={() => handleClaimSingleReward(rw)}
+                                startIcon={<Gift size={12} />}
+                                sx={{
+                                  mt: 0.5,
+                                  background: 'linear-gradient(135deg, #14F195 0%, #00E676 100%)',
+                                  color: '#000',
+                                  fontWeight: '900',
+                                  fontSize: '10px',
+                                  borderRadius: '8px',
+                                  py: 0.3,
+                                  px: 1.5,
+                                  textTransform: 'none'
+                                }}
+                              >
+                                Claim 1 usGOLD
+                              </Button>
+                            )}
+                            {isClaimed && (
                               <Chip
-                                label="✅ 1 usGOLD Paid to Wallet"
+                                label="✅ 1 usGOLD Claimed & Paid"
                                 size="small"
                                 color="success"
                                 variant="filled"
