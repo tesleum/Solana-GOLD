@@ -2318,7 +2318,7 @@ export function WalletPage({
                   <TextField
                     fullWidth
                     size="small"
-                    readOnly
+                    inputProps={{ readOnly: true }}
                     value={`${window.location.origin}?ref=${effectiveAddress || 'YOUR_WALLET'}`}
                     sx={{
                       bgcolor: alpha("#fff", 0.03),
@@ -2388,14 +2388,14 @@ export function WalletPage({
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#ff9800", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#ff9800", 0.05) }}>
+              <Card sx={{ border: `1px solid ${alpha("#ff9800", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#ff9800", 0.05) }}>
                 <Typography variant="caption" color="#ffb74d" fontWeight="800">Pending 1 usGOLD Approval</Typography>
                 <Typography variant="h5" fontWeight="900" color="#ff9800" sx={{ mt: 0.5 }}>{needsApprovalCount}</Typography>
                 <Typography variant="caption" color="#ffb74d" sx={{ fontSize: '10px' }}>{(needsApprovalCount * 1).toFixed(2)} usGOLD waiting payout</Typography>
               </Card>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card sx={{ bgcolor: "#121316", border: `1px solid ${alpha("#4caf50", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#4caf50", 0.05) }}>
+              <Card sx={{ border: `1px solid ${alpha("#4caf50", 0.4)}`, borderRadius: "18px", p: 2, bgcolor: alpha("#4caf50", 0.05) }}>
                 <Typography variant="caption" color="#81c784" fontWeight="800">Approved & Paid</Typography>
                 <Typography variant="h5" fontWeight="900" color="#4caf50" sx={{ mt: 0.5 }}>{approvedCount}</Typography>
                 <Typography variant="caption" color="#81c784" sx={{ fontSize: '10px' }}>{(approvedCount * 1).toFixed(2)} usGOLD in wallet</Typography>
