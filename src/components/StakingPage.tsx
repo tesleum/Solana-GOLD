@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Stack, Card, CardContent, alpha, useTheme, Button, 
   Divider, Grid, Chip, Slider, LinearProgress, Avatar, Tooltip, IconButton, Collapse,
-  Snackbar, Alert, TextField
+  Snackbar, Alert, TextField, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { 
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
   Copy, Check, TrendingUp, Award, Sparkles, CheckCircle2, Zap, Users, Lock, ArrowUpRight,
-  Wifi, Cpu, CreditCard, Gift, ChevronLeft, ChevronRight, ChevronDown, ChevronUp
+  Wifi, Cpu, CreditCard, Gift, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  AlertTriangle, XCircle, RotateCcw
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -95,6 +96,11 @@ export function StakingPage({
     message: '',
     severity: 'info'
   });
+
+  // Early Staking Cancellation Popup Modal State
+  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
+  const [selectedStakeToCancel, setSelectedStakeToCancel] = useState<any | null>(null);
+  const [isCancelingStake, setIsCancelingStake] = useState<boolean>(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -522,8 +528,84 @@ export function StakingPage({
     }
   };
 
+  // Handle Confirm Early Cancellation with 10% Penalty
+  const handleConfirmCancelStake = async () => {
+    if (!selectedStakeToCancel) return;
+    triggerHaptic(20);
+    setIsCancelingStake(true);
+
+    try {
+      const stakeKey = selectedStakeToCancel.key;
+      const principal = parseFloat(selectedStakeToCancel.amount || 0);
+      const penalty = principal * 0.10; // 10% penalty decrease
+      const refundPrincipal = Math.max(0, principal - penalty); // 90% returned
+      
+      // Calculate accrued yield so far
+      const totalDurationSec = Math.floor((selectedStakeToCancel.endTime - selectedStakeToCancel.startTime) / 1000) || 1;
+      const elapsedSec = Math.min(totalDurationSec, Math.max(0, Math.floor((nowTime - selectedStakeToCancel.startTime) / 1000)));
+      const profitPerSec = selectedStakeToCancel.totalExpectedProfit / totalDurationSec;
+      const accruedProfit = Math.min(selectedStakeToCancel.totalExpectedProfit, elapsedSec * profitPerSec);
+
+      const netReturnedToWallet = refundPrincipal + accruedProfit;
+
+      if (effectiveAddress) {
+        // 1. Update stake record in Firebase
+        const stakeRef = ref(database, `stakes/${effectiveAddress}/${stakeKey}`);
+        await update(stakeRef, {
+          status: 'canceled',
+          canceledAt: Date.now(),
+          penaltyAmount: penalty,
+          refundedPrincipal: refundPrincipal,
+          accruedProfitOnCancel: accruedProfit,
+          totalNetReturned: netReturnedToWallet
+        });
+
+        // 2. Credit refunded principal + accrued yield back to user balance
+        const userRef = ref(database, `users/${effectiveAddress}`);
+        const userSnap = await get(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.val();
+          await update(userRef, {
+            earnings: (userData.earnings || 0) + netReturnedToWallet,
+            lastActive: Date.now()
+          });
+        }
+
+        // 3. Log transaction
+        const txRef = ref(database, `transactions/${effectiveAddress}`);
+        await push(txRef, {
+          type: 'stake_canceled',
+          amount: `+${netReturnedToWallet.toFixed(4)} usGOLD`,
+          price: `$${netReturnedToWallet.toFixed(2)}`,
+          details: `Early Vault Cancellation (10% Penalty: -${penalty.toFixed(4)} usGOLD | Returned: ${refundPrincipal.toFixed(4)} usGOLD principal + $${accruedProfit.toFixed(2)} yield)`,
+          timestamp: Date.now()
+        });
+      } else {
+        setActiveStakes(prev => prev.filter(s => s.key !== stakeKey));
+      }
+
+      setToast({
+        open: true,
+        message: `Vault Position Canceled. 90% principal (${refundPrincipal.toFixed(2)} usGOLD) + yield ($${accruedProfit.toFixed(2)}) returned to your wallet.`,
+        severity: 'warning'
+      });
+
+      setCancelDialogOpen(false);
+      setSelectedStakeToCancel(null);
+    } catch (err: any) {
+      console.error("Error canceling stake:", err);
+      setToast({
+        open: true,
+        message: "Failed to cancel staking position. Please try again.",
+        severity: 'error'
+      });
+    } finally {
+      setIsCancelingStake(false);
+    }
+  };
+
   // Calculations for Stats Overview
-  const activeStakedList = activeStakes.filter(s => s.status !== 'claimed');
+  const activeStakedList = activeStakes.filter(s => s.status !== 'claimed' && s.status !== 'canceled');
   const totalStaked = activeStakedList.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
 
   // Cumulative real-time accrued profits ticking live second-by-second
@@ -651,12 +733,20 @@ export function StakingPage({
             </Stack>
 
             {/* Calculation Breakdown Banner */}
-            <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#14F195', 0.05), border: `1px solid ${alpha('#14F195', 0.2)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ mb: 1.5, p: 1.5, borderRadius: '12px', bgcolor: alpha('#14F195', 0.05), border: `1px solid ${alpha('#14F195', 0.2)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px' }}>
                 {t('rate', language)}: <strong>1 usGOLD = ${effectiveTokenPrice.toFixed(2)} USD</strong>
               </Typography>
               <Typography variant="caption" color="#14F195" fontWeight="bold" sx={{ fontSize: '11px' }}>
                 {t('fee', language)}: +{networkFeeSol} SOL
+              </Typography>
+            </Box>
+
+            {/* Flexible Staking Terms Notice */}
+            <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.08), border: `1px solid ${alpha('#D4AF37', 0.25)}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShieldCheck size={16} color="#FFDF73" />
+              <Typography variant="caption" color="#FFDF73" fontWeight="700" sx={{ fontSize: '11px' }}>
+                ⚡ Flexible Vault: Unstake anytime before maturity with a 10% principal cancellation penalty.
               </Typography>
             </Box>
 
@@ -942,16 +1032,29 @@ export function StakingPage({
                         sx={{ bgcolor: alpha('#4caf50', 0.12), color: '#4caf50', fontWeight: '900', fontSize: '11px', height: 22 }} 
                       />
                     </Box>
-                    {/* Countdown */}
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '11px' }}>
-                        {t('countdown', language)}:
-                      </Typography>
-                      <Typography variant="body2" fontWeight="bold" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                        {countdownFormatted}
-                      </Typography>
+                    {/* Countdown & Accrued Yield */}
+                    <Box sx={{ mt: 1.5 }}>
+                      <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10.5px' }}>
+                            {t('countdown', language)}:
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '12.5px' }}>
+                            {countdownFormatted}
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={6} sx={{ textAlign: 'right' }}>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10.5px' }}>
+                            Accrued Yield:
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" color="#4caf50" sx={{ fontFamily: 'monospace', fontSize: '12.5px' }}>
+                            +${currentAccruedProfit.toFixed(4)} USD
+                          </Typography>
+                        </Grid>
+                      </Grid>
                       
-                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <LinearProgress 
                           variant="determinate" 
                           value={progressPercent} 
@@ -967,6 +1070,57 @@ export function StakingPage({
                           {progressPercent.toFixed(0)}%
                         </Typography>
                       </Box>
+
+                      {/* Flexible Staking Action Buttons */}
+                      <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                        {currentAccruedProfit > 0 && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            onClick={() => handleClaimStakeProfit(st.key, currentAccruedProfit)}
+                            startIcon={<Sparkles size={14} />}
+                            sx={{
+                              borderRadius: '10px',
+                              fontWeight: '800',
+                              fontSize: '11px',
+                              textTransform: 'none',
+                              py: 0.6,
+                              px: 1.8
+                            }}
+                          >
+                            Claim Yield (${currentAccruedProfit.toFixed(2)})
+                          </Button>
+                        )}
+
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          onClick={() => {
+                            triggerHaptic(10);
+                            setSelectedStakeToCancel(st);
+                            setCancelDialogOpen(true);
+                          }}
+                          startIcon={<RotateCcw size={14} />}
+                          sx={{
+                            borderColor: alpha('#f44336', 0.5),
+                            color: '#ff8a80',
+                            borderRadius: '10px',
+                            fontWeight: '800',
+                            fontSize: '11px',
+                            textTransform: 'none',
+                            py: 0.6,
+                            px: 1.8,
+                            '&:hover': {
+                              borderColor: '#f44336',
+                              bgcolor: alpha('#f44336', 0.1)
+                            }
+                          }}
+                        >
+                          Cancel / Unstake (-10% Penalty)
+                        </Button>
+                      </Stack>
                     </Box>
                   </Box>
                 );
@@ -975,6 +1129,126 @@ export function StakingPage({
           )}
         </CardContent>
       </Card>
+
+      {/* 3. EARLY STAKING CANCELLATION CONFIRMATION DIALOG POPUP */}
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#141518',
+            border: `1px solid ${alpha('#f44336', 0.4)}`,
+            borderRadius: '24px',
+            color: '#fff'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1, fontFamily: '"Cinzel", serif' }}>
+          <Avatar sx={{ bgcolor: alpha('#f44336', 0.2), color: '#f44336', width: 40, height: 40 }}>
+            <AlertTriangle size={22} />
+          </Avatar>
+          <Box>
+            <Typography variant="h6" fontWeight="900" color="#fff">
+              Cancel Staking Early?
+            </Typography>
+            <Typography variant="caption" color="error.main" fontWeight="800">
+              ⚠️ 10% Deduction Penalty Applies
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ borderColor: alpha('#fff', 0.1), py: 2.5 }}>
+          {selectedStakeToCancel && (() => {
+            const principal = parseFloat(selectedStakeToCancel.amount || 0);
+            const penalty = principal * 0.10;
+            const refundPrincipal = Math.max(0, principal - penalty);
+
+            const serverCd = serverCountdowns[selectedStakeToCancel.key];
+            const totalDurationSec = Math.floor((selectedStakeToCancel.endTime - selectedStakeToCancel.startTime) / 1000) || 1;
+            const elapsedSec = Math.min(totalDurationSec, Math.max(0, Math.floor((nowTime - selectedStakeToCancel.startTime) / 1000)));
+            const currentAccruedProfit = serverCd !== undefined ? serverCd.accruedProfit : Math.min(selectedStakeToCancel.totalExpectedProfit, elapsedSec * (selectedStakeToCancel.totalExpectedProfit / totalDurationSec));
+
+            const totalNet = refundPrincipal + currentAccruedProfit;
+
+            return (
+              <Stack spacing={2}>
+                <Alert severity="warning" variant="filled" sx={{ borderRadius: '14px', fontSize: '12px' }}>
+                  Early cancellation will end your vault position and deduct a <strong>10% penalty</strong> on your original staked principal.
+                </Alert>
+
+                <Box sx={{ p: 2, bgcolor: alpha('#000', 0.5), borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.08)}` }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ mb: 1, display: 'block' }}>
+                    FINANCIAL REFUND BREAKDOWN
+                  </Typography>
+
+                  <Stack spacing={1}>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Original Staked Principal:</Typography>
+                      <Typography variant="body2" fontWeight="800" color="#fff">{principal.toFixed(4)} usGOLD</Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="#f44336" fontWeight="700">10% Cancellation Penalty:</Typography>
+                      <Typography variant="body2" fontWeight="800" color="#f44336">-{penalty.toFixed(4)} usGOLD</Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Net Principal Returned (90%):</Typography>
+                      <Typography variant="body2" fontWeight="800" color="#fff">{refundPrincipal.toFixed(4)} usGOLD</Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="#FFDF73">Accrued Staking Yield:</Typography>
+                      <Typography variant="body2" fontWeight="800" color="#FFDF73">+${currentAccruedProfit.toFixed(2)} USD</Typography>
+                    </Stack>
+
+                    <Divider sx={{ my: 0.5, borderColor: alpha('#fff', 0.1) }} />
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="subtitle2" fontWeight="900" color="#4caf50">Total Refunded to Wallet:</Typography>
+                      <Typography variant="subtitle2" fontWeight="900" color="#4caf50">+{totalNet.toFixed(4)} usGOLD</Typography>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Stack>
+            );
+          })()}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button
+            onClick={() => setCancelDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              color: 'text.secondary',
+              borderColor: alpha('#fff', 0.2),
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontWeight: '700'
+            }}
+          >
+            Keep Vault Staking
+          </Button>
+
+          <Button
+            onClick={handleConfirmCancelStake}
+            variant="contained"
+            color="error"
+            disabled={isCancelingStake}
+            startIcon={<XCircle size={16} />}
+            sx={{
+              borderRadius: '12px',
+              fontWeight: '900',
+              textTransform: 'none',
+              px: 2.5
+            }}
+          >
+            {isCancelingStake ? "Canceling..." : "Confirm Cancel (-10% Penalty)"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast Notification */}
       <Snackbar 
