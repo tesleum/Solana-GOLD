@@ -46,9 +46,11 @@ export const appKit = createAppKit({
     email: false,
     socials: false,
   },
+  allWallets: 'SHOW',
   featuredWalletIds: [
+    'c1e31aa06085a5369654d6d67851d7e2e86f86c2e3906e5223e7a022b7c62464', // SafePal
     'a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393', // Phantom
     '1ca0bdd4747578705b1939af023d120677c64fe6ca76add81fda36e350605e79', // Solflare
-    'c1e31aa06085a5369654d6d67851d7e2e86f86c2e3906e5223e7a022b7c62464', // SafePal
+    '4622a2b2d6ad149757a699569c14840d4107779f32e9874a7d65b169b1836605', // Trust Wallet
   ]
 });
