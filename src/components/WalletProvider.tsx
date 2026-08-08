@@ -57,6 +57,10 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     }, [wsEndpoint]);
 
     const wallets = useMemo(() => [
+        new PhantomWalletAdapter(),
+        new TrustWalletAdapter(),
+        new SafePalWalletAdapter(),
+        new SolflareWalletAdapter(),
         new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
             appIdentity: {
@@ -68,10 +72,6 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
             cluster: network,
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
         }),
-        new PhantomWalletAdapter(),
-        new SolflareWalletAdapter(),
-        new SafePalWalletAdapter(),
-        new TrustWalletAdapter(),
     ], [network]);
 
     return (
