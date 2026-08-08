@@ -561,7 +561,17 @@ function Dashboard() {
       const totalLamports = Math.floor(amountToInvest * LAMPORTS_PER_SOL);
       
       const feeBuffer = 100000; // 0.0001 SOL buffer for multiple instructions and priority
-      // Balance check skipped due to Tatum RPC plan limits
+      
+      // Balance check
+      try {
+        const balanceLamports = await connection.getBalance(currentPublicKey);
+        if (balanceLamports < totalLamports + feeBuffer) {
+           throw new Error(`Insufficient SOL balance. Required: ${amountToInvest} SOL + Fees, Found: ${(balanceLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+      } catch (balErr: any) {
+        if (balErr.message.includes("Insufficient SOL")) throw balErr;
+        console.warn("Balance check failed, proceeding cautiously:", balErr);
+      }
 
       // Fetch MLM Settings
       const adminWallets = adminWalletsData || {};

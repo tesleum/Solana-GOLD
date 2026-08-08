@@ -48,8 +48,10 @@ export function StakingPage({
   const { publicKey, connected, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const { open } = useAppKit();
-  const { address: appKitAddress } = useAppKitAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<any>('solana');
+
+  const isActuallyConnected = connected || isAppKitConnected;
 
   // Custom Staking & Duration State
   const [customStakeAmount, setCustomStakeAmount] = useState<string>('100');
@@ -107,6 +109,30 @@ export function StakingPage({
 
   // Staking Transactions History State
   const [stakingTransactions, setStakingTransactions] = useState<any[]>([]);
+  const [solBalance, setSolBalance] = useState<number>(0);
+
+  // Fetch SOL balance from the connected wallet address
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSolBalance = async () => {
+      if (effectiveAddress && connection) {
+        try {
+          const balLamports = await connection.getBalance(new PublicKey(effectiveAddress));
+          if (isMounted) {
+            setSolBalance(balLamports / LAMPORTS_PER_SOL);
+          }
+        } catch (e) {
+          console.error("Failed to fetch SOL balance for StakingPage", e);
+        }
+      }
+    };
+    fetchSolBalance();
+    const interval = setInterval(fetchSolBalance, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [effectiveAddress, connection]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -874,6 +900,7 @@ export function StakingPage({
               </Typography>
               <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900, fontSize: '10px', letterSpacing: 0.5 }}>
                 {t('solReq', language).replace('{amount}', requiredSol.toFixed(4))}
+                {solBalance > 0 && ` | Bal: ${solBalance.toFixed(3)} SOL`}
               </Typography>
             </Box>
 
@@ -932,8 +959,8 @@ export function StakingPage({
             <Button
               fullWidth
               variant="contained"
-              disabled={isCreatingStake || (connected && (parseFloat(customStakeAmount) < 1 || isCreatingStake))}
-              onClick={!connected ? () => open() : handleCreateCustomStake}
+              disabled={isCreatingStake || (isActuallyConnected && (parseFloat(customStakeAmount) < 1 || isCreatingStake))}
+              onClick={!isActuallyConnected ? () => open() : handleCreateCustomStake}
               sx={{
                 py: 2.2,
                 borderRadius: '20px',

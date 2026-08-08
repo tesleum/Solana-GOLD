@@ -5,7 +5,7 @@ import { PhantomWalletAdapter, SolflareWalletAdapter, SafePalWalletAdapter, Trus
 
 // Set up Solana Adapter
 const solanaWeb3JsAdapter = new SolanaAdapter({
-  wallets: [new PhantomWalletAdapter(), new SolflareWalletAdapter(), new SafePalWalletAdapter(), new TrustWalletAdapter()]
+  wallets: [new SafePalWalletAdapter(), new PhantomWalletAdapter(), new SolflareWalletAdapter(), new TrustWalletAdapter()]
 });
 
 export const projectId = (() => {
