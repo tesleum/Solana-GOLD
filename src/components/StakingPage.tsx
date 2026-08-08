@@ -747,7 +747,7 @@ export function StakingPage({
                 {customStakeAmount || 10}g
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(100, 70, 10, 0.7)', fontWeight: '900', letterSpacing: 5, textTransform: 'uppercase', fontSize: '12px', mt: 1 }}>
-                {t('stakedVault', language)}
+                STAKED usGOLD
               </Typography>
             </motion.div>
             
@@ -771,71 +771,17 @@ export function StakingPage({
               }} 
             />
           </Box>
-          
-          {/* Staking Controls - Compact Live Calculator Design */}
-          <Box sx={{ 
-            bgcolor: alpha('#000', 0.5), 
-            p: { xs: 3, sm: 4 }, 
-            borderRadius: '32px', 
-            border: `1px solid ${alpha('#D4AF37', 0.2)}`,
-            backdropFilter: 'blur(20px)',
-            boxShadow: 'inset 0 0 40px rgba(0,0,0,0.5)'
-          }}>
-            
-            {/* Compact Metric Grid */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item xs={6}>
-                <Box sx={{ p: 2, borderRadius: '20px', bgcolor: alpha('#fff', 0.03), border: `1px solid ${alpha('#fff', 0.05)}` }}>
-                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                    STAKING AMOUNT
-                  </Typography>
-                  <Typography variant="h4" fontWeight="900" sx={{ color: '#fff', fontFamily: '"Cinzel", serif' }}>
-                    {customStakeAmount || 10} <span style={{ fontSize: '14px', color: '#D4AF37' }}>usGOLD</span>
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6}>
-                <Box sx={{ p: 2, borderRadius: '20px', bgcolor: alpha('#14F195', 0.03), border: `1px solid ${alpha('#14F195', 0.1)}`, textAlign: 'right' }}>
-                  <Typography variant="caption" sx={{ color: alpha('#14F195', 0.6), fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                    ESTIMATED YIELD
-                  </Typography>
-                  <Typography variant="h4" fontWeight="900" sx={{ color: '#14F195', fontFamily: '"Cinzel", serif' }}>
-                    +{( (parseFloat(customStakeAmount) || 10) * (stakingDurationMonths * 0.02) ).toFixed(2)} <span style={{ fontSize: '14px' }}>usG</span>
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
 
-            {/* Price Info Banner */}
-            <Box sx={{ mb: 3, px: 2.5, py: 1.5, borderRadius: '16px', bgcolor: alpha('#D4AF37', 0.05), border: `1px dashed ${alpha('#D4AF37', 0.3)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar sx={{ width: 24, height: 24, bgcolor: alpha('#D4AF37', 0.2), color: '#D4AF37' }}>
-                  <Coins size={14} />
-                </Avatar>
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.7), fontWeight: 700 }}>
-                  1 usGOLD = ${effectiveTokenPrice.toFixed(2)} USD
-                </Typography>
-              </Stack>
-              <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900 }}>
-                {requiredSol.toFixed(4)} SOL REQUIRED
+          {/* Slider Under Gold Bar */}
+          <Box sx={{ maxWidth: 400, mx: 'auto', mb: 6, px: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="caption" color="#FFDF73" fontWeight="800" letterSpacing={1}>
+                {t('adjustStakingAmount', language).toUpperCase()}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight="800">
+                MAX 1,000g
               </Typography>
             </Box>
-
-            {/* Flexible Staking Terms Notice */}
-            <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.08), border: `1px solid ${alpha('#D4AF37', 0.25)}`, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ShieldCheck size={16} color="#FFDF73" />
-              <Typography variant="caption" color="#FFDF73" fontWeight="700" sx={{ fontSize: '11px' }}>
-                ⚡ Flexible Vault: Unstake anytime before maturity with a 10% principal cancellation penalty.
-              </Typography>
-            </Box>
-
-            {/* Adjust Staking Amount Label & Slider */}
-            <Box sx={{ mt: 1, mb: 1.5 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={0.5}>
-                {t('adjustStakingAmount', language)}
-              </Typography>
-            </Box>
-
             <Slider
               value={Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10))}
               onChange={(e, newValue) => {
@@ -847,20 +793,72 @@ export function StakingPage({
               step={10}
               sx={{
                 color: '#D4AF37',
-                height: 8,
-                mb: 4,
+                height: 6,
                 '& .MuiSlider-track': { border: 'none', background: 'linear-gradient(to right, #D4AF37, #FFDF73)' },
                 '& .MuiSlider-thumb': {
-                  height: 24,
-                  width: 24,
+                  height: 20,
+                  width: 20,
                   backgroundColor: '#fff',
-                  border: '4px solid #D4AF37',
+                  border: '3px solid #D4AF37',
                   '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
                     boxShadow: `0px 0px 0px 8px ${alpha('#D4AF37', 0.16)}`,
                   },
                 }
               }}
             />
+          </Box>
+          
+          {/* Staking Controls - Compact Live Calculator Design */}
+          <Box sx={{ 
+            bgcolor: alpha('#000', 0.4), 
+            p: { xs: 2.5, sm: 3 }, 
+            borderRadius: '24px', 
+            border: `1px solid ${alpha('#D4AF37', 0.15)}`,
+            backdropFilter: 'blur(20px)',
+            boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4)'
+          }}>
+            
+            {/* Ultra-Compact Metric Grid */}
+            <Grid container spacing={1.5} sx={{ mb: 2 }}>
+              <Grid item xs={6}>
+                <Box sx={{ p: 1.5, borderRadius: '16px', bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.04)}` }}>
+                  <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 800, fontSize: '9px', letterSpacing: 0.5, mb: 0.2, display: 'block' }}>
+                    STAKING TOTAL
+                  </Typography>
+                  <Typography variant="h5" fontWeight="900" sx={{ color: '#fff', fontFamily: '"Cinzel", serif', fontSize: '1.2rem' }}>
+                    {customStakeAmount || 10} <span style={{ fontSize: '10px', color: '#D4AF37' }}>usG</span>
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6}>
+                <Box sx={{ p: 1.5, borderRadius: '16px', bgcolor: alpha('#14F195', 0.02), border: `1px solid ${alpha('#14F195', 0.08)}`, textAlign: 'right' }}>
+                  <Typography variant="caption" sx={{ color: alpha('#14F195', 0.5), fontWeight: 800, fontSize: '9px', letterSpacing: 0.5, mb: 0.2, display: 'block' }}>
+                    EST. YIELD
+                  </Typography>
+                  <Typography variant="h5" fontWeight="900" sx={{ color: '#14F195', fontFamily: '"Cinzel", serif', fontSize: '1.2rem' }}>
+                    +{( (parseFloat(customStakeAmount) || 10) * (stakingDurationMonths * 0.02) ).toFixed(2)} <span style={{ fontSize: '10px' }}>usG</span>
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+
+            {/* Compact Price Info Bar */}
+            <Box sx={{ mb: 2.5, px: 2, py: 1, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.03), border: `1px solid ${alpha('#D4AF37', 0.1)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, fontSize: '10px' }}>
+                ${effectiveTokenPrice.toFixed(2)}/usG
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900, fontSize: '10px', letterSpacing: 0.5 }}>
+                {requiredSol.toFixed(4)} SOL REQ.
+              </Typography>
+            </Box>
+
+            {/* Flexible Staking Terms Notice */}
+            <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.08), border: `1px solid ${alpha('#D4AF37', 0.25)}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShieldCheck size={16} color="#FFDF73" />
+              <Typography variant="caption" color="#FFDF73" fontWeight="700" sx={{ fontSize: '11px' }}>
+                ⚡ Flexible Vault: Unstake anytime before maturity with a 10% principal cancellation penalty.
+              </Typography>
+            </Box>
 
             {/* Duration Picker - Premium Horizontal Style */}
             <Box sx={{ mb: 4 }}>
