@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Box, Typography, Stack, Card, CardContent, alpha, useTheme, Button, 
   Divider, Grid, Chip, Slider, LinearProgress, Avatar, Tooltip, IconButton, Collapse,
@@ -639,118 +640,141 @@ export function StakingPage({
   return (
     <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
       {/* Redesigned Staking Vault Card matching Vault style */}
-      <Card sx={{ 
-        position: 'relative', 
-        overflow: 'hidden', 
-        borderRadius: '32px', 
-        bgcolor: '#1A1B1F', 
-        border: `1px solid ${alpha('#D4AF37', 0.3)}`,
-        boxShadow: `0 20px 50px ${alpha('#000', 0.6)}`,
-        p: { xs: 2.5, sm: 4 },
-        mb: 3
-      }}>
+      <Card 
+        component={motion.div}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        sx={{ 
+          position: 'relative', 
+          overflow: 'hidden', 
+          borderRadius: '32px', 
+          bgcolor: '#1A1B1F', 
+          border: `1px solid ${alpha('#D4AF37', 0.4)}`,
+          boxShadow: `0 30px 60px ${alpha('#000', 0.8)}`,
+          p: { xs: 2.5, sm: 5 },
+          mb: 4
+        }}
+      >
         {/* Background glows */}
         <Box sx={{ 
           position: 'absolute', 
-          top: -100, 
-          right: -100, 
-          width: 300, 
-          height: 300, 
-          background: `radial-gradient(circle, ${alpha('#D4AF37', 0.1)} 0%, transparent 70%)`,
-          zIndex: 0
+          top: -150, 
+          right: -150, 
+          width: 400, 
+          height: 400, 
+          background: `radial-gradient(circle, ${alpha('#D4AF37', 0.12)} 0%, transparent 70%)`,
+          zIndex: 0,
+          filter: 'blur(40px)'
         }} />
         
         <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 4 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 5 }}>
             <Box>
-              <Typography variant="overline" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
-                {t('goldReserveYield', language)}
+              <Typography variant="overline" sx={{ color: '#D4AF37', fontWeight: 800, letterSpacing: 3, display: 'block', mb: 1, opacity: 0.9 }}>
+                {t('goldReserveYield', language).toUpperCase()}
               </Typography>
-              <Typography variant="h3" fontWeight="900" sx={{ 
+              <Typography variant="h2" fontWeight="900" sx={{ 
                 color: '#fff', 
                 fontFamily: '"Cinzel", serif',
-                fontSize: { xs: '2rem', sm: '2.5rem' },
-                background: 'linear-gradient(45deg, #FFDF73, #D4AF37)',
+                fontSize: { xs: '2.2rem', sm: '3.2rem' },
+                background: 'linear-gradient(135deg, #FFF5D1 0%, #D4AF37 50%, #996515 100%)',
                 WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1.1,
+                letterSpacing: '-1px'
               }}>
                 {t('stakeUsGold', language)}
               </Typography>
             </Box>
 
-            <Tooltip title="Help">
-              <IconButton size="small" sx={{ color: alpha('#fff', 0.3), border: `1px solid ${alpha('#fff', 0.1)}` }}>
-                <Info size={18} />
+            <Tooltip title="Yield Information">
+              <IconButton size="medium" sx={{ color: '#D4AF37', border: `1px solid ${alpha('#D4AF37', 0.3)}`, bgcolor: alpha('#D4AF37', 0.05) }}>
+                <Info size={22} />
               </IconButton>
             </Tooltip>
           </Stack>
 
-          {/* Interactive Gold Bar Display */}
-          {(() => {
-            const val = Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10));
-            const norm = (val - 10) / 990; 
-            const barScale = 0.85 + norm * 0.3; 
-
-            return (
-              <Box sx={{ 
-                position: 'relative', 
-                width: '100%', 
-                height: 180, 
-                perspective: 1000,
+          {/* Interactive Gold Bar Display with Motion */}
+          <Box sx={{ 
+            position: 'relative', 
+            width: '100%', 
+            height: 220, 
+            perspective: 1200,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mb: 8
+          }}>
+            <motion.div
+              animate={{ 
+                scale: 0.85 + (Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10)) - 10) / 990 * 0.35,
+                rotateX: 15,
+                y: [0, -10, 0]
+              }}
+              transition={{ 
+                scale: { type: "spring", stiffness: 300, damping: 20 },
+                y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+              }}
+              style={{
+                position: 'relative',
+                width: '60%',
+                maxWidth: 260,
+                height: 120,
+                background: `linear-gradient(135deg, #B5852A 0%, #F5D76E 25%, #C89B3C 50%, #F5D76E 75%, #B5852A 100%)`,
+                borderRadius: '20px',
+                boxShadow: `
+                  0 40px 80px rgba(0,0,0,0.8),
+                  inset 0 4px 15px rgba(255,255,255,0.8),
+                  inset 0 -4px 15px rgba(0,0,0,0.6)
+                `,
                 display: 'flex',
-                justifyContent: 'center',
+                flexDirection: 'column',
                 alignItems: 'center',
-                mb: 6
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <Typography variant="h3" fontWeight="900" sx={{ 
+                color: 'rgba(120, 80, 20, 0.8)', 
+                textShadow: '1px 1px 2px rgba(255,255,255,0.5), -1px -1px 2px rgba(0,0,0,0.3)', 
+                fontFamily: '"Cinzel", serif',
+                fontSize: { xs: '2rem', sm: '2.5rem' }
               }}>
-                <Box sx={{
-                  position: 'relative',
-                  width: '55%',
-                  maxWidth: 240,
-                  height: 110,
-                  background: `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)`,
-                  borderRadius: '16px',
-                  boxShadow: `
-                    0 25px 50px rgba(0,0,0,0.7),
-                    inset 0 4px 12px rgba(255,255,255,0.7),
-                    inset 0 -4px 12px rgba(0,0,0,0.5)
-                  `,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: `rotateX(15deg) scale(${barScale})`,
-                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                }}>
-                  <Typography variant="h4" fontWeight="900" sx={{ 
-                    color: 'rgba(120, 80, 20, 0.7)', 
-                    textShadow: '1px 1px 1px rgba(255,255,255,0.4), -1px -1px 1px rgba(0,0,0,0.2)', 
-                    fontFamily: '"Cinzel", serif',
-                    letterSpacing: 1
-                  }}>
-                    {customStakeAmount || 10}g
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.6)', fontWeight: '900', letterSpacing: 3, textTransform: 'uppercase', fontSize: '10px' }}>
-                    {t('stakedVault', language)}
-                  </Typography>
-                </Box>
-                <Box sx={{ 
-                  position: 'absolute', 
-                  bottom: -10, 
-                  width: '70%', 
-                  maxWidth: 280,
-                  height: 25, 
-                  background: 'rgba(0,0,0,0.6)', 
-                  filter: 'blur(12px)', 
-                  borderRadius: '50%',
-                  transform: `scale(${barScale})`,
-                  transition: 'all 0.4s'
-                }} />
-              </Box>
-            );
-          })()}
+                {customStakeAmount || 10}g
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.7)', fontWeight: '900', letterSpacing: 4, textTransform: 'uppercase', fontSize: '11px', mt: 0.5 }}>
+                {t('stakedVault', language)}
+              </Typography>
+            </motion.div>
+            
+            <motion.div 
+              animate={{ 
+                scale: 0.9 + (Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10)) - 10) / 990 * 0.4,
+                opacity: [0.4, 0.6, 0.4]
+              }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              style={{ 
+                position: 'absolute', 
+                bottom: -20, 
+                width: '75%', 
+                maxWidth: 300,
+                height: 30, 
+                background: 'rgba(0,0,0,0.7)', 
+                filter: 'blur(15px)', 
+                borderRadius: '50%',
+                zIndex: -1
+              }} 
+            />
+          </Box>
           
-          {/* Staking Controls */}
-          <Box sx={{ bgcolor: alpha('#000', 0.3), p: 3, borderRadius: '24px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
+          {/* Staking Controls Card-in-Card */}
+          <Box sx={{ 
+            bgcolor: alpha('#000', 0.4), 
+            p: { xs: 3, sm: 4 }, 
+            borderRadius: '28px', 
+            border: `1px solid ${alpha('#fff', 0.08)}`,
+            backdropFilter: 'blur(10px)'
+          }}>
             
             {/* Amount Header & SOL Calculation */}
             <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={2}>
@@ -987,151 +1011,172 @@ export function StakingPage({
       )}
 
       {/* 2. ACTIVE STAKES / PREVIOUS VAULTS SECTION */}
-      <Card sx={{ 
-        bgcolor: '#141518',
-        border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-        borderRadius: '24px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-        overflow: 'hidden'
-      }}>
-        <Box sx={{ p: 2.5, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#D4AF37', 0.03), display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" fontWeight="800" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Activity color="#D4AF37" size={22} />
+      <Card 
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        sx={{ 
+          bgcolor: '#141518',
+          border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+          borderRadius: '32px',
+          boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+          overflow: 'hidden',
+          mb: 4
+        }}
+      >
+        <Box sx={{ p: 3, borderBottom: `1px solid ${alpha('#fff', 0.08)}`, bgcolor: alpha('#D4AF37', 0.04), display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" fontWeight="900" color="#fff" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, letterSpacing: 0.5 }}>
+            <Activity color="#D4AF37" size={24} />
             {t('activeStakingVaults', language)}
           </Typography>
           <Chip 
-            label={`${activeStakedList.length} ${t('active', language)}`} 
+            label={`${activeStakedList.length} ${t('active', language).toUpperCase()}`} 
             size="small" 
-            sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#FFDF73', fontWeight: '900', px: 1 }} 
+            sx={{ bgcolor: alpha('#D4AF37', 0.2), color: '#FFDF73', fontWeight: '900', px: 1.5, borderRadius: '8px' }} 
           />
         </Box>
 
-        <CardContent sx={{ p: 2.5 }}>
+        <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
           {activeStakedList.length === 0 ? (
-            <Box sx={{ py: 8, textAlign: 'center' }}>
-              <Coins size={44} color="#D4AF37" style={{ opacity: 0.35, marginBottom: 16 }} />
-              <Typography variant="body1" color="text.secondary" fontWeight="700" mb={1}>
+            <Box sx={{ py: 10, textAlign: 'center' }}>
+              <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 5, repeat: Infinity }}>
+                <Coins size={60} color="#D4AF37" style={{ opacity: 0.2, marginBottom: 20 }} />
+              </motion.div>
+              <Typography variant="h6" color="text.secondary" fontWeight="800" mb={1}>
                 {t('noActiveVaults', language)}
               </Typography>
-              <Typography variant="body2" color="text.secondary" display="block" sx={{ maxWidth: 280, mx: 'auto' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.7, maxWidth: 320, mx: 'auto' }}>
                 {t('stakeUsGoldDirectly', language)}
               </Typography>
             </Box>
           ) : (
-            <Stack spacing={2.5}>
-              {activeStakedList.map((st) => {
+            <Grid container spacing={3}>
+              {activeStakedList.map((st, idx) => {
                 const serverCd = serverCountdowns[st.key];
                 const totalDurationSec = Math.floor((st.endTime - st.startTime) / 1000) || 1;
                 const elapsedSec = Math.min(totalDurationSec, Math.max(0, Math.floor((nowTime - st.startTime) / 1000)));
                 
-                // Read from server countdown synced state or fallback to client side
                 const remainingSec = serverCd !== undefined ? serverCd.remainingSec : Math.max(0, Math.floor((st.endTime - nowTime) / 1000));
                 const currentAccruedProfit = serverCd !== undefined ? serverCd.accruedProfit : Math.min(st.totalExpectedProfit, elapsedSec * (st.totalExpectedProfit / totalDurationSec));
                 const progressPercent = serverCd !== undefined ? serverCd.progressPercent : Math.min(100, (elapsedSec / totalDurationSec) * 100);
 
-                // Countdown formatting
                 const days = Math.floor(remainingSec / 86400);
                 const hours = Math.floor((remainingSec % 86400) / 3600);
                 const minutes = Math.floor((remainingSec % 3600) / 60);
                 const seconds = remainingSec % 60;
-                const countdownFormatted = `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+                const countdownFormatted = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
                 return (
-                  <Box 
-                    key={st.key}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: '18px',
-                      bgcolor: alpha('#fff', 0.02),
-                      border: `1.5px solid ${alpha('#D4AF37', 0.25)}`,
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        borderColor: '#D4AF37',
-                        bgcolor: alpha('#fff', 0.03)
-                      }
-                    }}
-                  >
-                    {/* Vault Header */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#D4AF37', width: 36, height: 36 }}>
-                          <Award size={18} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight="800" color="#fff">
-                            {st.amount} usGOLD
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px' }}>
-                            {st.durationMonths}-{t('monthLockedVault', language)}
-                          </Typography>
+                  <Grid item xs={12} md={6} key={st.key}>
+                    <Box 
+                      component={motion.div}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      sx={{
+                        p: 3,
+                        height: '100%',
+                        borderRadius: '24px',
+                        bgcolor: alpha('#fff', 0.03),
+                        border: `1px solid ${alpha('#D4AF37', 0.2)}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        '&:hover': {
+                          borderColor: alpha('#D4AF37', 0.6),
+                          bgcolor: alpha('#fff', 0.05),
+                          transform: 'translateY(-4px)',
+                          transition: 'all 0.3s ease'
+                        }
+                      }}
+                    >
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.15), color: '#D4AF37', width: 44, height: 44, border: `1px solid ${alpha('#D4AF37', 0.3)}` }}>
+                              <Award size={24} />
+                            </Avatar>
+                            <Box>
+                              <Typography variant="h6" fontWeight="900" color="#fff" sx={{ lineHeight: 1.2 }}>
+                                {st.amount} <span style={{ fontSize: '13px', color: alpha('#fff', 0.6) }}>usGOLD</span>
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#D4AF37', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                {st.durationMonths} {t('monthLockedVault', language)}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="h6" fontWeight="900" color="#14F195" sx={{ lineHeight: 1.2 }}>
+                              +{st.durationMonths * 2}%
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px' }}>
+                              YIELD
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Stack>
-                      <Chip 
-                        label={`+${st.durationMonths * 2}% ${t('total', language)}`} 
-                        size="small" 
-                        sx={{ bgcolor: alpha('#4caf50', 0.12), color: '#4caf50', fontWeight: '900', fontSize: '11px', height: 22 }} 
-                      />
-                    </Box>
-                    {/* Countdown & Accrued Yield */}
-                    <Box sx={{ mt: 1.5 }}>
-                      <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10.5px' }}>
-                            {t('countdown', language)}:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '12.5px' }}>
-                            {countdownFormatted}
-                          </Typography>
+
+                        <Divider sx={{ mb: 2.5, borderColor: alpha('#fff', 0.06) }} />
+
+                        <Grid container spacing={2} sx={{ mb: 2.5 }}>
+                          <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ display: 'block', mb: 0.5, fontSize: '10px', letterSpacing: 0.5 }}>
+                              TIME REMAINING
+                            </Typography>
+                            <Typography variant="body1" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace' }}>
+                              {countdownFormatted}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6} sx={{ textAlign: 'right' }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ display: 'block', mb: 0.5, fontSize: '10px', letterSpacing: 0.5 }}>
+                              ACCRUED PROFIT
+                            </Typography>
+                            <Typography variant="body1" fontWeight="900" color="#14F195" sx={{ fontFamily: 'monospace' }}>
+                              +${currentAccruedProfit.toFixed(3)}
+                            </Typography>
+                          </Grid>
                         </Grid>
 
-                        <Grid item xs={6} sx={{ textAlign: 'right' }}>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '10.5px' }}>
-                            Accrued Yield:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="#4caf50" sx={{ fontFamily: 'monospace', fontSize: '12.5px' }}>
-                            +${currentAccruedProfit.toFixed(4)} USD
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={progressPercent} 
-                          sx={{ 
-                            flexGrow: 1, 
-                            height: 6, 
-                            borderRadius: 3, 
-                            bgcolor: alpha('#fff', 0.08),
-                            '& .MuiLinearProgress-bar': { bgcolor: '#D4AF37' } 
-                          }} 
-                        />
-                        <Typography variant="caption" color="text.secondary" fontWeight="bold" sx={{ fontSize: '11px' }}>
-                          {progressPercent.toFixed(0)}%
-                        </Typography>
+                        <Box sx={{ mb: 3 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ fontSize: '10px' }}>PROGRESS</Typography>
+                            <Typography variant="caption" fontWeight="900" color="#D4AF37" sx={{ fontSize: '10px' }}>{progressPercent.toFixed(1)}%</Typography>
+                          </Box>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={progressPercent} 
+                            sx={{ 
+                              height: 8, 
+                              borderRadius: 4, 
+                              bgcolor: alpha('#fff', 0.05),
+                              '& .MuiLinearProgress-bar': { 
+                                bgcolor: '#D4AF37',
+                                borderRadius: 4,
+                                background: 'linear-gradient(90deg, #996515 0%, #D4AF37 100%)'
+                              } 
+                            }} 
+                          />
+                        </Box>
                       </Box>
 
-                      {/* Flexible Staking Action Buttons */}
-                      <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                      <Stack direction="row" spacing={1.5}>
                         <Button
+                          fullWidth
                           size="small"
                           variant="outlined"
-                          color="error"
                           onClick={() => {
                             triggerHaptic(10);
                             setSelectedStakeToCancel(st);
                             setCancelDialogOpen(true);
                           }}
-                          startIcon={<RotateCcw size={14} />}
+                          startIcon={<RotateCcw size={16} />}
                           sx={{
                             borderColor: alpha('#f44336', 0.3),
                             color: alpha('#f44336', 0.8),
-                            borderRadius: '12px',
+                            borderRadius: '14px',
                             fontWeight: '900',
-                            fontSize: '11px',
                             textTransform: 'none',
-                            px: 2,
-                            py: 0.8,
+                            py: 1,
                             '&:hover': {
                               borderColor: '#f44336',
                               bgcolor: alpha('#f44336', 0.05)
@@ -1143,57 +1188,68 @@ export function StakingPage({
                         
                         {currentAccruedProfit > 0 && (
                           <Button
+                            fullWidth
                             size="small"
                             variant="contained"
                             onClick={() => handleClaimStakeProfit(st.key, currentAccruedProfit)}
-                            startIcon={<Sparkles size={14} />}
+                            startIcon={<Sparkles size={16} />}
                             sx={{
-                              borderRadius: '12px',
+                              borderRadius: '14px',
                               fontWeight: '900',
-                              fontSize: '11px',
                               textTransform: 'none',
-                              px: 2,
-                              py: 0.8,
+                              py: 1,
                               bgcolor: '#14F195',
                               color: '#000',
-                              '&:hover': { bgcolor: '#00E676' }
+                              boxShadow: `0 4px 14px ${alpha('#14F195', 0.4)}`,
+                              '&:hover': { bgcolor: '#00E676', boxShadow: `0 6px 20px ${alpha('#14F195', 0.6)}` }
                             }}
                           >
-                            Claim Yield (${currentAccruedProfit.toFixed(2)})
+                            Claim Yield
                           </Button>
                         )}
                       </Stack>
                     </Box>
-                  </Box>
+                  </Grid>
                 );
               })}
-            </Stack>
+            </Grid>
           )}
         </CardContent>
       </Card>
-
       {/* 3. STAKING TRANSACTIONS & ACTIVITY HISTORY CARD */}
-      <Card sx={{ bgcolor: '#141518', border: `1px solid ${alpha('#D4AF37', 0.2)}`, borderRadius: '24px', mt: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.1), color: '#FFDF73', width: 42, height: 42 }}>
-                <Activity size={22} />
+      <Card 
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        sx={{ 
+          bgcolor: '#141518', 
+          border: `1px solid ${alpha('#D4AF37', 0.2)}`, 
+          borderRadius: '32px', 
+          boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+          mt: 4
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37', width: 48, height: 48, border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
+                <Activity size={26} />
               </Avatar>
               <Box>
-                <Typography variant="h6" fontWeight="900" color="#fff">
+                <Typography variant="h6" fontWeight="900" color="#fff" sx={{ letterSpacing: 0.5 }}>
                   Staking History
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.6, fontWeight: 700 }}>
                   Vault deposits, yield payouts, and bonuses
                 </Typography>
               </Box>
             </Box>
 
             <Chip 
-              label={`${stakingTransactions.length} Records`}
+              label={`${stakingTransactions.length} RECORDS`}
               size="small"
-              sx={{ bgcolor: alpha('#fff', 0.05), color: '#FFDF73', fontWeight: '900', px: 1 }}
+              sx={{ bgcolor: alpha('#fff', 0.05), color: '#FFDF73', fontWeight: '900', px: 1.5, borderRadius: '8px' }}
             />
           </Stack>
 
