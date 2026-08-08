@@ -4,7 +4,7 @@ import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton, useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { WalletReadyState } from '@solana/wallet-adapter-base';
-import { useAppKit, useAppKitAccount, useAppKitProvider, useDisconnect } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { projectId } from './lib/reown'; // Initialize Reown AppKit
 import { Buffer } from 'buffer';
 import { LAMPORTS_PER_SOL, Transaction, SystemProgram, PublicKey, VersionedTransaction, TransactionInstruction, TransactionMessage, AddressLookupTableAccount, Connection } from '@solana/web3.js';
@@ -92,10 +92,9 @@ function Dashboard() {
   const showAIMenu = false;
   const navigate = useNavigate();
   const { connection } = useConnection();
-  const { publicKey, sendTransaction, connected, disconnect, wallet, wallets, select } = useWallet();
+  const { publicKey, sendTransaction, connected, disconnect, wallet, wallets, select, connect } = useWallet();
   const { setVisible } = useWalletModal();
   const { open } = useAppKit();
-  const { disconnect: appKitDisconnect } = useDisconnect();
   const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<any>('solana');
   const [balance, setBalance] = useState(0);
@@ -1011,48 +1010,67 @@ function Dashboard() {
   const handleConnect = async () => {
     if (isActuallyConnected) return;
     
-    // Check for specific injected wallets in in-app browsers
-    const isSafePal = !!(window as any).safepal || !!(window as any).safepal_solana;
-    const isTrust = !!(window as any).trustWallet || !!(window as any).trustwallet;
+    // Check for specific injected wallets in in-app browsers or extensions
+    const isPhantom = !!(window as any).phantom?.solana || !!(window as any).solana?.isPhantom;
+    const isSafePal = !!(window as any).safepal || !!(window as any).safepal_solana || !!(window as any).solana?.isSafePal;
+    const isTrust = !!(window as any).trustWallet || !!(window as any).trustwallet || !!(window as any).solana?.isTrust || !!(window as any).solana?.isTrustWallet || !!(window as any).ethereum?.isTrust;
+
+    if (isPhantom) {
+      const wp = wallets.find(w => w.adapter.name.toLowerCase().includes('phantom'));
+      if (wp) { 
+        try {
+          await select(wp.adapter.name as any); 
+          if (connect) {
+            await connect().catch(() => {});
+          }
+          return; 
+        } catch (e) {
+          console.error('Phantom wallet connection failed:', e);
+        }
+      }
+    }
 
     if (isSafePal) {
       const wp = wallets.find(w => w.adapter.name.toLowerCase().includes('safepal'));
       if (wp) { 
         try {
           await select(wp.adapter.name as any); 
+          if (connect) {
+            await connect().catch(() => {});
+          }
           return; 
         } catch (e) {
-          console.error('Wallet selection failed:', e);
+          console.error('SafePal wallet connection failed:', e);
         }
       }
     }
+
     if (isTrust) {
       const wp = wallets.find(w => w.adapter.name.toLowerCase().includes('trust'));
       if (wp) { 
         try {
           await select(wp.adapter.name as any); 
+          if (connect) {
+            await connect().catch(() => {});
+          }
           return; 
         } catch (e) {
-          console.error('Wallet selection failed:', e);
+          console.error('Trust Wallet connection failed:', e);
         }
       }
     }
 
-    // Use native WalletConnect (Reown AppKit) modal
+    // Default: Open wallet modal (Solana Wallet Adapter modal or AppKit modal)
     try {
-      // Check if we are on production using a sample projectId
       const isSampleId = projectId === '1de4bfbf68bf6d5b0606dcf1f618a8b1';
       const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
       if (isSampleId && !isLocal) {
-        alert(
-          '⚠️ Configuration Required:\n\n' +
-          'You are using the default/sample WalletConnect Project ID on a custom domain.\n\n' +
-          'WalletConnect/AppKit connections will fail unless you register a free Project ID at https://cloud.reown.com and set the VITE_WALLETCONNECT_PROJECT_ID environment variable in Railway.'
-        );
+        setVisible(true);
+        return;
       }
       await open();
     } catch (e) {
-      console.error('AppKit open failed:', e);
+      console.error('AppKit open failed, falling back to Solana Wallet Modal:', e);
       setVisible(true); // Fallback to standard modal
     }
   };
@@ -1061,13 +1079,14 @@ function Dashboard() {
   useEffect(() => {
     if (connected || publicKey || wallets.length === 0) return;
 
-    const isSafePal = !!(window as any).safepal || !!(window as any).safepal_solana;
-    const isTrust = !!(window as any).trustWallet || !!(window as any).trustwallet;
+    const isPhantom = !!(window as any).phantom?.solana || !!(window as any).solana?.isPhantom;
+    const isSafePal = !!(window as any).safepal || !!(window as any).safepal_solana || !!(window as any).solana?.isSafePal;
+    const isTrust = !!(window as any).trustWallet || !!(window as any).trustwallet || !!(window as any).solana?.isTrust || !!(window as any).solana?.isTrustWallet || !!(window as any).ethereum?.isTrust;
 
-    if (isSafePal || isTrust) {
-      const name = isSafePal ? 'SafePal' : 'Trust';
+    if (isPhantom || isSafePal || isTrust) {
+      const name = isPhantom ? 'Phantom' : isSafePal ? 'SafePal' : 'Trust';
       const wallet = wallets.find(w => w.adapter.name.toLowerCase().includes(name.toLowerCase()));
-      if (wallet) {
+      if (wallet && wallet.readyState === WalletReadyState.Installed) {
         select(wallet.adapter.name as any);
       }
     }
@@ -1075,7 +1094,6 @@ function Dashboard() {
     // MWA (Mobile Wallet Adapter) optimization
     const mwaWallet = wallets.find(w => w.adapter.name === 'Solana Mobile Stack');
     if (mwaWallet && mwaWallet.readyState === WalletReadyState.Installed) {
-       // Only select if specifically likely to be on a mobile device where MWA is preferred
        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
          select(mwaWallet.adapter.name as any);
        }
@@ -1439,13 +1457,8 @@ function Dashboard() {
             ) : (
               <Button 
                 variant="outlined" 
-                onClick={async () => {
-                  if (connected) {
-                    try { await disconnect(); } catch (e) { console.error(e); }
-                  }
-                  if (isAppKitConnected && appKitDisconnect) {
-                    try { await appKitDisconnect(); } catch (e) { console.error(e); }
-                  }
+                onClick={() => {
+                  if (connected) disconnect();
                   setViewOnlyAddress(null);
                 }}
                 sx={{ 
