@@ -57,10 +57,6 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     }, [wsEndpoint]);
 
     const wallets = useMemo(() => [
-        new PhantomWalletAdapter(),
-        new TrustWalletAdapter(),
-        new SafePalWalletAdapter(),
-        new SolflareWalletAdapter(),
         new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
             appIdentity: {
@@ -72,6 +68,16 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
             cluster: network,
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
         }),
+        new PhantomWalletAdapter(),
+        new SolflareWalletAdapter(),
+        new SafePalWalletAdapter(),
+        new TrustWalletAdapter(),
+        new WalletConnectWalletAdapter({
+            network: network,
+            options: {
+                projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '1de4bfbf68bf6d5b0606dcf1f618a8b1'
+            }
+        })
     ], [network]);
 
     return (

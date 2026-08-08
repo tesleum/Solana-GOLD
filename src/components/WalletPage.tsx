@@ -1065,7 +1065,9 @@ export function WalletPage({
 
   // Top Up Handler
   const handleBuyUsdtWithSol = async (amountInUsd: number) => {
-    if (!connected || !publicKey) {
+    const currentPublicKey = publicKey || (appKitAddress ? new PublicKey(appKitAddress) : null);
+
+    if (!isActuallyConnected || !currentPublicKey) {
       open();
       return;
     }
@@ -1088,7 +1090,7 @@ export function WalletPage({
 
       const instructions: TransactionInstruction[] = [
         SystemProgram.transfer({
-          fromPubkey: publicKey,
+          fromPubkey: currentPublicKey,
           toPubkey: recipientPubkey,
           lamports: totalLamports,
         }),
@@ -1097,13 +1099,20 @@ export function WalletPage({
       const blockhash = (await connection.getLatestBlockhash("confirmed"))
         .blockhash;
       const messageV0 = new TransactionMessage({
-        payerKey: publicKey,
+        payerKey: currentPublicKey,
         recentBlockhash: blockhash,
         instructions,
       }).compileToV0Message();
 
       const transaction = new VersionedTransaction(messageV0);
-      const signature = await sendTransaction(transaction, connection);
+      let signature = "";
+      if (publicKey && sendTransaction) {
+        signature = await sendTransaction(transaction, connection);
+      } else if (isAppKitConnected && walletProvider) {
+        signature = await walletProvider.sendTransaction(transaction, connection);
+      } else {
+        throw new Error("No connected wallet available.");
+      }
       await connection.confirmTransaction(signature, "confirmed");
 
       const timestamp = Date.now();
