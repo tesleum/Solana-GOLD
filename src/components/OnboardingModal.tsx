@@ -7,15 +7,21 @@ import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { Network, ArrowRightLeft, Smartphone } from 'lucide-react';
 import { ref, onValue } from 'firebase/database';
 import { database } from '../firebase';
-
-const steps = ['Connect Wallet', 'Understand MLM', 'Start Investing', 'Install App'];
+import { t } from '../translations';
 
 interface OnboardingModalProps {
   openExternal?: boolean;
   onCloseExternal?: () => void;
+  language: string;
 }
 
-export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingModalProps) {
+export function OnboardingModal({ openExternal, onCloseExternal, language }: OnboardingModalProps) {
+  const steps = [
+    t('onboardingStep1', language),
+    t('onboardingStep2', language),
+    t('onboardingStep3', language),
+    t('onboardingStep4', language)
+  ];
   const [open, setOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [apyYield, setApyYield] = useState('8');
@@ -139,7 +145,7 @@ export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingMod
       disableEnforceFocus // Allows wallet modal to take focus
       sx={{ zIndex: 1200 }} 
     >
-      <DialogTitle>Welcome to Solana Gold</DialogTitle>
+      <DialogTitle>{t('onboardingTitle', language)}</DialogTitle>
       <DialogContent>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4, mt: 2 }}>
           {steps.map((label) => (
@@ -152,7 +158,7 @@ export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingMod
         <Box sx={{ minHeight: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
           {activeStep === 0 && (
             <Box>
-              <Typography variant="h6" gutterBottom>Connect Your Solana Wallet</Typography>
+              <Typography variant="h6" gutterBottom>{t('onboardingStep1', language)}</Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
                 To get started, please connect your Solana wallet. You'll need it to buy $usGOLD and receive commissions.
               </Typography>
@@ -197,7 +203,7 @@ export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingMod
           {activeStep === 1 && (
             <Box>
               <Network size={48} opacity={0.5} style={{ marginBottom: 16 }} />
-              <Typography variant="h6" gutterBottom>The Unilevel MLM Structure</Typography>
+              <Typography variant="h6" gutterBottom>{t('onboardingStep2', language)}</Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Invite others using your referral link. When they invest, you earn a percentage of their investment as commission. 
                 Our unilevel structure rewards you across multiple levels of your downline!
@@ -208,7 +214,7 @@ export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingMod
           {activeStep === 2 && (
             <Box>
               <ArrowRightLeft size={48} opacity={0.5} style={{ marginBottom: 16 }} />
-              <Typography variant="h6" gutterBottom>Invest in $usGOLD</Typography>
+              <Typography variant="h6" gutterBottom>{t('onboardingStep3', language)}</Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Buy $usGOLD at a discounted price! There's a 20% discount on market price with a 6-month lockup, plus a {apyYield}% APY yield.
               </Typography>
@@ -218,7 +224,7 @@ export function OnboardingModal({ openExternal, onCloseExternal }: OnboardingMod
           {activeStep === 3 && (
             <Box>
               <Smartphone size={48} opacity={0.5} style={{ marginBottom: 16 }} />
-              <Typography variant="h6" gutterBottom>Install for the Best Experience</Typography>
+              <Typography variant="h6" gutterBottom>{t('onboardingStep4', language)}</Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Add usGOLD directly to your home screen. Enjoy faster load times, full-screen mode, and quick access to your investments.
               </Typography>

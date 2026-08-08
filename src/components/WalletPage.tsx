@@ -821,7 +821,7 @@ export function WalletPage({
     }
 
     if (numFromAmount <= 0) {
-      alert("Please enter a valid swap amount.");
+      alert(t('enterValidSwapAmount', language));
       return;
     }
 
@@ -1072,7 +1072,7 @@ export function WalletPage({
     }
 
     if (amountInUsd < 10 || amountInUsd > 1000) {
-      alert("USDT purchase amount must be between $10 and $1,000 USD.");
+      alert(t('usdtPurchaseLimit', language));
       return;
     }
 
@@ -1142,7 +1142,7 @@ export function WalletPage({
     }
     if (purchaseAsset === "usGOLD") {
       if (customPurchaseAmount < 10 || customPurchaseAmount > 1000) {
-        alert("usGOLD minting volume must be between $10 and $1,000 USD.");
+        alert(t('usGoldMintLimit', language));
         return;
       }
       setInvestAmount(customPurchaseAmount);
@@ -1194,7 +1194,7 @@ export function WalletPage({
             fontWeight="900"
             gutterBottom
           >
-            Solana Wallet Portal
+            {t('solanaWalletPortal', language)}
           </Typography>
           <Typography
             variant="body2"
@@ -1202,8 +1202,7 @@ export function WalletPage({
             mb={4}
             sx={{ lineHeight: 1.6 }}
           >
-            Connect your Solana wallet to access live balances, execute instant
-            token swaps, and top up usGOLD.
+            {t('connectWalletPortalDesc', language)}
           </Typography>
           <Button
             variant="contained"
@@ -1218,7 +1217,7 @@ export function WalletPage({
               "&:hover": { backgroundColor: "#FFDF73" },
             }}
           >
-            Connect Wallet
+            {t('connectWallet', language)}
           </Button>
         </Card>
       </Box>
@@ -2604,25 +2603,25 @@ export function WalletPage({
           {/* How it works info card */}
           <Card sx={{ bgcolor: alpha("#000", 0.4), border: `1px solid ${alpha("#D4AF37", 0.2)}`, borderRadius: "20px", p: 3 }}>
             <Typography variant="subtitle1" fontWeight="900" color="#FFDF73" mb={1.5}>
-              How 1 usGOLD Referral Rewards Work
+              {t('howReferralWorks', language)}
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={4}>
                 <Stack spacing={0.5}>
-                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 1: Share Link</Typography>
-                  <Typography variant="body2" color="text.secondary">Send your link to friends or social channels. Anyone visiting via your link is attributed to you.</Typography>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">{t('step1ShareLink', language)}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('step1Desc', language)}</Typography>
                 </Stack>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <Stack spacing={0.5}>
-                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 2: Friend Stakes</Typography>
-                  <Typography variant="body2" color="text.secondary">When your friend connects their wallet and stakes usGOLD in a vault, a 1 usGOLD pending reward is queued.</Typography>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">{t('step2FriendStakes', language)}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('step2Desc', language)}</Typography>
                 </Stack>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <Stack spacing={0.5}>
-                  <Typography variant="caption" color="#D4AF37" fontWeight="900">STEP 3: Receive 1 usGOLD</Typography>
-                  <Typography variant="body2" color="text.secondary">Admin verifies the referee stake and approves payment. 1 usGOLD is credited directly to your wallet balance!</Typography>
+                  <Typography variant="caption" color="#D4AF37" fontWeight="900">{t('step3Receive1UsGold', language)}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('step3Desc', language)}</Typography>
                 </Stack>
               </Grid>
             </Grid>

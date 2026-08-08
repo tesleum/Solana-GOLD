@@ -1309,7 +1309,11 @@ function Dashboard() {
       borderRight: { sm: `1px solid ${alpha('#D4AF37', 0.15)}` },
       position: 'relative'
     }}>
-      <OnboardingModal openExternal={isGuidanceOpen} onCloseExternal={() => setIsGuidanceOpen(false)} />
+      <OnboardingModal 
+        openExternal={isGuidanceOpen} 
+        onCloseExternal={() => setIsGuidanceOpen(false)} 
+        language={language}
+      />
       {/* Header */}
       <AppBar 
         position="fixed" 

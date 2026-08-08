@@ -806,13 +806,13 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
           <ToggleButton value={1}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Award size={16} />
-              <Typography variant="body2" fontWeight="bold">Global Pools</Typography>
+              <Typography variant="body2" fontWeight="bold">{t('globalPools', language)}</Typography>
             </Stack>
           </ToggleButton>
           <ToggleButton value={2}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Network size={16} />
-              <Typography variant="body2" fontWeight="bold">Visual Tree</Typography>
+              <Typography variant="body2" fontWeight="bold">{t('visualTree', language)}</Typography>
             </Stack>
           </ToggleButton>
         </ToggleButtonGroup>
@@ -1098,10 +1098,10 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
               <Card sx={{ bgcolor: alpha('#121214', 0.4), border: `1px solid ${alpha(theme.palette.divider, 0.08)}`, borderRadius: 2 }}>
                 <CardContent sx={{ p: 2.5 }}>
                   <Typography variant="subtitle1" fontWeight="bold" color="primary.main" gutterBottom>
-                    Your Syndicate Qualifications
+                    {t('syndicateQualifications', language)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, fontSize: '0.8rem' }}>
-                    Below is your actual current qualification status across all four global reward tiers. Keep recruiting to level up.
+                    {t('poolQualificationDesc', language)}
                   </Typography>
                   
                   <Stack spacing={2}>
@@ -1109,11 +1109,11 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
                     <Box sx={{ p: 1.5, bgcolor: treeData.qualifies8 ? alpha('#10b981', 0.05) : alpha('#fff', 0.01), border: `1px solid ${treeData.qualifies8 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 2 }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography variant="body2" fontWeight="bold">8% Pool Qualification</Typography>
-                          <Typography variant="caption" color="text.secondary">Min. $3,000 volume in each Line</Typography>
+                          <Typography variant="body2" fontWeight="bold">{t('poolQualification', language).replace('{pool}', '8')}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('minVolumePerLine', language).replace('${amount}', '3,000')}</Typography>
                         </Box>
                         <Chip 
-                          label={treeData.qualifies8 ? 'QUALIFIED' : 'NOT QUALIFIED'} 
+                          label={treeData.qualifies8 ? t('qualified', language) : t('notQualified', language)} 
                           size="small" 
                           color={treeData.qualifies8 ? 'success' : 'default'}
                           sx={{ fontWeight: 'bold', fontSize: '0.65rem' }}
@@ -1124,11 +1124,11 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
                     <Box sx={{ p: 1.5, bgcolor: treeData.qualifies6 ? alpha('#10b981', 0.05) : alpha('#fff', 0.01), border: `1px solid ${treeData.qualifies6 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 2 }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography variant="body2" fontWeight="bold">6% Pool Qualification</Typography>
-                          <Typography variant="caption" color="text.secondary">Min. $5,000 volume in each Line</Typography>
+                          <Typography variant="body2" fontWeight="bold">{t('poolQualification', language).replace('{pool}', '6')}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('minVolumePerLine', language).replace('${amount}', '5,000')}</Typography>
                         </Box>
                         <Chip 
-                          label={treeData.qualifies6 ? 'QUALIFIED' : 'NOT QUALIFIED'} 
+                          label={treeData.qualifies6 ? t('qualified', language) : t('notQualified', language)} 
                           size="small" 
                           color={treeData.qualifies6 ? 'success' : 'default'}
                           sx={{ fontWeight: 'bold', fontSize: '0.65rem' }}
@@ -1139,11 +1139,11 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
                     <Box sx={{ p: 1.5, bgcolor: treeData.qualifies4 ? alpha('#10b981', 0.05) : alpha('#fff', 0.01), border: `1px solid ${treeData.qualifies4 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 2 }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography variant="body2" fontWeight="bold">4% Pool Qualification</Typography>
-                          <Typography variant="caption" color="text.secondary">Min. $10,000 volume in each Line</Typography>
+                          <Typography variant="body2" fontWeight="bold">{t('poolQualification', language).replace('{pool}', '4')}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('minVolumePerLine', language).replace('${amount}', '10,000')}</Typography>
                         </Box>
                         <Chip 
-                          label={treeData.qualifies4 ? 'QUALIFIED' : 'NOT QUALIFIED'} 
+                          label={treeData.qualifies4 ? t('qualified', language) : t('notQualified', language)} 
                           size="small" 
                           color={treeData.qualifies4 ? 'success' : 'default'}
                           sx={{ fontWeight: 'bold', fontSize: '0.65rem' }}
@@ -1154,11 +1154,11 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
                     <Box sx={{ p: 1.5, bgcolor: treeData.qualifies2 ? alpha('#10b981', 0.05) : alpha('#fff', 0.01), border: `1px solid ${treeData.qualifies2 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 2 }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Typography variant="body2" fontWeight="bold">2% Pool Qualification</Typography>
-                          <Typography variant="caption" color="text.secondary">Min. $30,000 volume in each Line</Typography>
+                          <Typography variant="body2" fontWeight="bold">{t('poolQualification', language).replace('{pool}', '2')}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('minVolumePerLine', language).replace('${amount}', '30,000')}</Typography>
                         </Box>
                         <Chip 
-                          label={treeData.qualifies2 ? 'QUALIFIED' : 'NOT QUALIFIED'} 
+                          label={treeData.qualifies2 ? t('qualified', language) : t('notQualified', language)} 
                           size="small" 
                           color={treeData.qualifies2 ? 'success' : 'default'}
                           sx={{ fontWeight: 'bold', fontSize: '0.65rem' }}

@@ -272,7 +272,7 @@ export function StakingPage({
         });
         setFcmToken("in-app-enabled");
       }
-      alert("Standard notifications are restricted in this sandbox. In-app database inbox notification routing has been activated for your address!");
+      alert(t('standardNotificationRestricted', language));
     } finally {
       setSavingFCM(false);
     }
@@ -856,7 +856,7 @@ export function StakingPage({
             <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.08), border: `1px solid ${alpha('#D4AF37', 0.25)}`, display: 'flex', alignItems: 'center', gap: 1 }}>
               <ShieldCheck size={16} color="#FFDF73" />
               <Typography variant="caption" color="#FFDF73" fontWeight="700" sx={{ fontSize: '11px' }}>
-                ⚡ Flexible Vault: Unstake anytime before maturity with a 10% principal cancellation penalty.
+                {t('flexibleVaultNotice', language)}
               </Typography>
             </Box>
 
@@ -1422,7 +1422,7 @@ export function StakingPage({
 
                   <Stack spacing={1}>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Original Staked Principal:</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('originalStakedPrincipal', language)}</Typography>
                       <Typography variant="body2" fontWeight="800" color="#fff">{principal.toFixed(4)} usGOLD</Typography>
                     </Stack>
 
@@ -1432,19 +1432,19 @@ export function StakingPage({
                     </Stack>
 
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Net Principal Returned (90%):</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('netPrincipalReturned', language)}</Typography>
                       <Typography variant="body2" fontWeight="800" color="#fff">{refundPrincipal.toFixed(4)} usGOLD</Typography>
                     </Stack>
 
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="#FFDF73">Accrued Staking Yield:</Typography>
+                      <Typography variant="body2" color="#FFDF73">{t('accruedStakingYield', language)}</Typography>
                       <Typography variant="body2" fontWeight="800" color="#FFDF73">+${currentAccruedProfit.toFixed(2)} USD</Typography>
                     </Stack>
 
                     <Divider sx={{ my: 0.5, borderColor: alpha('#fff', 0.1) }} />
 
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="subtitle2" fontWeight="900" color="#4caf50">Total Refunded to Wallet:</Typography>
+                      <Typography variant="subtitle2" fontWeight="900" color="#4caf50">{t('totalRefundedToWallet', language)}</Typography>
                       <Typography variant="subtitle2" fontWeight="900" color="#4caf50">+{totalNet.toFixed(4)} usGOLD</Typography>
                     </Stack>
                   </Stack>
