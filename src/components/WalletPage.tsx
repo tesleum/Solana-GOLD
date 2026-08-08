@@ -57,6 +57,7 @@ import {
   Hourglass,
   Share2,
   XCircle,
+  Download,
 } from "lucide-react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -1363,132 +1364,66 @@ export function WalletPage({
           </Stack>
         </Stack>
 
-        {/* NET PORTFOLIO BALANCE & CARD ADDRESS */}
-        <Grid container spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-          <Grid item xs={12} sm={7}>
-            <Typography variant="caption" sx={{ color: alpha('#FFDF73', 0.8), fontWeight: 800, fontSize: '10px', letterSpacing: 1, display: 'block', mb: 0.2 }}>
-              {t('netPortfolioBalance', language)}
+        {/* TOTAL PORTFOLIO BALANCE */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="overline" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
+            Total Portfolio Value
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+            <Typography variant="h3" fontWeight="900" sx={{ color: '#fff', fontSize: { xs: '2.5rem', sm: '3rem' } }}>
+              ${((totalStaked * effectiveTokenPrice) + liveTotalAccrued).toFixed(2)}
             </Typography>
+            <Typography variant="h6" fontWeight="800" sx={{ color: alpha('#fff', 0.4) }}>
+              USD
+            </Typography>
+          </Box>
+          <Typography variant="body2" sx={{ color: '#14F195', fontWeight: 700, mt: 0.5 }}>
+            4912 •••• {effectiveAddress ? effectiveAddress.slice(-4).toUpperCase() : '8888'}
+          </Typography>
+        </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-              <Typography variant="h4" fontWeight="900" sx={{ 
-                color: '#FFF', 
-                fontFamily: '"Cinzel", serif',
-                letterSpacing: '-0.5px',
-                fontSize: { xs: '1.8rem', sm: '2.2rem' },
-                textShadow: `0 0 20px ${alpha('#D4AF37', 0.35)}`
-              }}>
-                ${((totalStaked * effectiveTokenPrice) + liveTotalAccrued).toFixed(2)}
-              </Typography>
-              <Typography variant="subtitle2" fontWeight="800" color="#D4AF37" sx={{ fontSize: '13px' }}>
-                USD
-              </Typography>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} sm={5}>
-            {/* CARD ACCOUNT NUMBER DISPLAY */}
-            <Box sx={{ 
-              py: 1, 
-              px: 1.5, 
-              borderRadius: '12px', 
-              bgcolor: alpha('#000', 0.55), 
-              border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '8px', letterSpacing: 1, fontWeight: 700, display: 'block' }}>
-                  {t('vaultCardAddress', language)}
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontFamily: 'monospace', 
-                  letterSpacing: { xs: 1.5, sm: 2 }, 
-                  fontWeight: 800, 
-                  color: alpha('#fff', 0.95),
-                  fontSize: { xs: '10.5px', sm: '11.5px' }
-                }}>
-                  4912 •••• {effectiveAddress ? effectiveAddress.slice(-4).toUpperCase() : '8888'}
-                </Typography>
-              </Box>
-
-              <Tooltip title={t('copyVaultCardAddress', language)}>
-                <IconButton 
-                  size="small" 
-                  onClick={() => {
-                    if (effectiveAddress) {
-                      navigator.clipboard.writeText(effectiveAddress);
-                      triggerHaptic(10);
-                      alert(t('vaultCardWalletCopied', language));
-                    }
-                  }}
-                  sx={{ color: '#D4AF37', p: 0.6, bgcolor: alpha('#D4AF37', 0.1), '&:hover': { bgcolor: alpha('#D4AF37', 0.25) } }}
-                >
-                  <Copy size={13} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* ADMIN APPROVED REWARD CLAIM BAR ON TOP CARD */}
+        {/* WITHDRAW CLAIM SECTION */}
         <Box 
-          onClick={() => {
-            if (approvedToClaimAmount === 0) {
-              triggerHaptic(10);
-              setWalletTab("invite");
-              setTimeout(() => {
-                document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }, 100);
-            }
-          }}
           sx={{ 
-            cursor: approvedToClaimAmount === 0 ? 'pointer' : 'default',
-            mb: 2, 
-            p: 1.5, 
-            borderRadius: '16px', 
-            bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.12) : alpha('#000', 0.45),
-            border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.5) : alpha('#D4AF37', 0.25)}`,
+            p: 2.5, 
+            borderRadius: '20px', 
+            bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.1) : alpha('#fff', 0.03),
+            border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.4) : alpha('#fff', 0.1)}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 1.5,
-            transition: 'all 0.3s ease',
-            '&:hover': approvedToClaimAmount === 0 ? {
-              borderColor: alpha('#D4AF37', 0.6),
-              bgcolor: alpha('#D4AF37', 0.08)
-            } : {}
+            gap: 2,
+            transition: 'all 0.3s ease'
           }}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center">
             <Avatar sx={{ 
-              bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.2) : alpha('#D4AF37', 0.15),
-              color: approvedToClaimAmount > 0 ? '#14F195' : '#D4AF37',
-              width: 38,
-              height: 38
+              bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.2) : alpha('#fff', 0.05),
+              color: approvedToClaimAmount > 0 ? '#14F195' : 'text.secondary',
+              width: 48,
+              height: 48
             }}>
-              <Sparkles size={20} />
+              <Sparkles size={24} />
             </Avatar>
             <Box>
-              <Typography variant="body2" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#FFDF73', fontSize: '13px' }}>
+              <Typography variant="body1" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#fff' }}>
                 {approvedToClaimAmount > 0 
-                  ? t('approvedUsGoldByAdmin', language).replace('{amount}', approvedToClaimAmount.toFixed(2))
-                  : t('adminApprovedRewards', language)}
+                  ? `Withdraw ${approvedToClaimAmount.toFixed(2)} usGOLD`
+                  : 'Referral Earnings'}
               </Typography>
-              <Typography variant="caption" sx={{ color: alpha('#fff', 0.8), fontSize: '11px', display: 'block' }}>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontSize: '12px', display: 'block' }}>
                 {approvedToClaimAmount > 0 
-                  ? t('withdrawApprovedUsGoldDesc', language)
+                  ? 'Your earnings are approved and ready for withdrawal.'
                   : needsApprovalCount > 0
-                  ? t('pendingAdminReviewCount', language).replace('{count}', needsApprovalCount.toString())
-                  : t('inviteFriendsToStakeDesc', language)}
+                  ? `${needsApprovalCount} rewards pending admin review`
+                  : 'Earn usGOLD for every friend you invite.'}
               </Typography>
             </Box>
           </Stack>
 
           <Button
-            size="small"
+            size="large"
             variant={approvedToClaimAmount > 0 ? "contained" : "outlined"}
             disabled={isClaimingUsGold}
             onClick={(e) => {
@@ -1503,232 +1438,42 @@ export function WalletPage({
                 }, 100);
               }
             }}
-            startIcon={isClaimingUsGold ? <CircularProgress size={14} color="inherit" /> : <Gift size={15} />}
+            startIcon={isClaimingUsGold ? <CircularProgress size={18} color="inherit" /> : (approvedToClaimAmount > 0 ? <Download size={20} /> : <UserPlus size={20} />)}
             sx={{
               fontWeight: 900,
-              fontSize: '12px',
-              px: 2.5,
-              py: 0.8,
-              borderRadius: '12px',
+              px: 4,
+              borderRadius: '14px',
               textTransform: 'none',
               ...(approvedToClaimAmount > 0 ? {
-                background: 'linear-gradient(135deg, #14F195 0%, #00E676 100%)',
+                bgcolor: '#14F195',
                 color: '#000',
-                boxShadow: `0 4px 14px ${alpha('#14F195', 0.4)}`,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #00E676 0%, #14F195 100%)',
-                  boxShadow: `0 6px 18px ${alpha('#14F195', 0.6)}`
-                }
+                '&:hover': { bgcolor: '#00E676' }
               } : {
-                borderColor: alpha('#D4AF37', 0.5),
-                color: '#FFDF73',
-                '&:hover': {
-                  borderColor: '#FFDF73',
-                  bgcolor: alpha('#D4AF37', 0.15)
-                }
+                borderColor: alpha('#fff', 0.2),
+                color: '#fff',
+                '&:hover': { borderColor: '#fff', bgcolor: alpha('#fff', 0.05) }
               })
             }}
           >
             {isClaimingUsGold 
-              ? t('claiming', language) 
+              ? 'Processing...' 
               : approvedToClaimAmount > 0 
-              ? t('claimUsGoldAmount', language).replace('{amount}', approvedToClaimAmount.toFixed(2)) 
-              : t('claimRewards', language)}
+              ? 'Withdraw Claim' 
+              : 'Invite & Earn'}
           </Button>
         </Box>
 
-        {/* EXPANDABLE SLIDE DOWN TOGGLE BUTTON */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          mt: 1.5,
-          pt: 1.5,
-          borderTop: `1px solid ${alpha('#D4AF37', 0.2)}`
-        }}>
-          <Button
-            size="small"
-            variant="text"
-            onClick={() => {
-              triggerHaptic(5);
-              setShowMetrics(!showMetrics);
-            }}
-            endIcon={showMetrics ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-            sx={{
-              color: '#FFDF73',
-              fontSize: '10.5px',
-              fontWeight: 800,
-              letterSpacing: 0.5,
-              textTransform: 'uppercase',
-              py: 0.4,
-              px: 2,
-              borderRadius: '20px',
-              bgcolor: alpha('#D4AF37', 0.08),
-              border: `1px solid ${alpha('#D4AF37', 0.25)}`,
-              transition: 'all 0.2s',
-              '&:hover': {
-                bgcolor: alpha('#D4AF37', 0.16),
-                borderColor: '#FFDF73'
-              }
-            }}
-          >
-            {showMetrics ? t('hideBalanceDetails', language) : t('showBalanceDetails', language)}
-          </Button>
+        {/* Portfolio Assets Section */}
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" fontWeight="900" sx={{ color: '#fff' }}>
+              Your Portfolio Assets
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#14F195', fontWeight: 800 }}>
+              Live Tracking
+            </Typography>
+          </Stack>
         </Box>
-
-        {/* COLLAPSIBLE METRICS CAROUSEL */}
-        <Collapse in={showMetrics} timeout="auto">
-          <Box sx={{ mt: 2 }}>
-            {/* SLIDABLE METRICS SECTION HEADER WITH TABS & CHEVRONS */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, pt: 1, borderTop: `1px dashed ${alpha('#D4AF37', 0.2)}` }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Stack direction="row" spacing={0.5}>
-                  {[t('vaultStaked', language), t('liveYieldTicker', language)].map((name, idx) => (
-                    <Chip
-                      key={name}
-                      label={name}
-                      size="small"
-                      onClick={() => {
-                        setActiveSlide(idx);
-                        const container = document.getElementById('slidable-metrics-container-wallet');
-                        if (container) {
-                          container.scrollTo({ left: idx * 260, behavior: 'smooth' });
-                        }
-                      }}
-                      sx={{
-                        height: 20,
-                        fontSize: '9px',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        bgcolor: activeSlide === idx ? alpha('#D4AF37', 0.3) : alpha('#fff', 0.05),
-                        color: activeSlide === idx ? '#FFDF73' : 'text.secondary',
-                        border: `1px solid ${activeSlide === idx ? alpha('#D4AF37', 0.5) : alpha('#fff', 0.1)}`,
-                        transition: 'all 0.2s'
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </Stack>
-
-              {/* Chevrons for manual sliding */}
-              <Stack direction="row" spacing={0.5}>
-                <IconButton 
-                  size="small"
-                  onClick={() => {
-                    const nextIdx = Math.max(0, activeSlide - 1);
-                    setActiveSlide(nextIdx);
-                    const container = document.getElementById('slidable-metrics-container-wallet');
-                    if (container) {
-                      container.scrollTo({ left: nextIdx * 260, behavior: 'smooth' });
-                    }
-                  }}
-                  sx={{ color: '#D4AF37', p: 0.4, bgcolor: alpha('#fff', 0.04) }}
-                >
-                  <ChevronLeft size={14} />
-                </IconButton>
-                <IconButton 
-                  size="small"
-                  onClick={() => {
-                    const nextIdx = Math.min(1, activeSlide + 1);
-                    setActiveSlide(nextIdx);
-                    const container = document.getElementById('slidable-metrics-container-wallet');
-                    if (container) {
-                      container.scrollTo({ left: nextIdx * 260, behavior: 'smooth' });
-                    }
-                  }}
-                  sx={{ color: '#D4AF37', p: 0.4, bgcolor: alpha('#fff', 0.04) }}
-                >
-                  <ChevronRight size={14} />
-                </IconButton>
-              </Stack>
-            </Box>
-
-            {/* HORIZONTAL TOUCH-SLIDABLE CAROUSEL */}
-            <Box 
-              id="slidable-metrics-container-wallet"
-              onScroll={(e) => {
-                const target = e.currentTarget;
-                const scrollPos = target.scrollLeft;
-                const cardWidth = 260;
-                const newIndex = Math.min(1, Math.max(0, Math.round(scrollPos / cardWidth)));
-                if (newIndex !== activeSlide) {
-                  setActiveSlide(newIndex);
-                }
-              }}
-              sx={{ 
-                display: 'flex', 
-                gap: 1.5, 
-                overflowX: 'auto', 
-                scrollSnapType: 'x mandatory',
-                py: 0.5,
-                px: 0.2,
-                scrollbarWidth: 'none',
-                '&::-webkit-scrollbar': { display: 'none' }
-              }}
-            >
-              {/* Card 1: Vault Staked */}
-              <Box sx={{ 
-                minWidth: { xs: 240, sm: '31%' },
-                flex: '0 0 auto',
-                scrollSnapAlign: 'start',
-                p: 1.5, 
-                bgcolor: alpha('#4caf50', 0.04), 
-                borderRadius: '14px', 
-                border: `1px solid ${activeSlide === 0 ? alpha('#4caf50', 0.6) : alpha('#4caf50', 0.25)}`,
-                boxShadow: activeSlide === 0 ? `0 4px 16px ${alpha('#4caf50', 0.15)}` : 'none',
-                transition: 'all 0.2s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
-                    1. {t('vaultStaked', language)}
-                  </Typography>
-                  <Lock size={15} color="#4caf50" />
-                </Stack>
-                <Box mt={1}>
-                  <Typography variant="h6" fontWeight="900" color="#4caf50" sx={{ fontSize: '1.05rem', lineHeight: 1.2 }}>
-                    {totalStaked.toFixed(4)} <span style={{ fontSize: '11px' }}>usGOLD</span>
-                  </Typography>
-                  <Typography variant="caption" color="#4caf50" fontWeight="bold" sx={{ fontSize: '10px' }}>
-                    +2% / mo {t('guaranteedReturn', language)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Card 2: Live Yield Ticker */}
-              <Box sx={{ 
-                minWidth: { xs: 240, sm: '31%' },
-                flex: '0 0 auto',
-                scrollSnapAlign: 'start',
-                p: 1.5, 
-                bgcolor: alpha('#FFDF73', 0.04), 
-                borderRadius: '14px', 
-                border: `1px solid ${activeSlide === 1 ? alpha('#FFDF73', 0.6) : alpha('#FFDF73', 0.25)}`,
-                boxShadow: activeSlide === 1 ? `0 4px 16px ${alpha('#FFDF73', 0.15)}` : 'none',
-                transition: 'all 0.2s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={0.5} sx={{ fontSize: '9.5px' }}>
-                    2. {t('liveYieldTicker', language)}
-                  </Typography>
-                  <Activity size={15} color="#FFDF73" className="animate-pulse" />
-                </Stack>
-                <Box mt={1}>
-                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace', fontSize: '1rem', lineHeight: 1.2 }}>
-                    +${liveTotalAccrued.toFixed(6)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
-                    {t('perSecondRealTime', language)}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        </Collapse>
       </Card>
 
       {/* 2. SUB-TAB NAVIGATION: ENHANCED SWAP / INVITE & EARN / HISTORY */}
