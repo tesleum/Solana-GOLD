@@ -395,15 +395,8 @@ export function WalletPage({
 
   const effectiveTokenPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 0;
 
-  const availableCommissions = useMemo(() => {
-    return Math.max(0, userEarnings - claimedCommissions);
-  }, [userEarnings, claimedCommissions]);
-
   // Real Native SOL Balance
   const [solBalance, setSolBalance] = useState<number>(0);
-
-  // Sync claimed commissions from Firebase
-  const [claimedCommissions, setClaimedCommissions] = useState<number>(0);
 
   // Futures Margin Balance from Firebase
   const [futuresBalance, setFuturesBalance] = useState<number>(0);
@@ -575,7 +568,6 @@ export function WalletPage({
           setUsdtBalance(data.usdtBalance || 0);
           setGoldTokenBalance(data.goldTokenBalance || 0);
           setXautBalance(data.xautBalance || data.goldTokenBalance || 0);
-          setClaimedCommissions(data.claimedCommissions || 0);
         }
       });
 
@@ -1449,144 +1441,109 @@ export function WalletPage({
           </Grid>
         </Grid>
 
-        {/* WITHDRAW & CLAIMS CENTER */}
-        <Box sx={{ mt: 2, p: 2, borderRadius: '16px', bgcolor: alpha('#000', 0.45), border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
-          <Typography variant="caption" sx={{ color: '#FFDF73', fontWeight: 900, fontSize: '10px', textTransform: 'uppercase', letterSpacing: 1.2, display: 'flex', alignItems: 'center', gap: 0.8, mb: 1.5 }}>
-            <Sparkles size={11} color="#FFDF73" />
-            Withdraw & Claims Hub
-          </Typography>
-          
-          <Grid container spacing={1.5}>
-            {/* Box 1: usGOLD Approved Rewards */}
-            <Grid item xs={12} sm={6}>
-              <Box sx={{
-                p: 1.5,
-                borderRadius: '12px',
-                bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.08) : alpha('#fff', 0.01),
-                border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.3) : alpha('#fff', 0.05)}`,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                height: '100%',
-                minHeight: 105
-              }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '9px', textTransform: 'uppercase', display: 'block', mb: 0.3 }}>
-                    usGOLD Referral Rewards
-                  </Typography>
-                  <Typography variant="body2" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#fff', fontSize: '12.5px' }}>
-                    {approvedToClaimAmount > 0 
-                      ? `${approvedToClaimAmount.toFixed(2)} usGOLD Approved`
-                      : 'No Approved Rewards'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', display: 'block', mt: 0.3, lineHeight: 1.2 }}>
-                    {approvedToClaimAmount > 0 
-                      ? 'Ready for instant withdrawal!'
-                      : needsApprovalCount > 0
-                      ? `${needsApprovalCount} pending admin review`
-                      : 'Invite friends to earn rewards'}
-                  </Typography>
-                </Box>
-                
-                <Button
-                  size="small"
-                  variant="contained"
-                  disabled={isClaimingUsGold || approvedToClaimAmount === 0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (approvedToClaimAmount > 0) {
-                      handleClaimApprovedUsGold();
-                    }
-                  }}
-                  startIcon={isClaimingUsGold ? <CircularProgress size={11} color="inherit" /> : <Gift size={11} />}
-                  sx={{
-                    mt: 1,
-                    fontSize: '10px',
-                    fontWeight: '900',
-                    py: 0.4,
-                    minHeight: '30px',
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    ...(approvedToClaimAmount > 0 ? {
-                      bgcolor: '#14F195',
-                      color: '#000',
-                      '&:hover': { bgcolor: '#00e676' }
-                    } : {
-                      bgcolor: alpha('#fff', 0.04),
-                      color: alpha('#fff', 0.35),
-                      border: 'none'
-                    })
-                  }}
-                >
-                  {approvedToClaimAmount > 0 ? `Withdraw usGOLD` : `No claimable usGOLD`}
-                </Button>
-              </Box>
-            </Grid>
+        {/* ADMIN APPROVED REWARD CLAIM BAR ON TOP CARD */}
+        <Box 
+          onClick={() => {
+            if (approvedToClaimAmount === 0) {
+              triggerHaptic(10);
+              setWalletTab("invite");
+              setTimeout(() => {
+                document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 100);
+            }
+          }}
+          sx={{ 
+            cursor: approvedToClaimAmount === 0 ? 'pointer' : 'default',
+            mb: 2, 
+            p: 1.5, 
+            borderRadius: '16px', 
+            bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.12) : alpha('#000', 0.45),
+            border: `1px solid ${approvedToClaimAmount > 0 ? alpha('#14F195', 0.5) : alpha('#D4AF37', 0.25)}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
+            transition: 'all 0.3s ease',
+            '&:hover': approvedToClaimAmount === 0 ? {
+              borderColor: alpha('#D4AF37', 0.6),
+              bgcolor: alpha('#D4AF37', 0.08)
+            } : {}
+          }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Avatar sx={{ 
+              bgcolor: approvedToClaimAmount > 0 ? alpha('#14F195', 0.2) : alpha('#D4AF37', 0.15),
+              color: approvedToClaimAmount > 0 ? '#14F195' : '#D4AF37',
+              width: 38,
+              height: 38
+            }}>
+              <Sparkles size={20} />
+            </Avatar>
+            <Box>
+              <Typography variant="body2" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#FFDF73', fontSize: '13px' }}>
+                {approvedToClaimAmount > 0 
+                  ? t('approvedUsGoldByAdmin', language).replace('{amount}', approvedToClaimAmount.toFixed(2))
+                  : t('adminApprovedRewards', language)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.8), fontSize: '11px', display: 'block' }}>
+                {approvedToClaimAmount > 0 
+                  ? t('withdrawApprovedUsGoldDesc', language)
+                  : needsApprovalCount > 0
+                  ? t('pendingAdminReviewCount', language).replace('{count}', needsApprovalCount.toString())
+                  : t('inviteFriendsToStakeDesc', language)}
+              </Typography>
+            </Box>
+          </Stack>
 
-            {/* Box 2: SOL Commissions */}
-            <Grid item xs={12} sm={6}>
-              <Box sx={{
-                p: 1.5,
-                borderRadius: '12px',
-                bgcolor: availableCommissions > 0 ? alpha('#D4AF37', 0.08) : alpha('#fff', 0.01),
-                border: `1px solid ${availableCommissions > 0 ? alpha('#D4AF37', 0.3) : alpha('#fff', 0.05)}`,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                height: '100%',
-                minHeight: 105
-              }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '9px', textTransform: 'uppercase', display: 'block', mb: 0.3 }}>
-                    Dynasty SOL Commissions
-                  </Typography>
-                  <Typography variant="body2" fontWeight="900" sx={{ color: availableCommissions > 0 ? '#FFDF73' : '#fff', fontSize: '12.5px' }}>
-                    {availableCommissions > 0 
-                      ? `${availableCommissions.toFixed(4)} SOL Available`
-                      : '0.0000 SOL Available'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px', display: 'block', mt: 0.3, lineHeight: 1.2 }}>
-                    {availableCommissions > 0 
-                      ? 'Ready to claim into wallet!'
-                      : 'Earn partner commissions'}
-                  </Typography>
-                </Box>
-                
-                <Button
-                  size="small"
-                  variant="contained"
-                  disabled={isClaiming || availableCommissions === 0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (availableCommissions > 0) {
-                      handleClaimCommissions();
-                    }
-                  }}
-                  startIcon={isClaiming ? <CircularProgress size={11} color="inherit" /> : <Sparkles size={11} />}
-                  sx={{
-                    mt: 1,
-                    fontSize: '10px',
-                    fontWeight: '900',
-                    py: 0.4,
-                    minHeight: '30px',
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    ...(availableCommissions > 0 ? {
-                      bgcolor: '#D4AF37',
-                      color: '#000',
-                      '&:hover': { bgcolor: '#FFDF73' }
-                    } : {
-                      bgcolor: alpha('#fff', 0.04),
-                      color: alpha('#fff', 0.35),
-                      border: 'none'
-                    })
-                  }}
-                >
-                  {availableCommissions > 0 ? `Withdraw SOL` : `No claimable SOL`}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
+          <Button
+            size="small"
+            variant={approvedToClaimAmount > 0 ? "contained" : "outlined"}
+            disabled={isClaimingUsGold}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (approvedToClaimAmount > 0) {
+                handleClaimApprovedUsGold();
+              } else {
+                triggerHaptic(10);
+                setWalletTab("invite");
+                setTimeout(() => {
+                  document.getElementById("invite-earn-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 100);
+              }
+            }}
+            startIcon={isClaimingUsGold ? <CircularProgress size={14} color="inherit" /> : <Gift size={15} />}
+            sx={{
+              fontWeight: 900,
+              fontSize: '12px',
+              px: 2.5,
+              py: 0.8,
+              borderRadius: '12px',
+              textTransform: 'none',
+              ...(approvedToClaimAmount > 0 ? {
+                background: 'linear-gradient(135deg, #14F195 0%, #00E676 100%)',
+                color: '#000',
+                boxShadow: `0 4px 14px ${alpha('#14F195', 0.4)}`,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #00E676 0%, #14F195 100%)',
+                  boxShadow: `0 6px 18px ${alpha('#14F195', 0.6)}`
+                }
+              } : {
+                borderColor: alpha('#D4AF37', 0.5),
+                color: '#FFDF73',
+                '&:hover': {
+                  borderColor: '#FFDF73',
+                  bgcolor: alpha('#D4AF37', 0.15)
+                }
+              })
+            }}
+          >
+            {isClaimingUsGold 
+              ? t('claiming', language) 
+              : approvedToClaimAmount > 0 
+              ? t('claimUsGoldAmount', language).replace('{amount}', approvedToClaimAmount.toFixed(2)) 
+              : t('claimRewards', language)}
+          </Button>
         </Box>
 
         {/* EXPANDABLE SLIDE DOWN TOGGLE BUTTON */}
