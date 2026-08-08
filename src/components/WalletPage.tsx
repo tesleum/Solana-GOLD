@@ -493,9 +493,9 @@ export function WalletPage({
   useEffect(() => {
     let isMounted = true;
     const fetchSolBalance = async () => {
-      if (publicKey && connection) {
+      if (effectiveAddress && connection) {
         try {
-          const balLamports = await connection.getBalance(publicKey);
+          const balLamports = await connection.getBalance(new PublicKey(effectiveAddress));
           if (isMounted) {
             setSolBalance(balLamports / LAMPORTS_PER_SOL);
           }
@@ -511,13 +511,13 @@ export function WalletPage({
       isMounted = false;
       clearInterval(interval);
     };
-  }, [publicKey, connection]);
+  }, [effectiveAddress, connection]);
 
   // Scan Connected Wallet On-Chain SPL Token Accounts
   useEffect(() => {
     let isMounted = true;
     const fetchOnChainTokens = async () => {
-      if (!publicKey || !connection) {
+      if (!effectiveAddress || !connection) {
         if (isMounted) setOnChainTokenBalances({});
         return;
       }
@@ -526,7 +526,7 @@ export function WalletPage({
           "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
         );
         const parsedAccounts = await connection.getParsedTokenAccountsByOwner(
-          publicKey,
+          new PublicKey(effectiveAddress),
           { programId: TOKEN_PROGRAM_ID },
           "confirmed",
         );
@@ -555,7 +555,7 @@ export function WalletPage({
       isMounted = false;
       clearInterval(timer);
     };
-  }, [publicKey, connection]);
+  }, [effectiveAddress, connection]);
 
   // Sync balances from Firebase & Tatum
   useEffect(() => {

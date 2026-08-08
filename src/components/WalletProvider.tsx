@@ -57,9 +57,9 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     }, [wsEndpoint]);
 
     const wallets = useMemo(() => [
+        new SafePalWalletAdapter(),
         new PhantomWalletAdapter(),
         new TrustWalletAdapter(),
-        new SafePalWalletAdapter(),
         new SolflareWalletAdapter(),
         new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),

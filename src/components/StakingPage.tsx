@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { useAppKit } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { t } from '../translations';
 import { database, getSafeMessaging } from '../firebase';
 import { ref, onValue, update, push, get } from 'firebase/database';
@@ -48,6 +48,8 @@ export function StakingPage({
   const { publicKey, connected, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const { open } = useAppKit();
+  const { address: appKitAddress } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<any>('solana');
 
   // Custom Staking & Duration State
   const [customStakeAmount, setCustomStakeAmount] = useState<string>('100');
@@ -344,7 +346,22 @@ export function StakingPage({
 
     try {
       // 1. Check wallet's actual SOL balance to prevent failure
-      const balanceLamports = await connection.getBalance(publicKey);
+      let currentPublicKey = publicKey;
+      if (!currentPublicKey && effectiveAddress) {
+        try {
+          currentPublicKey = new PublicKey(effectiveAddress);
+        } catch (e) {
+          console.error("Invalid effectiveAddress for balance check", e);
+        }
+      }
+
+      if (!currentPublicKey) {
+        alert("Wallet connection not detected. Please connect your wallet.");
+        setIsCreatingStake(false);
+        return;
+      }
+
+      const balanceLamports = await connection.getBalance(currentPublicKey);
       const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
       
       if (balanceSol < totalSolPayment) {
@@ -367,9 +384,17 @@ export function StakingPage({
         );
         
         transaction.recentBlockhash = blockhash;
-        transaction.feePayer = publicKey;
+        transaction.feePayer = currentPublicKey;
 
-        signature = await sendTransaction(transaction, connection);
+        if (publicKey && sendTransaction) {
+          signature = await sendTransaction(transaction, connection);
+        } else if (walletProvider && walletProvider.sendTransaction) {
+          // Reown / WalletConnect specific sending logic
+          signature = await walletProvider.sendTransaction(transaction, connection);
+        } else {
+          throw new Error("No available method to send transaction");
+        }
+        
         await connection.confirmTransaction({
           signature,
           blockhash,
