@@ -395,15 +395,15 @@ export function WalletPage({
 
   const effectiveTokenPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 0;
 
-  // Sync claimed commissions from Firebase
-  const [claimedCommissions, setClaimedCommissions] = useState<number>(0);
-
   const availableCommissions = useMemo(() => {
     return Math.max(0, userEarnings - claimedCommissions);
   }, [userEarnings, claimedCommissions]);
 
   // Real Native SOL Balance
   const [solBalance, setSolBalance] = useState<number>(0);
+
+  // Sync claimed commissions from Firebase
+  const [claimedCommissions, setClaimedCommissions] = useState<number>(0);
 
   // Futures Margin Balance from Firebase
   const [futuresBalance, setFuturesBalance] = useState<number>(0);
