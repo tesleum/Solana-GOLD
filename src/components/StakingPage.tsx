@@ -8,7 +8,7 @@ import {
   Coins, ShieldCheck, Activity, Flame, Wallet, Share2, 
   Copy, Check, TrendingUp, Award, Sparkles, CheckCircle2, Zap, Users, Lock, ArrowUpRight,
   Wifi, Cpu, CreditCard, Gift, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  AlertTriangle, XCircle, RotateCcw, ExternalLink
+  AlertTriangle, XCircle, RotateCcw, ExternalLink, Info
 } from 'lucide-react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -640,22 +640,117 @@ export function StakingPage({
     <Box sx={{ animation: 'fadeIn 0.3s ease-out', pb: 10 }}>
       {/* Redesigned Staking Vault Card matching Vault style */}
       <Card sx={{ 
-        background: `linear-gradient(145deg, #1A1A1A 0%, #0D0D0D 100%)`,
-        border: `1px solid ${alpha('#D4AF37', 0.3)}`,
-        boxShadow: `0 12px 40px ${alpha('#D4AF37', 0.15)}, inset 0 1px 0 ${alpha('#fff', 0.1)}`,
         position: 'relative', 
         overflow: 'hidden', 
-        mb: 3,
-        borderRadius: '28px'
+        borderRadius: '32px', 
+        bgcolor: '#1A1B1F', 
+        border: `1px solid ${alpha('#D4AF37', 0.3)}`,
+        boxShadow: `0 20px 50px ${alpha('#000', 0.6)}`,
+        p: { xs: 2.5, sm: 4 },
+        mb: 3
       }}>
         {/* Background glows */}
-        <Box sx={{ position: 'absolute', top: -50, left: -50, width: 200, height: 200, background: `radial-gradient(circle, ${alpha('#D4AF37', 0.15)} 0%, transparent 60%)` }} />
-        <Box sx={{ position: 'absolute', bottom: -100, right: -50, width: 300, height: 300, background: `radial-gradient(circle, ${alpha('#D4AF37', 0.1)} 0%, transparent 60%)` }} />
+        <Box sx={{ 
+          position: 'absolute', 
+          top: -100, 
+          right: -100, 
+          width: 300, 
+          height: 300, 
+          background: `radial-gradient(circle, ${alpha('#D4AF37', 0.1)} 0%, transparent 70%)`,
+          zIndex: 0
+        }} />
         
-        <CardContent sx={{ p: {xs: 3, md: 5}, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 4 }}>
+            <Box>
+              <Typography variant="overline" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
+                {t('goldReserveYield', language)}
+              </Typography>
+              <Typography variant="h3" fontWeight="900" sx={{ 
+                color: '#fff', 
+                fontFamily: '"Cinzel", serif',
+                fontSize: { xs: '2rem', sm: '2.5rem' },
+                background: 'linear-gradient(45deg, #FFDF73, #D4AF37)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                {t('stakeUsGold', language)}
+              </Typography>
+            </Box>
+
+            <Tooltip title="Help">
+              <IconButton size="small" sx={{ color: alpha('#fff', 0.3), border: `1px solid ${alpha('#fff', 0.1)}` }}>
+                <Info size={18} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+
+          {/* Interactive Gold Bar Display */}
+          {(() => {
+            const val = Math.min(1000, Math.max(10, parseFloat(customStakeAmount) || 10));
+            const norm = (val - 10) / 990; 
+            const barScale = 0.85 + norm * 0.3; 
+
+            return (
+              <Box sx={{ 
+                position: 'relative', 
+                width: '100%', 
+                height: 180, 
+                perspective: 1000,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                mb: 6
+              }}>
+                <Box sx={{
+                  position: 'relative',
+                  width: '55%',
+                  maxWidth: 240,
+                  height: 110,
+                  background: `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)`,
+                  borderRadius: '16px',
+                  boxShadow: `
+                    0 25px 50px rgba(0,0,0,0.7),
+                    inset 0 4px 12px rgba(255,255,255,0.7),
+                    inset 0 -4px 12px rgba(0,0,0,0.5)
+                  `,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: `rotateX(15deg) scale(${barScale})`,
+                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                }}>
+                  <Typography variant="h4" fontWeight="900" sx={{ 
+                    color: 'rgba(120, 80, 20, 0.7)', 
+                    textShadow: '1px 1px 1px rgba(255,255,255,0.4), -1px -1px 1px rgba(0,0,0,0.2)', 
+                    fontFamily: '"Cinzel", serif',
+                    letterSpacing: 1
+                  }}>
+                    {customStakeAmount || 10}g
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.6)', fontWeight: '900', letterSpacing: 3, textTransform: 'uppercase', fontSize: '10px' }}>
+                    {t('stakedVault', language)}
+                  </Typography>
+                </Box>
+                <Box sx={{ 
+                  position: 'absolute', 
+                  bottom: -10, 
+                  width: '70%', 
+                  maxWidth: 280,
+                  height: 25, 
+                  background: 'rgba(0,0,0,0.6)', 
+                  filter: 'blur(12px)', 
+                  borderRadius: '50%',
+                  transform: `scale(${barScale})`,
+                  transition: 'all 0.4s'
+                }} />
+              </Box>
+            );
+          })()}
           
           {/* Staking Controls */}
-          <Box sx={{ bgcolor: alpha('#000', 0.4), p: 3, borderRadius: '24px', border: `1px solid ${alpha('#ffffff', 0.05)}` }}>
+          <Box sx={{ bgcolor: alpha('#000', 0.3), p: 3, borderRadius: '24px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
             
             {/* Amount Header & SOL Calculation */}
             <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={2}>
@@ -818,8 +913,7 @@ export function StakingPage({
             )}
 
           </Box>
-
-        </CardContent>
+        </Box>
       </Card>
 
       {/* FIREBASE MESSAGING CLOUD NOTIFICATION ALERTS SETTING CARD */}
