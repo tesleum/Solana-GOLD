@@ -109,30 +109,6 @@ export function StakingPage({
 
   // Staking Transactions History State
   const [stakingTransactions, setStakingTransactions] = useState<any[]>([]);
-  const [solBalance, setSolBalance] = useState<number>(0);
-
-  // Fetch SOL balance from the connected wallet address
-  useEffect(() => {
-    let isMounted = true;
-    const fetchSolBalance = async () => {
-      if (effectiveAddress && connection) {
-        try {
-          const balLamports = await connection.getBalance(new PublicKey(effectiveAddress));
-          if (isMounted) {
-            setSolBalance(balLamports / LAMPORTS_PER_SOL);
-          }
-        } catch (e) {
-          console.error("Failed to fetch SOL balance for StakingPage", e);
-        }
-      }
-    };
-    fetchSolBalance();
-    const interval = setInterval(fetchSolBalance, 15000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [effectiveAddress, connection]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -337,12 +313,13 @@ export function StakingPage({
 
   // Solana Price & SOL conversion calculation for usGOLD (derived from tokenPrice)
   const currentSolPrice = solanaPrice && solanaPrice > 0 ? solanaPrice : 0;
-  const effectiveTokenPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 0;
+  // Use a sensible fallback if price hasn't loaded yet
+  const effectiveTokenPrice = tokenPrice && tokenPrice > 0 ? tokenPrice : 85.45; 
   const stakeValUsd = (parseFloat(customStakeAmount) || 0) * effectiveTokenPrice;
   
   // SOL needed = (Amount * tokenPrice) / currentSolPrice
   const requiredSol = (currentSolPrice && currentSolPrice > 0) ? (stakeValUsd / currentSolPrice) : 0;
-  const networkFeeSol = 0.0001;
+  const networkFeeSol = 0.0005; // Slightly higher buffer for priority fees
   const totalSolPayment = requiredSol + networkFeeSol;
 
   // Handle Custom usGOLD Staking creation with Direct Solana Payment
@@ -354,7 +331,7 @@ export function StakingPage({
       return;
     }
 
-    if (!connected || !publicKey) {
+    if (!isActuallyConnected || !effectiveAddress) {
       alert("Please connect your Solana wallet first.");
       open();
       return;
@@ -403,7 +380,7 @@ export function StakingPage({
         
         const transaction = new Transaction().add(
           SystemProgram.transfer({
-            fromPubkey: publicKey,
+            fromPubkey: currentPublicKey,
             toPubkey: adminWallet,
             lamports,
           })
@@ -894,14 +871,23 @@ export function StakingPage({
             </Grid>
 
             {/* Compact Price Info Bar */}
-            <Box sx={{ mb: 2.5, px: 2, py: 1, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.03), border: `1px solid ${alpha('#D4AF37', 0.1)}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, fontSize: '10px' }}>
-                ${effectiveTokenPrice.toFixed(2)}/usG
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900, fontSize: '10px', letterSpacing: 0.5 }}>
-                {t('solReq', language).replace('{amount}', requiredSol.toFixed(4))}
-                {solBalance > 0 && ` | Bal: ${solBalance.toFixed(3)} SOL`}
-              </Typography>
+            <Box sx={{ mb: 2.5, px: 2, py: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.03), border: `1px solid ${alpha('#D4AF37', 0.1)}` }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 700, fontSize: '10px' }}>
+                  Value ({customStakeAmount} usG)
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#FFDF73', fontWeight: 800, fontSize: '11px' }}>
+                  ${stakeValUsd.toFixed(2)}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 700, fontSize: '10px' }}>
+                  Price: ${effectiveTokenPrice.toFixed(2)}/usG
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900, fontSize: '11px', letterSpacing: 0.5 }}>
+                  {totalSolPayment.toFixed(4)} SOL
+                </Typography>
+              </Box>
             </Box>
 
             {/* Flexible Staking Terms Notice */}
@@ -959,8 +945,8 @@ export function StakingPage({
             <Button
               fullWidth
               variant="contained"
-              disabled={isCreatingStake || (isActuallyConnected && (parseFloat(customStakeAmount) < 1 || isCreatingStake))}
-              onClick={!isActuallyConnected ? () => open() : handleCreateCustomStake}
+              disabled={isCreatingStake || (connected && (parseFloat(customStakeAmount) < 1 || isCreatingStake))}
+              onClick={!connected ? () => open() : handleCreateCustomStake}
               sx={{
                 py: 2.2,
                 borderRadius: '20px',

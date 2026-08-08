@@ -757,7 +757,7 @@ function UserRow({ row }: { row: any }) {
                 <Grid item xs={6} sm={4}>
                   <Box sx={{ p: 1.5, bgcolor: alpha('#fff', 0.02), borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
                     <Typography variant="caption" color="text.secondary" display="block">Commission</Typography>
-                    <Typography variant="subtitle2" fontWeight="700" color="success.main">{row.commissionEarned ? row.commissionEarned.split(' ')[0] : '0.000'}</Typography>
+                    <Typography variant="subtitle2" fontWeight="700" color="success.main">{row.commissionEarned ? row.commissionEarned.split(' ')[0] : '0.00'}</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={12} sm={4}>
