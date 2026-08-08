@@ -1020,9 +1020,7 @@ function Dashboard() {
       if (wp) { 
         try {
           await select(wp.adapter.name as any); 
-          if (connect) {
-            await connect().catch(() => {});
-          }
+          // Since autoConnect is true in WalletProvider, select() triggers connect automatically
           return; 
         } catch (e) {
           console.error('Phantom wallet connection failed:', e);
@@ -1035,9 +1033,7 @@ function Dashboard() {
       if (wp) { 
         try {
           await select(wp.adapter.name as any); 
-          if (connect) {
-            await connect().catch(() => {});
-          }
+          // Removed manual connect() to prevent double prompts as autoConnect is enabled
           return; 
         } catch (e) {
           console.error('SafePal wallet connection failed:', e);
@@ -1050,9 +1046,6 @@ function Dashboard() {
       if (wp) { 
         try {
           await select(wp.adapter.name as any); 
-          if (connect) {
-            await connect().catch(() => {});
-          }
           return; 
         } catch (e) {
           console.error('Trust Wallet connection failed:', e);
