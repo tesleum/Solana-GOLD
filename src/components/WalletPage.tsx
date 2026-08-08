@@ -234,7 +234,7 @@ export function WalletPage({
     const amountToClaim = approvedList.reduce((sum, r) => sum + (r.amount || 1), 0);
 
     if (amountToClaim <= 0 || approvedList.length === 0) {
-      alert("No admin-approved usGOLD rewards available to claim at this time. Once admin approves your referee rewards, they will appear here!");
+      alert(t('unclaimedRewardsAlert', language));
       return;
     }
 
@@ -288,10 +288,10 @@ export function WalletPage({
       });
 
       triggerHaptic(20);
-      alert(`🎉 Success! Claimed ${amountToClaim.toFixed(2)} usGOLD approved referral reward(s) directly into your usGOLD balance!`);
+      alert(t('claimSuccessMsg', language).replace('{amount}', amountToClaim.toFixed(2)));
     } catch (err: any) {
       console.error("Error claiming approved usGOLD:", err);
-      alert(`Failed to claim usGOLD: ${err.message || err}`);
+      alert(t('claimFailedMsg', language).replace('{error}', err.message || err));
     } finally {
       setIsClaimingUsGold(false);
     }
@@ -347,10 +347,10 @@ export function WalletPage({
       });
 
       triggerHaptic(20);
-      alert(`🎉 Successfully claimed 1 usGOLD into your wallet balance!`);
+      alert(t('claimSingleSuccessMsg', language));
     } catch (err: any) {
       console.error("Error claiming single reward:", err);
-      alert(`Failed to claim usGOLD: ${err.message || err}`);
+      alert(t('claimFailedMsg', language).replace('{error}', err.message || err));
     } finally {
       setIsClaimingUsGold(false);
     }
@@ -360,8 +360,8 @@ export function WalletPage({
     triggerHaptic(15);
     const referralLink = `${window.location.origin}?ref=${effectiveAddress || 'GOLDEN'}`;
     const shareData = {
-      title: 'usGOLD Staking Reserve',
-      text: 'Stake usGOLD stablecoin on Solana to earn 2% monthly fixed yield + $1 usGOLD referral bonus!',
+      title: t('stakingReserveTitle', language),
+      text: t('shareText', language),
       url: referralLink,
     };
 
@@ -1367,7 +1367,7 @@ export function WalletPage({
         {/* TOTAL PORTFOLIO BALANCE */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="overline" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, letterSpacing: 1.5, display: 'block', mb: 0.5 }}>
-            Total Portfolio Value
+            {t('totalPortfolioValue', language)}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
             <Typography variant="h3" fontWeight="900" sx={{ color: '#fff', fontSize: { xs: '2.5rem', sm: '3rem' } }}>
@@ -1409,15 +1409,15 @@ export function WalletPage({
             <Box>
               <Typography variant="body1" fontWeight="900" sx={{ color: approvedToClaimAmount > 0 ? '#14F195' : '#fff' }}>
                 {approvedToClaimAmount > 0 
-                  ? `Withdraw ${approvedToClaimAmount.toFixed(2)} usGOLD`
-                  : 'Referral Earnings'}
+                  ? t('withdrawUsGoldAmount', language).replace('{amount}', approvedToClaimAmount.toFixed(2))
+                  : t('referralEarnings', language)}
               </Typography>
               <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontSize: '12px', display: 'block' }}>
                 {approvedToClaimAmount > 0 
-                  ? 'Your earnings are approved and ready for withdrawal.'
+                  ? t('earningsApprovedReady', language)
                   : needsApprovalCount > 0
-                  ? `${needsApprovalCount} rewards pending admin review`
-                  : 'Earn usGOLD for every friend you invite.'}
+                  ? t('rewardsPendingReviewCount', language).replace('{count}', needsApprovalCount.toString())
+                  : t('earnUsGoldInvite', language)}
               </Typography>
             </Box>
           </Stack>
@@ -1456,10 +1456,10 @@ export function WalletPage({
             }}
           >
             {isClaimingUsGold 
-              ? 'Processing...' 
+              ? t('processing', language) 
               : approvedToClaimAmount > 0 
-              ? 'Withdraw Claim' 
-              : 'Invite & Earn'}
+              ? t('withdrawClaim', language) 
+              : t('inviteEarn', language)}
           </Button>
         </Box>
 
@@ -1467,10 +1467,10 @@ export function WalletPage({
         <Box sx={{ mt: 4, mb: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6" fontWeight="900" sx={{ color: '#fff' }}>
-              Your Portfolio Assets
+              {t('yourPortfolioAssets', language)}
             </Typography>
             <Typography variant="body2" sx={{ color: '#14F195', fontWeight: 800 }}>
-              Live Tracking
+              {t('liveTracking', language)}
             </Typography>
           </Stack>
         </Box>

@@ -747,7 +747,7 @@ export function StakingPage({
                 {customStakeAmount || 10}g
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(100, 70, 10, 0.7)', fontWeight: '900', letterSpacing: 5, textTransform: 'uppercase', fontSize: '12px', mt: 1 }}>
-                STAKED usGOLD
+                {t('stakedUsGold', language)}
               </Typography>
             </motion.div>
             
@@ -779,7 +779,7 @@ export function StakingPage({
                 {t('adjustStakingAmount', language).toUpperCase()}
               </Typography>
               <Typography variant="caption" color="text.secondary" fontWeight="800">
-                MAX 1,000g
+                {t('max1000g', language)}
               </Typography>
             </Box>
             <Slider
@@ -823,7 +823,7 @@ export function StakingPage({
               <Grid item xs={6}>
                 <Box sx={{ p: 1.5, borderRadius: '16px', bgcolor: alpha('#fff', 0.02), border: `1px solid ${alpha('#fff', 0.04)}` }}>
                   <Typography variant="caption" sx={{ color: alpha('#fff', 0.4), fontWeight: 800, fontSize: '9px', letterSpacing: 0.5, mb: 0.2, display: 'block' }}>
-                    STAKING TOTAL
+                    {t('stakingTotal', language)}
                   </Typography>
                   <Typography variant="h5" fontWeight="900" sx={{ color: '#fff', fontFamily: '"Cinzel", serif', fontSize: '1.2rem' }}>
                     {customStakeAmount || 10} <span style={{ fontSize: '10px', color: '#D4AF37' }}>usG</span>
@@ -833,7 +833,7 @@ export function StakingPage({
               <Grid item xs={6}>
                 <Box sx={{ p: 1.5, borderRadius: '16px', bgcolor: alpha('#14F195', 0.02), border: `1px solid ${alpha('#14F195', 0.08)}`, textAlign: 'right' }}>
                   <Typography variant="caption" sx={{ color: alpha('#14F195', 0.5), fontWeight: 800, fontSize: '9px', letterSpacing: 0.5, mb: 0.2, display: 'block' }}>
-                    EST. YIELD
+                    {t('estYield', language)}
                   </Typography>
                   <Typography variant="h5" fontWeight="900" sx={{ color: '#14F195', fontFamily: '"Cinzel", serif', fontSize: '1.2rem' }}>
                     +{( (parseFloat(customStakeAmount) || 10) * (stakingDurationMonths * 0.02) ).toFixed(2)} <span style={{ fontSize: '10px' }}>usG</span>
@@ -848,7 +848,7 @@ export function StakingPage({
                 ${effectiveTokenPrice.toFixed(2)}/usG
               </Typography>
               <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 900, fontSize: '10px', letterSpacing: 0.5 }}>
-                {requiredSol.toFixed(4)} SOL REQ.
+                {t('solReq', language).replace('{amount}', requiredSol.toFixed(4))}
               </Typography>
             </Box>
 
@@ -863,7 +863,7 @@ export function StakingPage({
             {/* Duration Picker - Premium Horizontal Style */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={1} display="block" mb={2}>
-                LOCKUP PERIOD & REWARDS
+                {t('lockupPeriodRewards', language)}
               </Typography>
               <Grid container spacing={1.5}>
                 {[
@@ -930,7 +930,7 @@ export function StakingPage({
                 '&.Mui-disabled': { bgcolor: alpha('#fff', 0.05), color: alpha('#fff', 0.2) }
               }}
             >
-              {!connected ? t('connectWalletToStake', language) : (isCreatingStake ? 'DEPLOYING TO VAULT...' : t('stakeUsGoldNow', language))}
+              {!connected ? t('connectWalletToStake', language) : (isCreatingStake ? t('deployingToVault', language) : t('stakeUsGoldNow', language))}
               {/* Shine Effect */}
               <Box sx={{
                 position: 'absolute',
@@ -950,7 +950,7 @@ export function StakingPage({
 
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 3, fontWeight: 700, opacity: 0.6, letterSpacing: 0.5 }}>
               <ShieldCheck size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-              Guaranteed by Physical Gold Reserves • Fully Transparent
+              {t('guaranteedByGold', language)}
             </Typography>
           </Box>
         </Box>
@@ -968,17 +968,17 @@ export function StakingPage({
           <Box sx={{ p: 3, borderBottom: `1px solid ${alpha('#fff', 0.05)}`, bgcolor: alpha('#000', 0.2), display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Zap color="#D4AF37" size={20} />
             <Typography variant="h6" fontWeight="800" color="#fff">
-              Real-Time Push Notifications
+              {t('realTimePushNotifications', language)}
             </Typography>
           </Box>
           <CardContent sx={{ p: 3 }}>
             <Grid container spacing={3} alignItems="center">
               <Grid item xs={12} md={8}>
                 <Typography variant="body1" fontWeight="700" color="#fff" mb={0.5}>
-                  Stay updated on-the-go with Firebase Messaging
+                  {t('stayUpdatedFcm', language)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" lineHeight={1.6}>
-                  Receive instantaneous, reliable notifications directly on your desktop or mobile browser whenever you establish a staking vault, harvest staking rewards, or unlock referral bonuses.
+                  {t('fcmNotificationDesc', language)}
                 </Typography>
               </Grid>
               <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
@@ -1000,7 +1000,7 @@ export function StakingPage({
                       }
                     }}
                   >
-                    🔔 Alerts Active
+                    {t('alertsActive', language)}
                   </Button>
                 ) : (
                   <Button
@@ -1017,7 +1017,7 @@ export function StakingPage({
                       '&:hover': { bgcolor: '#FFDF73' }
                     }}
                   >
-                    {savingFCM ? "Activating..." : "Enable Alerts"}
+                    {savingFCM ? t('activating', language) : t('enableAlerts', language)}
                   </Button>
                 )}
               </Grid>
@@ -1127,7 +1127,7 @@ export function StakingPage({
                               +{st.durationMonths * 2}%
                             </Typography>
                             <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px' }}>
-                              TOTAL YIELD
+                              {t('totalYield', language).toUpperCase()}
                             </Typography>
                           </Box>
                         </Box>
@@ -1137,7 +1137,7 @@ export function StakingPage({
                         <Grid container spacing={2} sx={{ mb: 2.5 }}>
                           <Grid item xs={6}>
                             <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ display: 'block', mb: 0.5, fontSize: '10px', letterSpacing: 0.5 }}>
-                              TIME REMAINING
+                              {t('timeRemaining', language).toUpperCase()}
                             </Typography>
                             <Typography variant="body1" fontWeight="900" color="#FFDF73" sx={{ fontFamily: 'monospace' }}>
                               {countdownFormatted}
@@ -1145,7 +1145,7 @@ export function StakingPage({
                           </Grid>
                           <Grid item xs={6} sx={{ textAlign: 'right' }}>
                             <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ display: 'block', mb: 0.5, fontSize: '10px', letterSpacing: 0.5 }}>
-                              ACCRUED PROFIT
+                              {t('accruedYield', language).toUpperCase()}
                             </Typography>
                             <Typography variant="body1" fontWeight="900" color="#14F195" sx={{ fontFamily: 'monospace' }}>
                               +${currentAccruedProfit.toFixed(3)}
@@ -1155,7 +1155,7 @@ export function StakingPage({
 
                         <Box sx={{ mb: 3 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ fontSize: '10px' }}>VAULT PROGRESS</Typography>
+                            <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ fontSize: '10px' }}>{t('vaultProgress', language).toUpperCase()}</Typography>
                             <Typography variant="caption" fontWeight="900" color="#D4AF37" sx={{ fontSize: '10px' }}>{progressPercent.toFixed(1)}%</Typography>
                           </Box>
                           <LinearProgress 
@@ -1199,7 +1199,7 @@ export function StakingPage({
                             }
                           }}
                         >
-                          Early Unstake
+                          {t('earlyUnstake', language)}
                         </Button>
                         
                         {currentAccruedProfit > 0 && (
@@ -1220,7 +1220,7 @@ export function StakingPage({
                               '&:hover': { bgcolor: '#00E676', boxShadow: `0 6px 20px ${alpha('#14F195', 0.6)}` }
                             }}
                           >
-                            Claim Yield
+                            {t('claimYield', language)}
                           </Button>
                         )}
                       </Stack>
@@ -1243,16 +1243,16 @@ export function StakingPage({
               </Avatar>
               <Box>
                 <Typography variant="h6" fontWeight="900" color="#fff">
-                  Staking History
+                  {t('stakingHistory', language)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8 }}>
-                  Vault deposits, yield payouts, and bonuses
+                  {t('vaultHistoryDesc', language)}
                 </Typography>
               </Box>
             </Box>
 
             <Chip 
-              label={`${stakingTransactions.length} Records`}
+              label={`${stakingTransactions.length} ${t('records', language)}`}
               size="small"
               sx={{ bgcolor: alpha('#fff', 0.05), color: '#FFDF73', fontWeight: '900', px: 1 }}
             />
@@ -1262,7 +1262,7 @@ export function StakingPage({
             <Box sx={{ py: 5, textAlign: 'center' }}>
               <Coins size={36} color="#D4AF37" style={{ opacity: 0.3, marginBottom: 8 }} />
               <Typography variant="body2" color="text.secondary">
-                No staking transactions recorded yet. Stake usGOLD above to launch your first vault!
+                {t('noStakingTransactions', language)}
               </Typography>
             </Box>
           ) : (
@@ -1274,12 +1274,12 @@ export function StakingPage({
 
                 const chipColor = isStakeCreated ? 'primary' : isStakeClaimed ? 'success' : isStakeCanceled ? 'error' : 'warning';
                 const chipLabel = isStakeCreated 
-                  ? '🟢 Vault Created' 
+                  ? t('vaultCreated', language) 
                   : isStakeClaimed 
-                  ? '⚡ Yield Claimed' 
+                  ? t('yieldClaimed', language) 
                   : isStakeCanceled 
-                  ? '🔴 Early Cancelled (-10%)' 
-                  : '🟡 Referral Bonus';
+                  ? t('earlyCancelled', language) 
+                  : t('referralBonus', language);
 
                 return (
                   <Box
