@@ -1,9 +1,52 @@
 // Telegram WebApp Integration & WalletConnect Deep-link Fix Helper
+import { database } from '../firebase';
+import { ref, update, set, get } from 'firebase/database';
+
+export interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+  photo_url?: string;
+  is_premium?: boolean;
+  allows_write_to_pm?: boolean;
+}
+
+export interface TelegramThemeParams {
+  bg_color?: string;
+  text_color?: string;
+  hint_color?: string;
+  link_color?: string;
+  button_color?: string;
+  button_text_color?: string;
+  secondary_bg_color?: string;
+}
 
 declare global {
   interface Window {
     Telegram?: {
       WebApp?: {
+        initData: string;
+        initDataUnsafe?: {
+          query_id?: string;
+          user?: TelegramUser;
+          receiver?: TelegramUser;
+          chat_type?: string;
+          chat_instance?: string;
+          start_param?: string;
+          auth_date?: number;
+          hash?: string;
+        };
+        version?: string;
+        platform?: string;
+        colorScheme?: 'light' | 'dark';
+        themeParams?: TelegramThemeParams;
+        isExpanded?: boolean;
+        viewportHeight?: number;
+        viewportStableHeight?: number;
+        headerColor?: string;
+        backgroundColor?: string;
         ready: () => void;
         expand: () => void;
         close: () => void;
@@ -12,26 +55,13 @@ declare global {
         openLink: (url: string, options?: { try_instant_view?: boolean }) => void;
         openTelegramLink: (url: string) => void;
         enableClosingConfirmation: () => void;
+        disableClosingConfirmation?: () => void;
         HapticFeedback?: {
           impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
           notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
           selectionChanged: () => void;
         };
-        initDataUnsafe?: {
-          query_id?: string;
-          user?: {
-            id: number;
-            first_name: string;
-            last_name?: string;
-            username?: string;
-            language_code?: string;
-            photo_url?: string;
-          };
-          start_param?: string;
-        };
-        isExpanded?: boolean;
-        platform?: string;
-        viewportHeight?: number;
+        sendData?: (data: string) => void;
       };
     };
   }
@@ -41,7 +71,8 @@ export const isTelegramWebApp = (): boolean => {
   return typeof window !== 'undefined' && Boolean(
     window.Telegram?.WebApp?.initDataUnsafe?.user || 
     window.Telegram?.WebApp?.initDataUnsafe?.start_param || 
-    window.Telegram?.WebApp?.platform
+    window.Telegram?.WebApp?.platform ||
+    (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.initData.length > 0)
   );
 };
 
@@ -52,11 +83,123 @@ export const getTelegramWebApp = () => {
   return undefined;
 };
 
-export const getTelegramUser = () => {
-  if (typeof window !== 'undefined') {
-    return window.Telegram?.WebApp?.initDataUnsafe?.user;
+export const getTelegramUser = (): TelegramUser | null => {
+  if (typeof window === 'undefined') return null;
+
+  // 1. Direct from Telegram WebApp
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (tgUser && tgUser.id) {
+    try {
+      localStorage.setItem('tg_user_data', JSON.stringify(tgUser));
+    } catch (e) {}
+    return tgUser;
   }
-  return undefined;
+
+  // 2. Fallback to cached Telegram user in localStorage
+  try {
+    const cached = localStorage.getItem('tg_user_data');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {}
+
+  return null;
+};
+
+export const getTelegramInitData = (): string => {
+  if (typeof window === 'undefined') return '';
+  return window.Telegram?.WebApp?.initData || '';
+};
+
+export const getTelegramPlatform = (): string => {
+  if (typeof window === 'undefined') return 'browser';
+  return window.Telegram?.WebApp?.platform || 'browser';
+};
+
+export const getTelegramThemeParams = (): TelegramThemeParams | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  return window.Telegram?.WebApp?.themeParams;
+};
+
+/**
+ * Maps Telegram language code (e.g. 'en', 'ru', 'fa', 'es', 'fr', 'zh', 'ar', 'de', 'it', 'ja', 'ko', 'id')
+ * to the app's supported language codes.
+ */
+export const getTelegramPreferredLanguage = (): string | null => {
+  const tgUser = getTelegramUser();
+  if (!tgUser?.language_code) return null;
+
+  const raw = tgUser.language_code.toLowerCase().trim();
+  const langMap: Record<string, string> = {
+    'en': 'EN',
+    'ru': 'RU',
+    'fa': 'FA',
+    'es': 'ES',
+    'fr': 'FR',
+    'zh': 'ZH',
+    'ar': 'AR',
+    'de': 'DE',
+    'it': 'IT',
+    'ja': 'JA',
+    'ko': 'KO',
+    'id': 'ID',
+    'az': 'AZ',
+    'ckb': 'CKB'
+  };
+
+  return langMap[raw] || null;
+};
+
+/**
+ * Synchronize Telegram user profile into Firebase Realtime Database
+ */
+export const syncTelegramUserToFirebase = async (
+  user?: TelegramUser | null, 
+  walletAddress?: string
+): Promise<void> => {
+  const tgUser = user || getTelegramUser();
+  if (!tgUser || !tgUser.id) return;
+
+  const tgId = String(tgUser.id);
+  const now = Date.now();
+
+  try {
+    // 1. Update /telegramUsers/{tgId}
+    const tgUserRef = ref(database, `telegramUsers/${tgId}`);
+    const tgSnapshot = await get(tgUserRef);
+    const existing = tgSnapshot.exists() ? tgSnapshot.val() : {};
+
+    await update(tgUserRef, {
+      id: tgId,
+      username: tgUser.username || existing.username || '',
+      firstName: tgUser.first_name || existing.firstName || '',
+      lastName: tgUser.last_name || existing.lastName || '',
+      photoUrl: tgUser.photo_url || existing.photoUrl || '',
+      languageCode: tgUser.language_code || existing.languageCode || '',
+      isPremium: Boolean(tgUser.is_premium),
+      address: walletAddress || existing.address || '',
+      lastActive: now,
+      createdAt: existing.createdAt || now,
+      platform: getTelegramPlatform()
+    });
+
+    // 2. If wallet address is provided, also link into /users/{walletAddress}
+    if (walletAddress) {
+      const userRef = ref(database, `users/${walletAddress}`);
+      await update(userRef, {
+        telegramId: tgId,
+        telegramUsername: tgUser.username || '',
+        telegramFirstName: tgUser.first_name || '',
+        telegramLastName: tgUser.last_name || '',
+        telegramPhotoUrl: tgUser.photo_url || '',
+        telegramLanguage: tgUser.language_code || '',
+        isTelegramPremium: Boolean(tgUser.is_premium),
+        lastActive: now
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to sync Telegram user data to Firebase:", err);
+  }
 };
 
 /**

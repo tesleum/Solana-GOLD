@@ -61,6 +61,16 @@ export default defineConfig(({mode}) => {
         'cross-fetch': path.resolve(__dirname, './src/fetch-mock.ts'),
       },
     },
+    server: {
+      port: 3000,
+      host: '0.0.0.0',
+      strictPort: true,
+    },
+    preview: {
+      port: 3000,
+      host: '0.0.0.0',
+      strictPort: true,
+    },
     optimizeDeps: {
       esbuildOptions: {
         target: 'esnext'

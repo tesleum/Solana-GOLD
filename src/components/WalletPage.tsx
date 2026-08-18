@@ -142,6 +142,7 @@ export function WalletPage({
   const [walletTab, setWalletTab] = useState<"swap" | "invite" | "history">(
     "swap",
   );
+  const tgUser = useMemo(() => getTelegramUser(), []);
 
   // Staking and Referral States for Top Card
   const [activeStakes, setActiveStakes] = useState<any[]>([]);
@@ -1361,6 +1362,63 @@ export function WalletPage({
             </Tooltip>
           </Stack>
         </Stack>
+
+        {/* TELEGRAM MINI-APP USER INFO BANNER */}
+        {tgUser && (
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: '16px',
+              bgcolor: alpha('#0088cc', 0.08),
+              border: `1px solid ${alpha('#0088cc', 0.25)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 2
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {tgUser.photo_url ? (
+                <Avatar src={tgUser.photo_url} sx={{ width: 44, height: 44, border: '2px solid #0088cc' }} />
+              ) : (
+                <Avatar sx={{ width: 44, height: 44, bgcolor: '#0088cc', color: '#fff', fontSize: '18px', fontWeight: 900 }}>
+                  {tgUser.first_name?.[0] || 'T'}
+                </Avatar>
+              )}
+              <Box>
+                <Typography variant="body2" fontWeight="900" sx={{ color: '#fff', display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  {tgUser.first_name} {tgUser.last_name || ''}
+                  {tgUser.username && (
+                    <Typography component="span" variant="caption" sx={{ color: '#00c3ff', fontWeight: 700 }}>
+                      @{tgUser.username}
+                    </Typography>
+                  )}
+                  {tgUser.is_premium && (
+                    <Chip label="PRO" size="small" sx={{ height: 16, fontSize: '9px', fontWeight: 900, bgcolor: alpha('#FFDF73', 0.2), color: '#FFDF73' }} />
+                  )}
+                </Typography>
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontSize: '11px', display: 'block' }}>
+                  {t('telegramId', language) || 'Telegram ID'}: {tgUser.id} • {t('telegramConnected', language) || 'Telegram Connected'}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Chip
+              icon={<Check size={13} color="#14F195" />}
+              label={t('telegramSynced', language) || 'Synced with Database'}
+              size="small"
+              sx={{
+                bgcolor: alpha('#14F195', 0.1),
+                color: '#14F195',
+                fontWeight: 700,
+                fontSize: '10px',
+                border: `1px solid ${alpha('#14F195', 0.3)}`
+              }}
+            />
+          </Box>
+        )}
 
         {/* TOTAL PORTFOLIO BALANCE */}
         <Box sx={{ mb: 4 }}>

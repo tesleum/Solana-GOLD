@@ -141,6 +141,56 @@ async function startServer() {
       }
     }
   });
+  // Telegram Mini-App User Data Sync API
+  app.post("/api/telegram/account", async (req, res) => {
+    try {
+      const { user, walletAddress, initData } = req.body;
+      if (!user || !user.id) {
+        return res.status(400).json({ error: "Missing Telegram user data" });
+      }
+
+      const tgId = String(user.id);
+      const now = Date.now();
+
+      // Record / Update in Firebase Realtime Database
+      const tgUserRef = dbRef(rtdb, `telegramUsers/${tgId}`);
+      const snap = await dbGet(tgUserRef);
+      const existing = snap.exists() ? snap.val() : {};
+
+      await dbUpdate(tgUserRef, {
+        id: tgId,
+        username: user.username || existing.username || '',
+        firstName: user.first_name || existing.firstName || '',
+        lastName: user.last_name || existing.lastName || '',
+        photoUrl: user.photo_url || existing.photoUrl || '',
+        languageCode: user.language_code || existing.languageCode || '',
+        isPremium: Boolean(user.is_premium),
+        address: walletAddress || existing.address || '',
+        lastActive: now,
+        createdAt: existing.createdAt || now
+      });
+
+      if (walletAddress) {
+        const userRef = dbRef(rtdb, `users/${walletAddress}`);
+        await dbUpdate(userRef, {
+          telegramId: tgId,
+          telegramUsername: user.username || '',
+          telegramFirstName: user.first_name || '',
+          telegramLastName: user.last_name || '',
+          telegramPhotoUrl: user.photo_url || '',
+          telegramLanguage: user.language_code || '',
+          isTelegramPremium: Boolean(user.is_premium),
+          lastActive: now
+        });
+      }
+
+      res.json({ success: true, user: { id: tgId, username: user.username, firstName: user.first_name } });
+    } catch (err: any) {
+      console.error("Error in /api/telegram/account:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/jupiter/quote", async (req, res) => {
     try {
       const queryParams = new URLSearchParams(req.query as Record<string, string>).toString();

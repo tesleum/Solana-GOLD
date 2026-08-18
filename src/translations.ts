@@ -427,7 +427,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     "monthVault": "{months}-Month Vault",
     "positionsOfVolume": "{count} Position(s) • {pct}% of volume",
     "txSignatureExpired": "Transaction signature expired because approval in wallet took longer than 60 seconds. Please try again and approve promptly in your wallet.",
-    "txCancelledInWallet": "Transaction was cancelled in your wallet."
+    "txCancelledInWallet": "Transaction was cancelled in your wallet.",
+    "telegramAccount": "Telegram Account",
+    "telegramConnected": "Telegram Connected",
+    "telegramId": "Telegram ID",
+    "telegramUser": "Telegram User",
+    "telegramPremium": "Telegram Premium",
+    "telegramSynced": "Telegram Profile Synced"
   },
   "ES": {
     "investInUsGold": "Invertir en GOLD",
@@ -2037,7 +2043,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     "monthVault": "خزانه {months} ماهه",
     "positionsOfVolume": "{count} موقعیت • {pct}٪ از حجم کل",
     "txSignatureExpired": "امضای تراکنش منقضی شد زیرا تایید در کیف پول بیش از ۶۰ ثانیه طول کشید. لطفاً مجدداً امتحان کرده و سریعاً در کیف پول تایید کنید.",
-    "txCancelledInWallet": "تراکنش در کیف پول شما لغو شد."
+    "txCancelledInWallet": "تراکنش در کیف پول شما لغو شد.",
+    "telegramAccount": "حساب تلگرام",
+    "telegramConnected": "متصل به تلگرام",
+    "telegramId": "شناسه تلگرام",
+    "telegramUser": "کاربر تلگرام",
+    "telegramPremium": "پرمیوم تلگرام",
+    "telegramSynced": "پروفایل تلگرام همگام‌سازی شد"
   },
   "RU": {
     "investInUsGold": "Инвестировать в GOLD",

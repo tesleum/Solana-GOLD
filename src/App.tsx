@@ -9,7 +9,7 @@ import { projectId } from './lib/reown'; // Initialize Reown AppKit
 import { Buffer } from 'buffer';
 import { LAMPORTS_PER_SOL, Transaction, SystemProgram, PublicKey, VersionedTransaction, TransactionInstruction, TransactionMessage, AddressLookupTableAccount, Connection } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { Home, Users, User, Activity, BarChart3, Coins, Copy, CopyCheck, ArrowUpRight, ArrowDownRight, QrCode, Filter, Download, Search, Info, ChevronDown, Globe, Wallet, Bot, Bell } from 'lucide-react';
+import { Home, Users, User, Activity, BarChart3, Coins, Copy, CopyCheck, ArrowUpRight, ArrowDownRight, QrCode, Filter, Download, Search, Info, ChevronDown, Globe, Wallet, Bot, Bell, Sparkles, Send, Check } from 'lucide-react';
 import { AppWalletProvider } from './components/WalletProvider';
 import { NetworkTree } from './components/NetworkTree';
 import { ROIAnalyzer } from './components/ROIAnalyzer';
@@ -68,7 +68,16 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import axios from 'axios';
 import { database } from './firebase';
 import { ref, get, push, onValue, set, update } from 'firebase/database';
-import { initTelegramIntegration, getTelegramReferralParam, isTelegramWebApp, getTelegramUser } from './lib/telegram';
+import { 
+  initTelegramIntegration, 
+  getTelegramReferralParam, 
+  isTelegramWebApp, 
+  getTelegramUser, 
+  getTelegramPreferredLanguage, 
+  syncTelegramUserToFirebase, 
+  TelegramUser,
+  getTelegramPlatform
+} from './lib/telegram';
 
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'error' = 'light') => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -140,11 +149,15 @@ function Dashboard() {
   const [language, setLanguage] = useState(() => {
     const saved = localStorage.getItem('language');
     if (saved) return saved;
+    const tgLang = getTelegramPreferredLanguage();
+    if (tgLang) return tgLang;
     const browserLang = navigator.language.toUpperCase().substring(0, 2);
     const supported = ['EN', 'ES', 'FR', 'ZH', 'AR', 'RU', 'FA', 'CKB', 'AZ', 'DE', 'IT', 'JA', 'KO', 'ID'];
     return supported.includes(browserLang) ? browserLang : 'EN';
   });
   const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null);
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(() => getTelegramUser());
+  const [tgProfileOpen, setTgProfileOpen] = useState(false);
   
   // Prefetched data for fast synchronous transaction logic
   const [adminWalletsData, setAdminWalletsData] = useState<any>({});
@@ -218,6 +231,17 @@ function Dashboard() {
   useEffect(() => {
     initTelegramIntegration();
 
+    const tgUser = getTelegramUser();
+    if (tgUser) {
+      setTelegramUser(tgUser);
+      syncTelegramUserToFirebase(tgUser, effectiveAddress || undefined);
+      fetch('/api/telegram/account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: tgUser, walletAddress: effectiveAddress || undefined })
+      }).catch(() => {});
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const tgRef = getTelegramReferralParam();
     const start = tgRef || urlParams.get('ref') || urlParams.get('start') || urlParams.get('startapp');
@@ -258,20 +282,18 @@ function Dashboard() {
     if (addressToRegister) {
       const userRef = ref(database, `users/${addressToRegister}`);
       
-      // If user is inside Telegram WebApp, bind their Telegram user ID & username to their Solana address
+      // If user is inside Telegram WebApp, bind their Telegram user ID & account details to their Solana address
       const tgUser = getTelegramUser();
       let tgUserId = '';
       if (tgUser?.id) {
         tgUserId = String(tgUser.id);
-        const tgUserRef = ref(database, `telegramUsers/${tgUserId}`);
-        update(tgUserRef, {
-          id: tgUserId,
-          address: addressToRegister,
-          username: tgUser.username || '',
-          firstName: tgUser.first_name || '',
-          lastName: tgUser.last_name || '',
-          lastActive: Date.now()
-        });
+        setTelegramUser(tgUser);
+        syncTelegramUserToFirebase(tgUser, addressToRegister);
+        fetch('/api/telegram/account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: tgUser, walletAddress: addressToRegister })
+        }).catch(() => {});
       }
 
       get(userRef).then((snapshot) => {
@@ -286,6 +308,9 @@ function Dashboard() {
             line: storedLine,
             telegramId: tgUserId || null,
             telegramUsername: tgUser?.username || null,
+            telegramFirstName: tgUser?.first_name || null,
+            telegramLastName: tgUser?.last_name || null,
+            telegramPhotoUrl: tgUser?.photo_url || null,
             joinedAt: Date.now(),
             totalInvested: 0,
             earnings: 0,
@@ -308,6 +333,9 @@ function Dashboard() {
           if (tgUserId) {
             updateData.telegramId = tgUserId;
             updateData.telegramUsername = tgUser?.username || '';
+            updateData.telegramFirstName = tgUser?.first_name || '';
+            updateData.telegramLastName = tgUser?.last_name || '';
+            updateData.telegramPhotoUrl = tgUser?.photo_url || '';
           }
           update(userRef, updateData);
         }
@@ -1478,6 +1506,44 @@ function Dashboard() {
                 </MenuItem>
               </Menu>
             </Box>
+
+            {telegramUser && (
+              <Chip
+                onClick={() => setTgProfileOpen(true)}
+                avatar={
+                  telegramUser.photo_url ? (
+                    <Avatar src={telegramUser.photo_url} sx={{ width: 22, height: 22 }} />
+                  ) : (
+                    <Avatar sx={{ width: 22, height: 22, bgcolor: '#0088cc', color: '#fff', fontSize: '10px', fontWeight: 900 }}>
+                      {telegramUser.first_name?.[0] || 'T'}
+                    </Avatar>
+                  )
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ maxWidth: { xs: 65, sm: 110 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {telegramUser.username ? `@${telegramUser.username}` : telegramUser.first_name}
+                    </Box>
+                    {telegramUser.is_premium && <Sparkles size={11} color="#FFDF73" />}
+                  </Box>
+                }
+                size="small"
+                sx={{
+                  height: 36,
+                  borderRadius: '14px',
+                  bgcolor: alpha('#0088cc', 0.15),
+                  color: '#00c3ff',
+                  border: `1px solid ${alpha('#0088cc', 0.35)}`,
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: alpha('#0088cc', 0.25),
+                    borderColor: '#00c3ff'
+                  }
+                }}
+              />
+            )}
 
             {!isActuallyConnected && !viewOnlyAddress ? (
               <Button 
@@ -3142,6 +3208,110 @@ function Dashboard() {
           <Button onClick={() => setClaimDialogOpen(false)} disabled={isClaiming} sx={{ color: 'text.secondary', fontWeight: 600 }}>{t('cancel', language).toUpperCase()}</Button>
           <Button onClick={handleClaimCommissions} disabled={isClaiming} variant="contained" sx={{ borderRadius: '12px', fontWeight: 'bold' }}>
             {isClaiming ? t('processing', language).toUpperCase() : t('proceed', language).toUpperCase()}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Telegram Account Profile Dialog */}
+      <Dialog
+        open={tgProfileOpen}
+        onClose={() => setTgProfileOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: '#121214',
+            borderRadius: '24px',
+            p: 1,
+            border: `1px solid ${alpha('#0088cc', 0.3)}`,
+            maxWidth: 420,
+            width: '100%'
+          }
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 0.5, color: '#00c3ff', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+          <Send size={20} color="#00c3ff" />
+          {t('telegramAccount', language) || 'Telegram Account'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: '16px !important', pb: 2 }}>
+          {telegramUser && (
+            <Stack spacing={2.5} alignItems="center">
+              {telegramUser.photo_url ? (
+                <Avatar src={telegramUser.photo_url} sx={{ width: 72, height: 72, border: '3px solid #0088cc', boxShadow: '0 4px 20px rgba(0,136,204,0.4)' }} />
+              ) : (
+                <Avatar sx={{ width: 72, height: 72, bgcolor: '#0088cc', color: '#fff', fontSize: '28px', fontWeight: 900, border: '3px solid #00c3ff' }}>
+                  {telegramUser.first_name?.[0] || 'T'}
+                </Avatar>
+              )}
+
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" fontWeight="900" sx={{ color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+                  {telegramUser.first_name} {telegramUser.last_name || ''}
+                  {telegramUser.is_premium && (
+                    <Chip label="PREMIUM" size="small" sx={{ bgcolor: alpha('#FFDF73', 0.2), color: '#FFDF73', fontWeight: 900, fontSize: '9px', height: 18 }} />
+                  )}
+                </Typography>
+                {telegramUser.username && (
+                  <Typography variant="body2" sx={{ color: '#00c3ff', fontWeight: 700 }}>
+                    @{telegramUser.username}
+                  </Typography>
+                )}
+              </Box>
+
+              <Box sx={{ width: '100%', bgcolor: alpha('#fff', 0.03), borderRadius: '16px', p: 2, border: `1px solid ${alpha('#fff', 0.08)}` }}>
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                      {t('telegramId', language) || 'Telegram ID'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, fontFamily: 'monospace' }}>
+                      {telegramUser.id}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ opacity: 0.1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                      Language
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>
+                      {telegramUser.language_code || language}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ opacity: 0.1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                      Platform
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#fff', fontWeight: 800 }}>
+                      {getTelegramPlatform()}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ opacity: 0.1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                      Connected Wallet
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: effectiveAddress ? '#14F195' : 'text.secondary', fontWeight: 800, fontFamily: 'monospace' }}>
+                      {effectiveAddress ? `${effectiveAddress.slice(0, 4)}...${effectiveAddress.slice(-4)}` : 'Not Connected'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Chip 
+                icon={<Check size={14} color="#14F195" />}
+                label={t('telegramSynced', language) || 'Telegram Profile Synced with Firebase'} 
+                sx={{ bgcolor: alpha('#14F195', 0.1), color: '#14F195', fontWeight: 700, fontSize: '11px', border: `1px solid ${alpha('#14F195', 0.3)}` }} 
+              />
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button 
+            onClick={() => setTgProfileOpen(false)} 
+            variant="contained" 
+            fullWidth
+            sx={{ borderRadius: '12px', fontWeight: 800, bgcolor: '#0088cc', color: '#fff', '&:hover': { bgcolor: '#0077b5' } }}
+          >
+            {t('dismiss', language) || 'CLOSE'}
           </Button>
         </DialogActions>
       </Dialog>
