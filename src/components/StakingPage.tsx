@@ -935,7 +935,7 @@ export function StakingPage({
           <Box sx={{ 
             position: 'relative', 
             width: '100%', 
-            height: 200, 
+            height: 190, 
             perspective: 1000,
             display: 'flex',
             justifyContent: 'center',
@@ -945,8 +945,8 @@ export function StakingPage({
           }}>
             <Box sx={{
               position: 'relative',
-              width: '60%',
-              maxWidth: 250,
+              width: '65%',
+              maxWidth: 260,
               height: 105,
               background: `linear-gradient(to right, #B5852A, #F5D76E, #C89B3C, #F5D76E, #B5852A)`,
               borderRadius: '16px',
@@ -1006,10 +1006,10 @@ export function StakingPage({
             backdropFilter: 'blur(20px)',
             boxShadow: '0 12px 36px rgba(0,0,0,0.5)'
           }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={2}>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" mb={2.5}>
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>
-                  {t('stakeAmount', language) || 'STAKING PRINCIPAL'}
+                  {t('stakeAmount', language) || 'STAKING AMOUNT'}
                 </Typography>
                 <Typography variant="h4" color="#fff" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif' }}>
                   ${stakeValUsd.toFixed(0)} <span style={{ fontSize: '1rem', color: '#D4AF37' }}>USD</span>
@@ -1028,7 +1028,7 @@ export function StakingPage({
               </Box>
             </Stack>
 
-            {/* Enhanced Slider with exact Vault Page Mint styling */}
+            {/* Enhanced Slider with exact Vault Page Mint styling and marks */}
             <Slider
               value={Math.min(1000, Math.max(5, parseFloat(customStakeAmount) || 5))}
               onChange={(e, newValue) => {
@@ -1047,7 +1047,7 @@ export function StakingPage({
               sx={{
                 color: '#D4AF37',
                 height: 8,
-                mb: 2.5,
+                mb: 3,
                 '& .MuiSlider-track': { border: 'none', background: 'linear-gradient(to right, #D4AF37, #FFDF73)' },
                 '& .MuiSlider-thumb': {
                   height: 24,
@@ -1066,40 +1066,8 @@ export function StakingPage({
               }}
             />
 
-            {/* Quick Presets Chips */}
-            <Stack direction="row" spacing={1} justifyContent="center" sx={{ flexWrap: 'wrap', gap: 0.8, mb: 3 }}>
-              {[10, 25, 50, 100, 250, 500, 1000].map((preset) => {
-                const isSelected = Math.round(parseFloat(customStakeAmount)) === preset;
-                return (
-                  <Chip
-                    key={preset}
-                    label={`$${preset}`}
-                    onClick={() => {
-                      triggerHaptic(10);
-                      setCustomStakeAmount(preset.toString());
-                    }}
-                    size="small"
-                    sx={{
-                      cursor: 'pointer',
-                      bgcolor: isSelected ? alpha('#D4AF37', 0.3) : alpha('#fff', 0.04),
-                      color: isSelected ? '#FFDF73' : alpha('#fff', 0.7),
-                      border: `1px solid ${isSelected ? '#D4AF37' : alpha('#fff', 0.08)}`,
-                      fontWeight: 800,
-                      fontSize: '11px',
-                      height: 26,
-                      '&:hover': {
-                        bgcolor: alpha('#D4AF37', 0.2),
-                        borderColor: '#D4AF37',
-                        color: '#fff'
-                      }
-                    }}
-                  />
-                );
-              })}
-            </Stack>
-
-            {/* Compact Price & Terms Info Bar */}
-            <Box sx={{ mb: 3, px: 2, py: 1.5, borderRadius: '14px', bgcolor: alpha('#D4AF37', 0.04), border: `1px solid ${alpha('#D4AF37', 0.12)}` }}>
+            {/* Compact Price Info Bar */}
+            <Box sx={{ mb: 2.5, px: 2, py: 1.5, borderRadius: '14px', bgcolor: alpha('#D4AF37', 0.04), border: `1px solid ${alpha('#D4AF37', 0.12)}` }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" sx={{ color: alpha('#fff', 0.6), fontWeight: 700, fontSize: '11px' }}>
                   1 SOL ≈ ${currentSolPrice.toFixed(2)} USD
@@ -1110,9 +1078,17 @@ export function StakingPage({
               </Box>
             </Box>
 
-            {/* Duration Picker - Clean Horizontal Style */}
-            <Box sx={{ mb: 3.5 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={1} display="block" mb={1.5}>
+            {/* Flexible Staking Terms Notice */}
+            <Box sx={{ mb: 3, p: 1.5, borderRadius: '12px', bgcolor: alpha('#D4AF37', 0.08), border: `1px solid ${alpha('#D4AF37', 0.25)}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShieldCheck size={16} color="#FFDF73" />
+              <Typography variant="caption" color="#FFDF73" fontWeight="700" sx={{ fontSize: '11px' }}>
+                {t('flexibleVaultNotice', language)}
+              </Typography>
+            </Box>
+
+            {/* Duration Picker - Premium Horizontal Style */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight="800" letterSpacing={1} display="block" mb={2}>
                 {t('lockupPeriodRewards', language)}
               </Typography>
               <Grid container spacing={1.5}>
@@ -1125,8 +1101,8 @@ export function StakingPage({
                   <Grid item xs={3} key={plan.months}>
                     <Box
                       component={motion.div}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => {
                         triggerHaptic(10);
                         setStakingDurationMonths(plan.months as any);
@@ -1136,14 +1112,14 @@ export function StakingPage({
                         bgcolor: stakingDurationMonths === plan.months ? alpha('#D4AF37', 0.25) : alpha('#fff', 0.03),
                         color: stakingDurationMonths === plan.months ? '#FFDF73' : alpha('#fff', 0.6),
                         border: `1.5px solid ${stakingDurationMonths === plan.months ? '#D4AF37' : alpha('#fff', 0.08)}`,
-                        borderRadius: '16px',
-                        py: 1.5,
+                        borderRadius: '20px',
+                        py: 2,
                         textAlign: 'center',
-                        transition: 'all 0.25s ease',
-                        boxShadow: stakingDurationMonths === plan.months ? `0 0 16px ${alpha('#D4AF37', 0.25)}` : 'none'
+                        transition: 'all 0.3s ease',
+                        boxShadow: stakingDurationMonths === plan.months ? `0 0 20px ${alpha('#D4AF37', 0.2)}` : 'none'
                       }}
                     >
-                      <Typography variant="body2" fontWeight="900">{plan.label}</Typography>
+                      <Typography variant="body2" fontWeight="900" sx={{ mb: 0.5 }}>{plan.label}</Typography>
                       <Typography variant="caption" fontWeight="900" sx={{ color: stakingDurationMonths === plan.months ? '#14F195' : alpha('#fff', 0.4), fontSize: '10px' }}>
                         +{plan.bonus}
                       </Typography>
@@ -1153,39 +1129,53 @@ export function StakingPage({
               </Grid>
             </Box>
 
-            {/* Action Button */}
+            {/* Action Button - Connected/Disconnected */}
             <Button
               fullWidth
               variant="contained"
               disabled={isCreatingStake || (isActuallyConnected && (parseFloat(customStakeAmount) < 1 || isCreatingStake))}
               onClick={!isActuallyConnected ? () => open() : handleCreateCustomStake}
               sx={{
-                py: 2,
-                borderRadius: '16px',
-                background: 'linear-gradient(45deg, #D4AF37, #F5D76E)',
+                py: 2.2,
+                borderRadius: '20px',
+                bgcolor: '#D4AF37',
                 color: '#000',
-                fontWeight: '900',
-                fontSize: '1.05rem',
-                letterSpacing: 1.5,
+                fontWeight: '950',
+                fontSize: '1rem',
+                letterSpacing: 2,
                 textTransform: 'uppercase',
-                boxShadow: `0 8px 24px ${alpha('#D4AF37', 0.35)}`,
-                transition: 'all 0.3s ease',
+                boxShadow: `0 10px 30px ${alpha('#D4AF37', 0.3)}`,
+                position: 'relative',
+                overflow: 'hidden',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #F5D76E, #FFF0B3)',
-                  boxShadow: `0 12px 32px ${alpha('#D4AF37', 0.55)}`,
+                  bgcolor: '#FFDF73',
+                  boxShadow: `0 15px 40px ${alpha('#D4AF37', 0.5)}`,
                   transform: 'translateY(-2px)'
                 },
-                '&:disabled': {
-                  background: alpha('#D4AF37', 0.25),
-                  color: alpha('#000', 0.4)
-                }
+                '&:active': { transform: 'translateY(1px)' },
+                '&.Mui-disabled': { bgcolor: alpha('#fff', 0.05), color: alpha('#fff', 0.2) }
               }}
             >
               {!isActuallyConnected ? t('connectWalletToStake', language) : (isCreatingStake ? t('deployingToVault', language) : t('stakeUsGoldNow', language))}
+              {/* Shine Effect */}
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                animation: 'shine 3s infinite',
+                '@keyframes shine': {
+                  '0%': { left: '-100%' },
+                  '20%': { left: '100%' },
+                  '100%': { left: '100%' }
+                }
+              }} />
             </Button>
 
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2.5, fontWeight: 700, opacity: 0.7 }}>
-              <ShieldCheck size={13} style={{ marginRight: 6, verticalAlign: 'middle', color: '#14F195' }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 3, fontWeight: 700, opacity: 0.6, letterSpacing: 0.5 }}>
+              <ShieldCheck size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
               {t('guaranteedByGold', language)}
             </Typography>
           </Box>
