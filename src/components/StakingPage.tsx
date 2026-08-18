@@ -1731,6 +1731,7 @@ export function StakingPage({
         open={isCreatingStake} 
         amountUsd={stakeValUsd} 
         durationMonths={stakingDurationMonths} 
+        language={language}
       />
 
       {/* Toast Notification */}

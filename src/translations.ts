@@ -442,9 +442,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVaults": "Staking Vaults",
     "referrals": "Referrals",
     "approvedPendingAdmin": "Pending Admin Approval",
-    "copyAddress": "Copy Address"
-  },
-  "ES": {
+    "copyAddress": "Copy Address",
+    "miningGoldVault": "MINING GOLD VAULT...",
+    "deployingPositionToVault": "Deploying {amount} into {duration}-Month Vault Position",
+    "step1ConfirmingPayment": "1. Confirming Wallet Payment",
+    "step2MiningTokens": "2. Mining Gold Vault Tokens",
+    "step3DeployingPosition": "3. Deploying Open Position to Vault",
+    "doNotCloseWindowModal": "Please do not close this window while your position is being opened..."
+  }  "ES": {
     "investInUsGold": "Invertir en GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -884,9 +889,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "FR": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "MINANDO BÓVEDA DE ORO...",
+    "deployingPositionToVault": "Desplegando {amount} en posición de bóveda de {duration} meses",
+    "step1ConfirmingPayment": "1. Confirmando pago de billetera",
+    "step2MiningTokens": "2. Minando tokens de bóveda de oro",
+    "step3DeployingPosition": "3. Desplegando posición abierta en la bóveda",
+    "doNotCloseWindowModal": "Por favor no cierre esta ventana mientras se abre su posición..."
+  }  "FR": {
     "investInUsGold": "Investir dans GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -1326,9 +1336,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "ZH": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "MINAGE DU COFFRE D’OR...",
+    "deployingPositionToVault": "Déploiement de {amount} dans la position de coffre à {duration} mois",
+    "step1ConfirmingPayment": "1. Confirmation du paiement du portefeuille",
+    "step2MiningTokens": "2. Minage des jetons du coffre d’or",
+    "step3DeployingPosition": "3. Déploiement de la position dans le coffre",
+    "doNotCloseWindowModal": "Veuillez ne pas fermer cette fenêtre pendant l’ouverture..."
+  }  "ZH": {
     "investInUsGold": "投资 GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -1768,9 +1783,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "AR": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "正在开采黄金金库...",
+    "deployingPositionToVault": "正在将 {amount} 存入 {duration} 个月金库头寸",
+    "step1ConfirmingPayment": "1. 正在确认钱包支付",
+    "step2MiningTokens": "2. 正在开采黄金金库代币",
+    "step3DeployingPosition": "3. 正在将头寸部署至金库",
+    "doNotCloseWindowModal": "请勿关闭此窗口，正在为您开启头寸..."
+  }  "AR": {
     "investInUsGold": "استثمر في GOLD",
     "investDesc": "استخدم سولانا (SOL) للحصول على GOLD. يتم توزيع الأموال وفقًا للتسلسل الهرمي للشبكة الملكية.",
     "youPay": "أنت تدفع (مقدر)",
@@ -2211,9 +2231,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "FA": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "جارٍ تعدين خزنة الذهب...",
+    "deployingPositionToVault": "جارٍ إيداع {amount} في مركز الخزنة لمدة {duration} أشهر",
+    "step1ConfirmingPayment": "1. تأكيد الدفع من المحفظة",
+    "step2MiningTokens": "2. تعدين توكنات خزنة الذهب",
+    "step3DeployingPosition": "3. استقرار المركز المفتوح في الخزنة",
+    "doNotCloseWindowModal": "يرجى عدم إغلاق هذه النافذة حتى اكتمال فتح المركز..."
+  }  "FA": {
     "adminApprovedRewards": "پاداش‌های usGOLD تایید شده توسط ادمین",
     "approvedUsGoldByAdmin": "{amount} usGOLD تایید شده توسط ادمین",
     "withdrawApprovedUsGoldDesc": "پاداش معرف usGOLD تایید شده توسط ادمین را مستقیماً به موجودی کیف پول خود واریز کنید!",
@@ -2655,9 +2680,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "stakingVaults": "گاوصندوق‌های استیکینگ",
     "referrals": "معرف‌ها",
     "approvedPendingAdmin": "در انتظار تایید ادمین",
-    "copyAddress": "کپی آدرس"
-  },
-  "RU": {
+    "copyAddress": "کپی آدرس",
+    "miningGoldVault": "در حال استخراج گاوصندوق طلا...",
+    "deployingPositionToVault": "استقرار {amount} در موقعیت گاوصندوق {duration} ماهه",
+    "step1ConfirmingPayment": "۱. در حال تایید پرداخت از کیف پول",
+    "step2MiningTokens": "۲. استخراج توکن‌های گاوصندوق طلا",
+    "step3DeployingPosition": "۳. استقرار موقعیت باز شده در گاوصندوق",
+    "doNotCloseWindowModal": "لطفاً تا زمان باز شدن موقعیت، این پنجره را نبندید..."
+  }  "RU": {
     "investInUsGold": "Инвестировать в GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -3097,9 +3127,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "DE": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "МАЙНИНГ ЗОЛОТОГО ХРАНИЛИЩА...",
+    "deployingPositionToVault": "Размещение {amount} в хранилище на {duration} мес.",
+    "step1ConfirmingPayment": "1. Подтверждение оплаты кошельком",
+    "step2MiningTokens": "2. Майнинг токенов хранилища золота",
+    "step3DeployingPosition": "3. Размещение позиции в хранилище",
+    "doNotCloseWindowModal": "Пожалуйста, не закрывайте это окно во время открытия позиции..."
+  }  "DE": {
     "investInUsGold": "In GOLD investieren",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -3539,9 +3574,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "IT": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "GOLD-TRESOR WIRD GESCHÜPFT...",
+    "deployingPositionToVault": "Hinterlegung von {amount} in {duration}-Monats-Tresorposition",
+    "step1ConfirmingPayment": "1. Wallet-Zahlung wird bestätigt",
+    "step2MiningTokens": "2. Gold-Tresor-Token werden generiert",
+    "step3DeployingPosition": "3. Position wird im Tresor hinterlegt",
+    "doNotCloseWindowModal": "Bitte schließen Sie dieses Fenster nicht, während die Position geöffnet wird..."
+  }  "IT": {
     "investInUsGold": "Investi in GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -3981,9 +4021,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "PL": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "MINING VAULT DI ORO...",
+    "deployingPositionToVault": "Deposito di {amount} nella posizione di vault a {duration} mesi",
+    "step1ConfirmingPayment": "1. Conferma del pagamento del wallet",
+    "step2MiningTokens": "2. Mining dei token del vault d’oro",
+    "step3DeployingPosition": "3. Deposito della posizione aperta nel vault",
+    "doNotCloseWindowModal": "Si prega di non chiudere questa finestra durante l’apertura..."
+  }  "PL": {
     "investInUsGold": "Zainwestuj w GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -4423,9 +4468,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "JA": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "WYDOBYCIE SKARBCA ZŁOTA...",
+    "deployingPositionToVault": "Wpłacanie {amount} do pozycji skarbca na {duration} miesięcy",
+    "step1ConfirmingPayment": "1. Potwierdzanie płatności z portfela",
+    "step2MiningTokens": "2. Wydobywanie tokenów skarbca złota",
+    "step3DeployingPosition": "3. Otwieranie pozycji w skarbcu",
+    "doNotCloseWindowModal": "Proszę nie zamykać tego okna podczas otwierania pozycji..."
+  }  "JA": {
     "investInUsGold": "GOLDに投資する",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -4865,9 +4915,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "KO": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "ゴールドボールトをマイニング中...",
+    "deployingPositionToVault": "{amount} を {duration}ヶ月ボールトポジションにデプロイ中",
+    "step1ConfirmingPayment": "1. ウォレット支払いの確認中",
+    "step2MiningTokens": "2. ゴールドボールトトークンのマイニング中",
+    "step3DeployingPosition": "3. ボールトへのポジション展開中",
+    "doNotCloseWindowModal": "ポジション開設中はウィンドウを閉じないでください..."
+  }  "KO": {
     "investInUsGold": "GOLD 투자",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -5307,9 +5362,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "ID": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "골드 금고 채굴 중...",
+    "deployingPositionToVault": "{amount}를 {duration}개월 금고 포지션에 입금 중",
+    "step1ConfirmingPayment": "1. 지갑 결제 확인 중",
+    "step2MiningTokens": "2. 골드 금고 토큰 채굴 중",
+    "step3DeployingPosition": "3. 금고 포지션 배포 중",
+    "doNotCloseWindowModal": "포지션이 열리는 동안 이 창을 닫지 마세요..."
+  }  "ID": {
     "investInUsGold": "Investasi di GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -5749,9 +5809,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "MS": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "MENAMBANG BRANKAS EMAS...",
+    "deployingPositionToVault": "Menempatkan {amount} ke Posisi Brankas {duration} Bulan",
+    "step1ConfirmingPayment": "1. Mengonfirmasi Pembayaran Dompet",
+    "step2MiningTokens": "2. Menambang Token Brankas Emas",
+    "step3DeployingPosition": "3. Membuka Posisi di Brankas",
+    "doNotCloseWindowModal": "Mohon jangan tutup jendela ini selagi posisi Anda sedang dibuka..."
+  }  "MS": {
     "investInUsGold": "Melabur dalam GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -6191,9 +6256,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "SV": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "MELOMBONG PETI BESI EMAS...",
+    "deployingPositionToVault": "Mendeposit {amount} ke Kedudukan Peti Besi {duration} Bulan",
+    "step1ConfirmingPayment": "1. Mengesahkan Pembayaran Dompet",
+    "step2MiningTokens": "2. Melombong Token Peti Besi Emas",
+    "step3DeployingPosition": "3. Melancarkan Kedudukan ke Peti Besi",
+    "doNotCloseWindowModal": "Sila jangan tutup tetingkap ini semasa kedudukan anda sedang dibuka..."
+  }  "SV": {
     "investInUsGold": "Investera i GOLD",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -6633,9 +6703,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "CKB": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "BRYTER GULDKVALV...",
+    "deployingPositionToVault": "Placerar {amount} i {duration}-månaders valvposition",
+    "step1ConfirmingPayment": "1. Bekräftar plånboksbetalning",
+    "step2MiningTokens": "2. Bryter guldvalvstokens",
+    "step3DeployingPosition": "3. Öppnar position i valvet",
+    "doNotCloseWindowModal": "Stäng inte detta fönster medan din position öppnas..."
+  }  "CKB": {
     "investInUsGold": "Veberhênan di GOLD de",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -7075,9 +7150,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
-  },
-  "AZ": {
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "دەرهێنانی خەزێنەی زێڕ...",
+    "deployingPositionToVault": "دابینکردنی {amount} لە پلەی خەزێنەی {duration} مانگی",
+    "step1ConfirmingPayment": "١. پشتڕاستکردنەوەی پارەدانی جزدان",
+    "step2MiningTokens": "٢. دەرهێنانی تۆکنەکانی خەزێنەی زێڕ",
+    "step3DeployingPosition": "٣. جێبەجێکردنی پلەی کراوە لە خەزێنەدا",
+    "doNotCloseWindowModal": "تکایە ئەم پەنجەرەیە دامەخە تا کاتی کردنەوەی پلەکەت..."
+  }  "AZ": {
     "investInUsGold": "GOLD-a sərmayə qoyun",
     "investDesc": "Use Solana (SOL) to acquire GOLD. Funds are distributed according to the Royal Network hierarchy.",
     "youPay": "You pay (Estimated)",
@@ -7517,7 +7597,13 @@ export const translations: Record<Lang, Record<string, string>> = {
     "copyReferralLink": "Copy Referral Link",
     "inviteeWallet": "Invitee Wallet",
     "joinedDate": "Joined: {date}",
-    "stakedDate": "Staked: {date}"
+    "stakedDate": "Staked: {date}",
+    "miningGoldVault": "QIZIL KASSASI MAYNİNQ EDİLİR...",
+    "deployingPositionToVault": "{amount} məbləği {duration} aylıq kassa mövqeyinə yerləşdirilir",
+    "step1ConfirmingPayment": "1. Cüzdan ödənişinin təsdiqi",
+    "step2MiningTokens": "2. Qızıl kassa tokenlərinin mayninqi",
+    "step3DeployingPosition": "3. Mövqenin kassaya yerləşdirilməsi",
+    "doNotCloseWindowModal": "Mövqe açılarkən zəhmət olmasa bu pəncərəni bağlamayın..."
   }};
 
 export const t = (key: string, lang: string): string => {
