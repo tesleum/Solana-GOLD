@@ -2747,7 +2747,7 @@ export function WalletPage({
                             </Stack>
                             {isNeedsApproval && (
                               <Chip
-                                label="🟡 Pending Admin Approval"
+                                label={`🟡 ${t('pendingAdminApproval', language)}`}
                                 size="small"
                                 color="warning"
                                 variant="filled"
@@ -2756,7 +2756,7 @@ export function WalletPage({
                             )}
                             {isPendingStake && (
                               <Chip
-                                label="⏳ Awaiting Friend Stake"
+                                label={`⏳ ${t('awaitingFriendStake', language)}`}
                                 size="small"
                                 sx={{ height: 20, fontSize: "10px", fontWeight: "700", bgcolor: alpha("#fff", 0.1), color: "text.secondary", mt: 0.5 }}
                               />
@@ -2780,12 +2780,12 @@ export function WalletPage({
                                   textTransform: 'none'
                                 }}
                               >
-                                Claim 1 usGOLD
+                                {t('claim1UsGold', language)}
                               </Button>
                             )}
                             {isClaimed && (
                               <Chip
-                                label="✅ 1 usGOLD Claimed & Paid"
+                                label={`✅ ${t('claimedAndPaid', language)}`}
                                 size="small"
                                 color="success"
                                 variant="filled"

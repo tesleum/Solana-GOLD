@@ -213,15 +213,21 @@ export function ReferralStakingTracker({
         let activeCount = 0;
 
         Object.entries(userStakesObj).forEach(([sKey, sVal]: [string, any]) => {
-          const amt = parseFloat(sVal?.amount || 0);
-          if (amt > 0) {
-            totalStaked += amt;
+          const rawAmt = parseFloat(sVal?.amount || 0);
+          const rawUsd = parseFloat(sVal?.usdAmount || 0);
+          const effectiveUsd = rawUsd > 0 
+            ? rawUsd 
+            : (rawAmt > 0 ? (tokenPrice && tokenPrice > 0 && rawAmt * tokenPrice >= 4.9 ? rawAmt * tokenPrice : rawAmt) : 0);
+          const stakeUsd = effectiveUsd > 0 ? effectiveUsd : rawAmt;
+
+          if (stakeUsd > 0) {
+            totalStaked += stakeUsd;
             if (sVal?.status === 'active' || !sVal?.status) {
               activeCount++;
             }
             stakesArr.push({
               key: sKey,
-              amount: amt,
+              amount: stakeUsd,
               durationMonths: sVal?.durationMonths || 3,
               startTime: sVal?.startTime || Date.now(),
               endTime: sVal?.endTime || Date.now(),
@@ -236,7 +242,7 @@ export function ReferralStakingTracker({
           referee.totalStakedUsd = Math.max(referee.totalStakedUsd, totalStaked);
           referee.stakesCount = stakesArr.length;
           referee.activeStakesCount = activeCount;
-          referee.hasStaked = totalStaked >= 5.0; // Qualified threshold: ≥ $5 USD stake
+          referee.hasStaked = referee.totalStakedUsd >= 5.0; // Staking >= $5 activates Active Staking status
         }
       }
 
@@ -251,11 +257,15 @@ export function ReferralStakingTracker({
         });
       }
 
-      // If user has staked >= $5 USD, they are 100% qualified for 1 usGOLD reward
+      // If user has staked >= $5 USD, they activate Active Staking and qualify for 1 usGOLD reward
       if (referee.totalStakedUsd >= 5.0) {
         referee.hasStaked = true;
         referee.rewardStatus = 'qualified';
         referee.qualifiedRewardUsGold = 1.0;
+      } else {
+        referee.hasStaked = false;
+        referee.rewardStatus = 'pending_stake';
+        referee.qualifiedRewardUsGold = 0;
       }
     });
 
@@ -1126,7 +1136,7 @@ export function ReferralStakingTracker({
                                       {copiedAddr === referee.address ? <Check size={12} color="#14F195" /> : <Copy size={12} />}
                                     </IconButton>
                                   </Tooltip>
-                                  <Tooltip title="View on Solscan">
+                                  <Tooltip title={t('viewOnSolscan', language) || "View on Solscan"}>
                                     <IconButton size="small" onClick={() => window.open(`https://solscan.io/account/${referee.address}`, '_blank')} sx={{ p: 0.3, color: 'text.secondary', '&:hover': { color: '#14F195' } }}>
                                       <ExternalLink size={12} />
                                     </IconButton>

@@ -918,13 +918,13 @@ export function StakingPage({
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 1.5 }}>
               <Chip 
                 icon={<ShieldCheck size={14} color="#14F195" />} 
-                label="SECURE VAULT" 
+                label={t('secureVault', language) || "SECURE VAULT"} 
                 size="small" 
                 sx={{ bgcolor: alpha('#14F195', 0.1), color: '#14F195', fontWeight: 800, fontSize: '10px', borderRadius: '6px' }} 
               />
               <Chip 
                 icon={<Zap size={14} color="#FFDF73" />} 
-                label="INSTANT YIELD" 
+                label={t('instantYield', language) || "INSTANT YIELD"} 
                 size="small" 
                 sx={{ bgcolor: alpha('#FFDF73', 0.1), color: '#FFDF73', fontWeight: 800, fontSize: '10px', borderRadius: '6px' }} 
               />
