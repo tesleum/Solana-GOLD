@@ -1521,15 +1521,149 @@ export function WalletPage({
         </Box>
 
         {/* Portfolio Assets Section */}
-        <Box sx={{ mt: 4, mb: 2 }}>
+        <Box sx={{ mt: 4, mb: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6" fontWeight="900" sx={{ color: '#fff' }}>
+            <Typography variant="h6" fontWeight="900" sx={{ color: '#fff', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Coins size={18} color="#D4AF37" />
               {t('yourPortfolioAssets', language)}
             </Typography>
-            <Typography variant="body2" sx={{ color: '#14F195', fontWeight: 800 }}>
-              {t('liveTracking', language)}
-            </Typography>
+            <Chip 
+              label={t('liveTracking', language)} 
+              size="small" 
+              sx={{ bgcolor: alpha('#14F195', 0.1), color: '#14F195', fontWeight: 800, fontSize: '10px', height: 22 }} 
+            />
           </Stack>
+
+          {/* Portfolio Asset Grid */}
+          <Grid container spacing={1.5}>
+            {/* 1. usGOLD Reserve Token */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: alpha('#000', 0.4),
+                border: `1px solid ${alpha('#D4AF37', 0.25)}`,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TokenIcon symbol="usGOLD" size={20} />
+                    <Typography variant="body2" fontWeight="900" color="#fff">usGOLD</Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: '#FFDF73', fontWeight: 800, fontSize: '10px' }}>
+                    100% GOLD BACKED
+                  </Typography>
+                </Stack>
+                <Box>
+                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                    {(usGoldBalance || 0).toFixed(4)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>g</span>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    ≈ ${((usGoldBalance || 0) * (tokenPrice || 85.45)).toFixed(2)} USD
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* 2. Staked Vault Assets */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: alpha('#000', 0.4),
+                border: `1px solid ${alpha('#fff', 0.08)}`,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <ShieldCheck size={18} color="#D4AF37" />
+                    <Typography variant="body2" fontWeight="900" color="#fff">{t('stakingVaults', language) || 'Vaults'}</Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 800, fontSize: '10px' }}>
+                    {activeStakes.length} ACTIVE
+                  </Typography>
+                </Stack>
+                <Box>
+                  <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
+                    ${totalStaked.toFixed(2)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>USD</span>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 700 }}>
+                    +{apyYield} APY
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* 3. Live Accrued Yield */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: alpha('#14F195', 0.03),
+                border: `1px solid ${alpha('#14F195', 0.2)}`,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TrendingUp size={18} color="#14F195" />
+                    <Typography variant="body2" fontWeight="900" color="#fff">{t('accruedYield', language) || 'Yield'}</Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 800, fontSize: '10px' }}>
+                    REAL-TIME
+                  </Typography>
+                </Stack>
+                <Box>
+                  <Typography variant="h6" fontWeight="900" color="#14F195" sx={{ fontFamily: '"Cinzel", serif' }}>
+                    +${liveTotalAccrued.toFixed(3)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>USD</span>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Ticking Live Clock
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* 4. Referral Commission Pool */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Box sx={{
+                p: 2,
+                borderRadius: '16px',
+                bgcolor: alpha('#000', 0.4),
+                border: `1px solid ${alpha('#FFDF73', 0.2)}`,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Gift size={18} color="#FFDF73" />
+                    <Typography variant="body2" fontWeight="900" color="#fff">{t('referrals', language) || 'Referrals'}</Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: '#FFDF73', fontWeight: 800, fontSize: '10px' }}>
+                    {referralsCount} INVITES
+                  </Typography>
+                </Stack>
+                <Box>
+                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                    {pendingReferralRewards.toFixed(2)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>usGOLD</span>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    1 usGOLD / Valid Referee
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
         </Box>
       </Card>
 
