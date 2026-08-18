@@ -302,14 +302,39 @@ export const initTelegramIntegration = () => {
 };
 
 /**
+ * Retrieves sanitized Telegram Bot username without any leading '@'
+ */
+export const getTelegramBotUsername = (): string => {
+  const envBot = (import.meta as any).env?.VITE_TELEGRAM_BOT_USERNAME || 'SolanaGoldBot';
+  return String(envBot).trim().replace(/^@+/, '');
+};
+
+/**
+ * Generates a valid Telegram Mini App direct deep-link without '@'
+ * Format: https://t.me/<bot_username>/app?startapp=<wallet_or_code>
+ */
+export const getTelegramReferralUrl = (referralAddress: string): string => {
+  const botUsername = getTelegramBotUsername();
+  const cleanAddr = referralAddress && referralAddress.trim().length > 0 ? referralAddress.trim() : 'GOLDEN';
+  if (cleanAddr.startsWith('http')) {
+    return cleanAddr.replace(/t\.me\/@+/g, 't.me/');
+  }
+  return `https://t.me/${botUsername}/app?startapp=${cleanAddr}`;
+};
+
+/**
  * Opens Telegram share link dialog for referral sharing
+ * Strictly ensures no '@' is present in the t.me bot URL to avoid "user not found" errors
  */
 export const shareTelegramReferralLink = (referralAddress: string, customMessage?: string) => {
-  const botUsername = (import.meta as any).env?.VITE_TELEGRAM_BOT_USERNAME || 'usgold_bot';
+  const botUsername = getTelegramBotUsername();
   const cleanAddr = referralAddress && referralAddress.trim().length > 0 ? referralAddress.trim() : 'GOLDEN';
-  const shareUrl = cleanAddr.startsWith('http') 
-    ? cleanAddr 
+  let shareUrl = cleanAddr.startsWith('http') 
+    ? cleanAddr.replace(/t\.me\/@+/g, 't.me/') 
     : `https://t.me/${botUsername}/app?startapp=${cleanAddr}`;
+
+  // Double-sanitize to guarantee no '@' immediately follows 't.me/'
+  shareUrl = shareUrl.replace(/t\.me\/@+/g, 't.me/');
   const text = customMessage || `🎁 Join me on Solana GOLD! Stake usGOLD to earn yield + get 1 usGOLD referral bonus!`;
   
   const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;

@@ -592,7 +592,7 @@ async function startServer() {
   // Telegram Bot & Webhook Integration
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || process.env.VITE_TELEGRAM_BOT_TOKEN || "";
   const RAW_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || process.env.VITE_TELEGRAM_BOT_USERNAME || "SolanaGoldBot";
-  const BOT_USERNAME = RAW_BOT_USERNAME.replace(/^@/, '');
+  const BOT_USERNAME = String(RAW_BOT_USERNAME).trim().replace(/^@+/, '');
 
   async function callTelegramApi(method: string, payload: any) {
     if (!TELEGRAM_BOT_TOKEN) return null;
@@ -684,7 +684,7 @@ async function startServer() {
       const referralCode = userWalletAddress || refCode || tgUserId;
       // Clean URL without /index.html to prevent 404/black screens
       const miniAppUrl = `${appUrl}/?start=${referralCode}`;
-      const telegramAppUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${referralCode}`;
+      const telegramAppUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${referralCode}`.replace(/t\.me\/@+/g, 't.me/');
 
       if (command === "/start" || command === "cmd_main") {
         const welcomeText = 

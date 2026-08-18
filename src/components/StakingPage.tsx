@@ -23,6 +23,7 @@ import { triggerHaptic } from '../lib/haptic';
 import { executeSolanaTransaction } from '../lib/solanaTx';
 import { MiningGoldLoadingModal } from './MiningGoldLoadingModal';
 import { ReferralStakingTracker } from './ReferralStakingTracker';
+import { shareReferral, shareTelegramReferralLink } from '../lib/telegram';
 import axios from 'axios';
 
 interface StakingPageProps {
@@ -308,33 +309,21 @@ export function StakingPage({
       setSavingFCM(false);
     }
   };
-  // Handle Referral Share via Web API
+  // Handle Referral Share via Web API & Telegram
   const handleShareReferral = async () => {
     triggerHaptic(15);
-    const referralLink = `${window.location.origin}?ref=${effectiveAddress || 'GOLDEN'}`;
-    const shareData = {
-      title: 'usGOLD Staking Reserve',
-      text: 'Stake usGOLD stablecoin on Solana to earn 2% monthly fixed yield + $1 referral bonus!',
-      url: referralLink,
-    };
-
-    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      try {
-        await navigator.share(shareData);
-        setShareSuccess(true);
-        setTimeout(() => setShareSuccess(false), 3000);
-      } catch (err) {
-        console.log("Share dismissed or error:", err);
-      }
+    const addr = effectiveAddress || 'GOLDEN';
+    const res = await shareReferral(
+      addr,
+      t('stakingReserveTitle', language) || 'usGOLD Staking Reserve',
+      t('shareText', language) || 'Stake usGOLD stablecoin on Solana to earn 2% monthly fixed yield + $1 referral bonus!'
+    );
+    if (res.method === 'clipboard') {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
     } else {
-      // Fallback copy to clipboard
-      try {
-        await navigator.clipboard.writeText(referralLink);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2500);
-      } catch (err) {
-        console.error("Clipboard copy failed:", err);
-      }
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 3000);
     }
   };
 
