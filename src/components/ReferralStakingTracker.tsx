@@ -203,17 +203,36 @@ export function ReferralStakingTracker({
       }
     });
 
-    // C. Enhance each referee with live `stakes` data
+    // C. Enhance each referee with live `stakes` data & user stats
     refereeMap.forEach((referee, addr) => {
-      // Check stakes node for this referee address
-      const userStakesObj = stakesData[addr];
+      const lowerAddr = addr.toLowerCase();
+
+      // Look up in stakesData with direct and case-insensitive matching
+      let userStakesObj = stakesData[addr];
+      if (!userStakesObj) {
+        const matchingKey = Object.keys(stakesData).find(k => k.toLowerCase() === lowerAddr);
+        if (matchingKey) {
+          userStakesObj = stakesData[matchingKey];
+        }
+      }
+
+      // Also check user's profile totalStaked in usersData
+      let userProfile = usersData[addr];
+      if (!userProfile) {
+        const matchingUserKey = Object.keys(usersData).find(k => k.toLowerCase() === lowerAddr);
+        if (matchingUserKey) {
+          userProfile = usersData[matchingUserKey];
+        }
+      }
+      const profileTotalStaked = parseFloat(userProfile?.totalStaked || 0);
+
       if (userStakesObj) {
         const stakesArr: RefereeStake[] = [];
         let totalStaked = 0;
         let activeCount = 0;
 
         Object.entries(userStakesObj).forEach(([sKey, sVal]: [string, any]) => {
-          const amt = parseFloat(sVal?.amount || 0);
+          const amt = parseFloat(sVal?.usdAmount || sVal?.amount || 0);
           if (amt > 0) {
             totalStaked += amt;
             if (sVal?.status === 'active' || !sVal?.status) {
@@ -236,14 +255,17 @@ export function ReferralStakingTracker({
           referee.totalStakedUsd = Math.max(referee.totalStakedUsd, totalStaked);
           referee.stakesCount = stakesArr.length;
           referee.activeStakesCount = activeCount;
-          referee.hasStaked = totalStaked >= 5.0; // Qualified threshold: ≥ $5 USD stake
         }
+      }
+
+      if (profileTotalStaked > 0) {
+        referee.totalStakedUsd = Math.max(referee.totalStakedUsd, profileTotalStaked);
       }
 
       // Check telegramUsers data for matching handle/ID
       if (!referee.telegramUsername) {
         Object.values(telegramUsersData).forEach((tgUser: any) => {
-          if (tgUser?.address && tgUser.address.toLowerCase() === addr.toLowerCase()) {
+          if (tgUser?.address && tgUser.address.toLowerCase() === lowerAddr) {
             referee.telegramUsername = tgUser.username || '';
             referee.telegramId = tgUser.id || '';
             if (tgUser.firstName) referee.firstName = tgUser.firstName;
@@ -251,8 +273,8 @@ export function ReferralStakingTracker({
         });
       }
 
-      // If user has staked >= $5 USD, they are 100% qualified for 1 usGOLD reward
-      if (referee.totalStakedUsd >= 5.0) {
+      // If user has staked >= $5 USD or has active stakes, update status from "Not Staked Yet" to "Active Staking"
+      if (referee.totalStakedUsd >= 5.0 || referee.activeStakesCount > 0) {
         referee.hasStaked = true;
         referee.rewardStatus = 'qualified';
         referee.qualifiedRewardUsGold = 1.0;
