@@ -3,13 +3,11 @@ import { Dialog, Box, Typography, LinearProgress, Stack, Paper } from '@mui/mate
 import { alpha } from '@mui/material/styles';
 import { Pickaxe, ShieldCheck, Sparkles, Clock } from 'lucide-react';
 import Lottie from 'lottie-react';
-import { t } from '../translations';
 
 interface MiningGoldLoadingModalProps {
   open: boolean;
   amountUsd?: number;
   durationMonths?: number;
-  language?: string;
 }
 
 // Gold Mining Lottie JSON structure for rich visual animation
@@ -72,8 +70,7 @@ const goldMiningLottieJson = {
 export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
   open,
   amountUsd = 0,
-  durationMonths = 12,
-  language = 'EN'
+  durationMonths = 12
 }) => {
   const [seconds, setSeconds] = useState(0);
   const [step, setStep] = useState(1);
@@ -192,13 +189,11 @@ export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
             mb: 0.5
           }}
         >
-          {t('miningGoldVault', language)}
+          MINING GOLD VAULT...
         </Typography>
 
         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '13px', mb: 2.5 }}>
-          {t('deployingPositionToVault', language)
-            .replace('{amount}', amountUsd > 0 ? `$${amountUsd.toFixed(2)} USD` : '')
-            .replace('{duration}', String(durationMonths))}
+          Deploying {amountUsd > 0 ? `$${amountUsd.toFixed(2)} USD` : ''} into {durationMonths}-Month Vault Position
         </Typography>
 
         {/* Timer Display Badge */}
@@ -239,7 +234,7 @@ export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
             <Stack direction="row" spacing={1.5} alignItems="center">
               <ShieldCheck size={18} color={step >= 1 ? '#14F195' : '#888'} />
               <Typography variant="caption" fontWeight="700" color={step >= 1 ? '#14F195' : 'text.secondary'}>
-                {t('step1ConfirmingPayment', language)}
+                1. Confirming Wallet Payment
               </Typography>
             </Stack>
             {step >= 1 && <Sparkles size={14} color="#14F195" />}
@@ -260,7 +255,7 @@ export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Pickaxe size={18} color={step >= 2 ? '#FFDF73' : '#888'} />
               <Typography variant="caption" fontWeight="700" color={step >= 2 ? '#FFDF73' : 'text.secondary'}>
-                {t('step2MiningTokens', language)}
+                2. Mining Gold Vault Tokens
               </Typography>
             </Stack>
             {step >= 2 && <Sparkles size={14} color="#FFDF73" />}
@@ -281,7 +276,7 @@ export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Sparkles size={18} color={step >= 3 ? '#14F195' : '#888'} />
               <Typography variant="caption" fontWeight="700" color={step >= 3 ? '#14F195' : 'text.secondary'}>
-                {t('step3DeployingPosition', language)}
+                3. Deploying Open Position to Vault
               </Typography>
             </Stack>
             {step >= 3 && <Sparkles size={14} color="#14F195" />}
@@ -303,10 +298,9 @@ export const MiningGoldLoadingModal: React.FC<MiningGoldLoadingModalProps> = ({
         />
 
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, fontSize: '11px' }}>
-          {t('doNotCloseWindowModal', language)}
+          Please do not close this window while your position is being opened...
         </Typography>
       </Box>
     </Dialog>
   );
 };
-
