@@ -1292,7 +1292,7 @@ export function StakingPage({
       </Card>
 
       {/* FIREBASE MESSAGING CLOUD NOTIFICATION ALERTS SETTING CARD */}
-      {connected && (
+      {isActuallyConnected && (
         <Card sx={{ 
           bgcolor: '#141518',
           border: `1px solid ${alpha('#D4AF37', 0.25)}`,
