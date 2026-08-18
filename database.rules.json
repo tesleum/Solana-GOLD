@@ -1,0 +1,82 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "mlmSettings": {
+      ".read": true,
+      ".write": true
+    },
+    "users": {
+      ".read": true,
+      ".write": true,
+      "$wallet_address": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["type", "timestamp"],
+        "$transaction_id": {
+          ".write": true
+        }
+      },
+      ".indexOn": ["referrer", "line", "joinedAt", "totalInvested"]
+    },
+    "transactions": {
+      ".read": true,
+      ".write": true,
+      "$wallet_address": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["type", "timestamp"],
+        "$transaction_id": {
+          ".write": true
+        }
+      }
+    },
+    "global_transactions": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["timestamp", "type"]
+    },
+    "stakes": {
+      ".read": true,
+      ".write": true,
+      "$wallet_address": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["status", "createdAt", "startTime", "endTime"],
+        "$stake_id": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "stakesCountdown": {
+      ".read": true,
+      ".write": true,
+      "$wallet_address": {
+        ".read": true,
+        ".write": true,
+        "$stake_id": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "rewards": {
+      ".read": true,
+      ".write": true,
+      "$wallet_address": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["status", "timestamp", "type", "referee"],
+        "$reward_id": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "serverTime": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

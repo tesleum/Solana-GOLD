@@ -1,0 +1,1 @@
+fetch('https://api.jup.ag/swap/v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=CwFp9y4hpDDbiGAHPvHRNrCpiTtGm5C4xafwCYDSGoLd&amount=100000', { headers: { 'x-api-key': 'jup_0bceef83ebaa8e2a9a35f27810e7dd60b155272ecdfd60b1901a875a9a333dfc' } }).then(r=>r.json()).then(console.log);
