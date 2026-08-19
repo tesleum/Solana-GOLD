@@ -10,7 +10,7 @@ body, html, #root {
   text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
-  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+  font-family: 'Cinzel', 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
 }
 
 * {
@@ -41,7 +41,7 @@ input, textarea {
 }
 
 body[dir='rtl'] {
-  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+  font-family: 'Cinzel', 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
 }
 
 body[dir='rtl'] h1, 
@@ -53,7 +53,7 @@ body[dir='rtl'] h6,
 body[dir='rtl'] .MuiTypography-root,
 body[dir='rtl'] .MuiButton-root,
 body[dir='rtl'] .MuiBottomNavigationAction-label {
-  font-family: 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
+  font-family: 'Cinzel', 'Montserrat', 'Inter', 'Vazirmatn', sans-serif;
 }
 
 /* Enhanced Skeleton Shimmer */
