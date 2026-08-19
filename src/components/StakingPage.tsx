@@ -892,7 +892,7 @@ export function StakingPage({
             </Typography>
             <Typography variant="h2" fontWeight="900" sx={{ 
               color: '#fff', 
-              fontFamily: '"Cinzel", serif',
+              fontFamily: '"Cinzel", "Vazirmatn", serif',
               fontSize: { xs: '2.5rem', sm: '3.8rem' },
               background: 'linear-gradient(135deg, #FFF5D1 0%, #D4AF37 50%, #996515 100%)',
               WebkitBackgroundClip: 'text',
@@ -955,7 +955,7 @@ export function StakingPage({
               <Typography variant="h4" fontWeight="900" sx={{ 
                 color: 'rgba(120, 80, 20, 0.85)', 
                 textShadow: '1px 1px 1px rgba(255,255,255,0.4), -1px -1px 1px rgba(0,0,0,0.2)', 
-                fontFamily: '"Cinzel", serif',
+                fontFamily: '"Cinzel", "Vazirmatn", serif',
                 letterSpacing: '1px',
                 fontSize: { xs: '1.6rem', sm: '1.9rem' }
               }}>
@@ -1000,7 +1000,7 @@ export function StakingPage({
                 <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>
                   {t('stakeAmount', language) || 'STAKING AMOUNT'}
                 </Typography>
-                <Typography variant="h4" color="#fff" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif' }}>
+                <Typography variant="h4" color="#fff" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                   ${stakeValUsd.toFixed(0)} <span style={{ fontSize: '1rem', color: '#D4AF37' }}>USD</span>
                 </Typography>
               </Box>
@@ -1008,7 +1008,7 @@ export function StakingPage({
                 <Typography variant="caption" color="text.secondary" fontWeight="700" letterSpacing={1}>
                   {t('estYield', language).toUpperCase()}
                 </Typography>
-                <Typography variant="h5" color="#14F195" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif' }}>
+                <Typography variant="h5" color="#14F195" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                   +${(stakeValUsd * (stakingDurationMonths * 0.02)).toFixed(2)} USD
                 </Typography>
                 <Typography variant="caption" color="primary.main" fontWeight="bold" sx={{ display: 'block', fontSize: '11px' }}>
@@ -1330,7 +1330,7 @@ export function StakingPage({
                               <Award size={24} />
                             </Avatar>
                             <Box>
-                              <Typography variant="h6" fontWeight="950" color="#fff" sx={{ fontFamily: '"Cinzel", serif', lineHeight: 1.2 }}>
+                              <Typography variant="h6" fontWeight="950" color="#fff" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', lineHeight: 1.2 }}>
                                 ${parseFloat(st.amount || 0).toFixed(2)} <span style={{ fontSize: '12px', color: alpha('#fff', 0.5) }}>USD</span>
                               </Typography>
                               <Typography variant="caption" sx={{ color: isMatured ? '#14F195' : '#D4AF37', fontWeight: 800, fontSize: '10px', textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -1339,7 +1339,7 @@ export function StakingPage({
                             </Box>
                           </Stack>
                           <Box sx={{ textAlign: 'right' }}>
-                            <Typography variant="h6" fontWeight="950" color="#14F195" sx={{ fontFamily: '"Cinzel", serif', lineHeight: 1.2 }}>
+                            <Typography variant="h6" fontWeight="950" color="#14F195" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', lineHeight: 1.2 }}>
                               +{st.durationMonths * 2}%
                             </Typography>
                             <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ fontSize: '10px' }}>
@@ -1610,7 +1610,7 @@ export function StakingPage({
           }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1, fontFamily: '"Cinzel", serif' }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1, fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
           <Avatar sx={{ bgcolor: alpha('#f44336', 0.2), color: '#f44336', width: 40, height: 40 }}>
             <AlertTriangle size={22} />
           </Avatar>

@@ -1179,13 +1179,13 @@ function Dashboard() {
     },
     shape: { borderRadius: 20 },
     typography: {
-      fontFamily: '"Montserrat", "Inter", "Vazirmatn", sans-serif',
-      h1: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 700, letterSpacing: '-0.02em' },
-      h2: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 700, letterSpacing: '-0.01em' },
-      h3: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 700 },
-      h4: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 700 },
-      h5: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 600 },
-      h6: { fontFamily: '"Montserrat", "Inter", sans-serif', fontWeight: 600 },
+      fontFamily: '"Montserrat", "Inter", "Cinzel", "Vazirmatn", sans-serif',
+      h1: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700, letterSpacing: '-0.02em' },
+      h2: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700, letterSpacing: '-0.01em' },
+      h3: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700 },
+      h4: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700 },
+      h5: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 600 },
+      h6: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 600 },
       button: { fontWeight: 600, textTransform: 'none' },
     },
     components: {
@@ -1424,7 +1424,7 @@ function Dashboard() {
                <Typography 
                 variant="h6" 
                 sx={{ 
-                  fontFamily: '"Cinzel", serif', 
+                  fontFamily: '"Cinzel", "Vazirmatn", serif', 
                   fontWeight: 900, 
                   fontSize: { xs: '1rem', sm: '1.25rem' }, 
                   background: 'linear-gradient(45deg, #FFDF73, #D4AF37)',
@@ -1635,7 +1635,7 @@ function Dashboard() {
 
       <Dialog open={showNotifications} onClose={() => setShowNotifications(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#121214', color: '#fff', borderRadius: '24px', border: `1px solid ${alpha('#D4AF37', 0.3)}` } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1, borderBottom: `1px solid ${alpha('#fff', 0.1)}` }}>
-          <Typography variant="h6" fontWeight="bold" fontFamily='"Cinzel", serif' color="#D4AF37">Notifications</Typography>
+          <Typography variant="h6" fontWeight="bold" fontFamily='"Cinzel", "Vazirmatn", serif' color="#D4AF37">Notifications</Typography>
         </DialogTitle>
         <DialogContent sx={{ p: 2, minHeight: '300px' }}>
           {notifications.length === 0 ? (
@@ -1689,7 +1689,7 @@ function Dashboard() {
                   <Typography variant="overline" color="text.secondary" fontWeight="700" letterSpacing={3} sx={{ opacity: 0.8 }}>
                     {t('secureYourLegacy', language)}
                   </Typography>
-                  <Typography variant="h3" fontWeight="900" sx={{ mt: 1, fontFamily: '"Cinzel", serif', background: 'linear-gradient(45deg, #FFDF73, #D4AF37, #996515)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
+                  <Typography variant="h3" fontWeight="900" sx={{ mt: 1, fontFamily: '"Cinzel", "Vazirmatn", serif', background: 'linear-gradient(45deg, #FFDF73, #D4AF37, #996515)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
                     {t('mintUsGold', language)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: '80%', mx: 'auto' }}>
@@ -1729,7 +1729,7 @@ function Dashboard() {
                     transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                   }}>
                     {/* Engravings on the Gold Bar */}
-                    <Typography variant="h4" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.6)', textShadow: '1px 1px 1px rgba(255,255,255,0.3), -1px -1px 1px rgba(0,0,0,0.2)', fontFamily: '"Cinzel", serif' }}>
+                    <Typography variant="h4" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.6)', textShadow: '1px 1px 1px rgba(255,255,255,0.3), -1px -1px 1px rgba(0,0,0,0.2)', fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                       {(investAmount / (tokenPrice || 1)).toFixed(2)}g
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.5)', fontWeight: 'bold', letterSpacing: 2 }}>
@@ -1955,7 +1955,7 @@ function Dashboard() {
                       }
                     }}>
                       {/* Engravings on the Gold Bar */}
-                      <Typography variant="h4" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.7)', textShadow: '1px 1px 1px rgba(255,255,255,0.4), -1px -1px 1px rgba(0,0,0,0.1)', fontFamily: '"Cinzel", serif' }}>
+                      <Typography variant="h4" fontWeight="900" sx={{ color: 'rgba(120, 80, 20, 0.7)', textShadow: '1px 1px 1px rgba(255,255,255,0.4), -1px -1px 1px rgba(0,0,0,0.1)', fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                         {!isAppReady ? <Skeleton width={100} sx={{ borderRadius: '8px' }} /> : `${userTotalInvested.toFixed(2)} oz`}
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'rgba(120, 80, 20, 0.6)', fontWeight: 'bold', letterSpacing: 2 }}>
@@ -2139,7 +2139,7 @@ function Dashboard() {
                     <BarChart3 size={24} />
                   </Box>
                   <Box>
-                    <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', letterSpacing: 1 }}>
+                    <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', letterSpacing: 1 }}>
                       {t('roiCalculator', language)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" fontWeight="700">
@@ -2249,7 +2249,7 @@ function Dashboard() {
                 sx={{ 
                   mb: 1, 
                   fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                  fontFamily: '"Cinzel", serif', 
+                  fontFamily: '"Cinzel", "Vazirmatn", serif', 
                   color: 'primary.main',
                   textShadow: `0 2px 8px ${alpha('#D4AF37', 0.3)}`
                 }}
@@ -2281,7 +2281,7 @@ function Dashboard() {
                   fontWeight: 800,
                   fontSize: '0.875rem',
                   letterSpacing: 1,
-                  fontFamily: '"Cinzel", serif',
+                  fontFamily: '"Cinzel", "Vazirmatn", serif',
                   background: networkSubTab === 'structure' 
                     ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
                     : 'transparent',
@@ -2308,7 +2308,7 @@ function Dashboard() {
                   fontWeight: 800,
                   fontSize: '0.875rem',
                   letterSpacing: 1,
-                  fontFamily: '"Cinzel", serif',
+                  fontFamily: '"Cinzel", "Vazirmatn", serif',
                   background: networkSubTab === 'activity' 
                     ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
                     : 'transparent',
@@ -2335,7 +2335,7 @@ function Dashboard() {
                   fontWeight: 800,
                   fontSize: '0.875rem',
                   letterSpacing: 1,
-                  fontFamily: '"Cinzel", serif',
+                  fontFamily: '"Cinzel", "Vazirmatn", serif',
                   background: networkSubTab === 'performance' 
                     ? 'linear-gradient(to bottom, #FFDF73, #D4AF37)' 
                     : 'transparent',
@@ -2428,7 +2428,7 @@ function Dashboard() {
                   <Card sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '24px', overflow: 'hidden', mb: 4 }}>
                     <CardContent sx={{ p: 0 }}>
                       <Box px={3} py={2.5} sx={{ borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha('#D4AF37', 0.05), borderLeft: `4px solid #D4AF37` }}>
-                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', color: 'primary.main', letterSpacing: 1 }}>{t('royalRecruitmentLink', language) || 'ROYAL RECRUITMENT LINK'}</Typography>
+                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', color: 'primary.main', letterSpacing: 1 }}>{t('royalRecruitmentLink', language) || 'ROYAL RECRUITMENT LINK'}</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, opacity: 0.8 }}>{t('chooseLineDescription', language)}</Typography>
                       </Box>
                       <Box sx={{ p: 3, bgcolor: alpha('#000', 0.2) }}>
@@ -2509,7 +2509,7 @@ function Dashboard() {
                       </Box>
                       
                       <Box px={3} py={2.5} sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: alpha('#D4AF37', 0.05), display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}>
-                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', letterSpacing: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>{t('downlineGenesis', language)}</Typography>
+                        <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', letterSpacing: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>{t('downlineGenesis', language)}</Typography>
                         <Chip size="small" label="10-Tier Structure" icon={<Activity size={14} />} sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: alpha('#D4AF37', 0.1), color: '#D4AF37', border: `1px solid ${alpha('#D4AF37', 0.2)}` }} />
                       </Box>
                       <Box sx={{ p: { xs: 0.5, sm: 2 }, bgcolor: alpha('#000', 0.15) }}>
@@ -2572,7 +2572,7 @@ function Dashboard() {
               <Card sx={{ border: `1px solid ${alpha(theme.palette.divider, 0.6)}`, borderRadius: '24px', overflow: 'hidden' }}>
                 <CardContent sx={{ p: 0 }}>
                   <Box px={3} py={2.5} sx={{ borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: alpha('#fff', 0.01) }}>
-                    <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', fontSize: '1.1rem' }}>{t('royalRewards', language)}</Typography>
+                    <Typography variant="h6" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', fontSize: '1.1rem' }}>{t('royalRewards', language)}</Typography>
                     <Typography variant="caption" color="text.secondary" fontWeight="800" sx={{ letterSpacing: 1 }}>{t('cashbackRoyalty', language)}</Typography>
                   </Box>
                   <List disablePadding>
@@ -2649,7 +2649,7 @@ function Dashboard() {
                 {/* Game-like Header for Activity */}
                 <Box sx={{ textAlign: 'center', mb: 2 }}>
                   <Typography variant="h3" fontWeight="900" sx={{ 
-                    fontFamily: '"Cinzel", serif', 
+                    fontFamily: '"Cinzel", "Vazirmatn", serif', 
                     background: 'linear-gradient(to bottom, #FFDF73, #D4AF37)', 
                     WebkitBackgroundClip: 'text', 
                     WebkitTextFillColor: 'transparent',
@@ -2902,7 +2902,7 @@ function Dashboard() {
               </>
             ) : (
               <Box>
-                <Typography variant="h5" fontWeight="900" sx={{ mb: 3, fontFamily: '"Cinzel", serif', color: '#D4AF37' }}>
+                <Typography variant="h5" fontWeight="900" sx={{ mb: 3, fontFamily: '"Cinzel", "Vazirmatn", serif', color: '#D4AF37' }}>
                   Performance Analytics
                 </Typography>
 
@@ -3116,7 +3116,7 @@ function Dashboard() {
           } 
         }}
       >
-        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: 'primary.main', fontFamily: '"Cinzel", serif', fontWeight: 900 }}>
+        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: 'primary.main', fontFamily: '"Cinzel", "Vazirmatn", serif', fontWeight: 900 }}>
           {qrValue ? qrTitle : 'EXPLORE SYNDICATE'}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: '16px !important', pb: 3 }}>
@@ -3193,7 +3193,7 @@ function Dashboard() {
           }
         }}
       >
-        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: 'primary.main', fontFamily: '"Cinzel", serif', fontWeight: 900 }}>
+        <DialogTitle sx={{ textAlign: 'center', pb: 1, color: 'primary.main', fontFamily: '"Cinzel", "Vazirmatn", serif', fontWeight: 900 }}>
           {t('claimCommissions', language)}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: '16px !important', pb: 3 }}>

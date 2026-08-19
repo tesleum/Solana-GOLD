@@ -193,7 +193,7 @@ export default function AdminPanel() {
             color: '#D4AF37', 
             fontWeight: 800, 
             letterSpacing: '0.2rem', 
-            fontFamily: '"Cinzel", serif',
+            fontFamily: '"Cinzel", "Vazirmatn", serif',
             textShadow: '0 0 10px rgba(212, 175, 55, 0.5)'
           }}>
             SOLANA GOLD
@@ -368,7 +368,7 @@ export default function AdminPanel() {
             variant="h6"
             noWrap
             component="div"
-            sx={{ fontFamily: '"Cinzel", serif', fontWeight: "bold", flexGrow: 1 }}
+            sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', fontWeight: "bold", flexGrow: 1 }}
           >
             Solana Gold Admin Panel
           </Typography>
@@ -733,7 +733,7 @@ function UserRow({ row }: { row: any }) {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ fontFamily: '"Cinzel", serif', fontSize: '1.1rem', fontWeight: 800 }}>Network Tree: {row.id.substring(0, 8)}...</DialogTitle>
+        <DialogTitle sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', fontSize: '1.1rem', fontWeight: 800 }}>Network Tree: {row.id.substring(0, 8)}...</DialogTitle>
         <DialogContent dividers sx={{ p: { xs: 1, sm: 2 } }}>
           <NetworkTree address={row.id} language="EN" />
         </DialogContent>
@@ -939,7 +939,7 @@ function UsersManagement() {
         variant="h4" 
         sx={{ 
           mb: 4, 
-          fontFamily: '"Cinzel", serif', 
+          fontFamily: '"Cinzel", "Vazirmatn", serif', 
           fontWeight: 800,
           fontSize: { xs: '1.5rem', sm: '2.125rem' } 
         }}
@@ -1242,7 +1242,7 @@ function Transactions() {
         variant="h4" 
         sx={{ 
           mb: 4, 
-          fontFamily: '"Cinzel", serif', 
+          fontFamily: '"Cinzel", "Vazirmatn", serif', 
           fontWeight: 800,
           fontSize: { xs: '1.5rem', sm: '2.125rem' } 
         }}
@@ -1804,7 +1804,7 @@ function ReferralApprovals() {
         variant="h4" 
         sx={{ 
           mb: 4, 
-          fontFamily: '"Cinzel", serif', 
+          fontFamily: '"Cinzel", "Vazirmatn", serif', 
           fontWeight: 800,
           fontSize: { xs: '1.5rem', sm: '2.125rem' } 
         }}
@@ -2464,7 +2464,7 @@ export function AdminStaking() {
         variant="h4" 
         sx={{ 
           mb: 4, 
-          fontFamily: '"Cinzel", serif', 
+          fontFamily: '"Cinzel", "Vazirmatn", serif', 
           fontWeight: 800,
           fontSize: { xs: '1.5rem', sm: '2.125rem' } 
         }}
@@ -2689,7 +2689,7 @@ export function AdminStaking() {
           {/* Header & Actions */}
           <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={2} sx={{ mb: 3 }}>
             <Box>
-              <Typography variant="h6" fontWeight="900" sx={{ color: "#fff", fontFamily: '"Cinzel", serif' }}>
+              <Typography variant="h6" fontWeight="900" sx={{ color: "#fff", fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                 Referral Rewards & 1 usGOLD Approvals
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -3028,7 +3028,7 @@ export function AdminStaking() {
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#D4AF37', 0.2)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>Firebase Push Configuration</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", "Vazirmatn", serif', fontWeight: 800 }}>Firebase Push Configuration</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   Configure your official Firebase Cloud Messaging API settings to deliver real-time system & user notifications automatically.
                 </Typography>
@@ -3076,7 +3076,7 @@ export function AdminStaking() {
           <Grid item xs={12} md={6}>
             <Card sx={{ bgcolor: '#141518', borderRadius: '16px', border: `1px solid ${alpha('#fff', 0.05)}` }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", serif', fontWeight: 800 }}>FCM Broadcast Center</Typography>
+                <Typography variant="h6" sx={{ mb: 1, fontFamily: '"Cinzel", "Vazirmatn", serif', fontWeight: 800 }}>FCM Broadcast Center</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   Send a push notification announcement to ALL users registered with Firebase Cloud Messaging.
                 </Typography>
@@ -3169,7 +3169,7 @@ export function AdminStaking() {
 
       {/* Manual Referral Reward Grant Dialog */}
       <Dialog open={manualGrantOpen} onClose={() => setManualGrantOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: "900", fontFamily: '"Cinzel", serif' }}>
+        <DialogTitle sx={{ fontWeight: "900", fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
           Manual 1 usGOLD Referral Reward Credit
         </DialogTitle>
         <DialogContent dividers>

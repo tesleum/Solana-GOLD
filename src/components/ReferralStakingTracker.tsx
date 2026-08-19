@@ -446,7 +446,7 @@ export function ReferralStakingTracker({
                 fontWeight="950" 
                 color="#fff" 
                 sx={{ 
-                  fontFamily: '"Cinzel", serif', 
+                  fontFamily: '"Cinzel", "Vazirmatn", serif', 
                   letterSpacing: 0.5,
                   fontSize: { xs: '1.1rem', md: '1.3rem' }
                 }}
@@ -581,7 +581,7 @@ export function ReferralStakingTracker({
                 </Avatar>
               </Stack>
               <Box sx={{ mt: 1.5 }}>
-                <Typography variant="h4" fontWeight="950" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
+                <Typography variant="h4" fontWeight="950" color="#fff" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                   {metrics.total}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
@@ -621,7 +621,7 @@ export function ReferralStakingTracker({
                 </Avatar>
               </Stack>
               <Box sx={{ mt: 1.5 }}>
-                <Typography variant="h4" fontWeight="950" color="#14F195" sx={{ fontFamily: '"Cinzel", serif' }}>
+                <Typography variant="h4" fontWeight="950" color="#14F195" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                   {metrics.stakedCount}
                 </Typography>
                 <Typography variant="caption" color="#14F195" sx={{ opacity: 0.9, fontWeight: 700, mt: 0.5, display: 'block' }}>
@@ -660,7 +660,7 @@ export function ReferralStakingTracker({
                 </Avatar>
               </Stack>
               <Box sx={{ mt: 1.5 }}>
-                <Typography variant="h4" fontWeight="950" color="#ff9800" sx={{ fontFamily: '"Cinzel", serif' }}>
+                <Typography variant="h4" fontWeight="950" color="#ff9800" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                   {metrics.unstakedCount}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.8, mt: 0.5, display: 'block' }}>
@@ -701,7 +701,7 @@ export function ReferralStakingTracker({
               </Stack>
               <Box sx={{ mt: 1.5 }}>
                 <Stack direction="row" alignItems="baseline" spacing={0.8}>
-                  <Typography variant="h4" fontWeight="950" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                  <Typography variant="h4" fontWeight="950" color="#FFDF73" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                     {metrics.totalQualifiedUsGold.toFixed(2)}
                   </Typography>
                   <Typography variant="caption" fontWeight="900" color="#D4AF37">usGOLD</Typography>
@@ -922,7 +922,7 @@ export function ReferralStakingTracker({
                         </Typography>
                         <Chip label={v.yieldRate} size="small" sx={{ bgcolor: alpha(v.color, 0.15), color: v.color, fontWeight: 900, height: 20, fontSize: '10px' }} />
                       </Stack>
-                      <Typography variant="h6" fontWeight="950" color="#fff" sx={{ mt: 1, fontFamily: '"Cinzel", serif' }}>
+                      <Typography variant="h6" fontWeight="950" color="#fff" sx={{ mt: 1, fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                         ${data.volume.toFixed(2)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.5) }}>USD</span>
                       </Typography>
                       <LinearProgress variant="determinate" value={pct} sx={{ height: 6, borderRadius: 3, my: 1, bgcolor: alpha('#fff', 0.05), '& .MuiLinearProgress-bar': { bgcolor: v.color } }} />
@@ -1186,7 +1186,7 @@ export function ReferralStakingTracker({
                           <TableCell sx={{ borderBottom: `1px solid ${alpha('#fff', 0.04)}` }}>
                             {referee.hasStaked ? (
                               <Box>
-                                <Typography variant="body2" fontWeight="950" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                                <Typography variant="body2" fontWeight="950" color="#FFDF73" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                                   ${referee.totalStakedUsd.toFixed(2)} <span style={{ fontSize: '10px', color: alpha('#fff', 0.6) }}>USD</span>
                                 </Typography>
                                 <Typography variant="caption" color="#14F195" sx={{ fontSize: '10px', fontWeight: 800 }}>

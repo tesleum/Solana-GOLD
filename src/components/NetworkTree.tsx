@@ -676,7 +676,7 @@ export const NetworkTree: React.FC<{ address?: string; language: string }> = ({ 
               <BarChart3 size={20} color="#D4AF37" />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', letterSpacing: '0.05rem', fontSize: { xs: '1rem', sm: '1.15rem' } }}>
+              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', letterSpacing: '0.05rem', fontSize: { xs: '1rem', sm: '1.15rem' } }}>
                 {t('networkAnalytics', language)}
               </Typography>
               <Typography variant="caption" color="text.secondary">

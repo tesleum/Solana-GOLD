@@ -1558,7 +1558,7 @@ export function WalletPage({
                   </Typography>
                 </Stack>
                 <Box>
-                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                     {(usGoldBalance || 0).toFixed(4)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>g</span>
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -1590,7 +1590,7 @@ export function WalletPage({
                   </Typography>
                 </Stack>
                 <Box>
-                  <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
+                  <Typography variant="h6" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                     ${totalStaked.toFixed(2)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>USD</span>
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#14F195', fontWeight: 700 }}>
@@ -1622,7 +1622,7 @@ export function WalletPage({
                   </Typography>
                 </Stack>
                 <Box>
-                  <Typography variant="h6" fontWeight="900" color="#14F195" sx={{ fontFamily: '"Cinzel", serif' }}>
+                  <Typography variant="h6" fontWeight="900" color="#14F195" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                     +${liveTotalAccrued.toFixed(3)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>USD</span>
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -1654,7 +1654,7 @@ export function WalletPage({
                   </Typography>
                 </Stack>
                 <Box>
-                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                  <Typography variant="h6" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                     {pendingReferralRewards.toFixed(2)} <span style={{ fontSize: '11px', color: alpha('#fff', 0.6) }}>usGOLD</span>
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -2480,7 +2480,7 @@ export function WalletPage({
                       <Gift size={24} />
                     </Avatar>
                     <Box>
-                      <Typography variant="h5" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", serif' }}>
+                      <Typography variant="h5" fontWeight="900" color="#fff" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                         {t('inviteFriendsEarnReward', language)}
                       </Typography>
                       <Typography variant="caption" color="#D4AF37" fontWeight="700">
@@ -2508,7 +2508,7 @@ export function WalletPage({
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, my: 0.5 }}>
                       <TokenIcon symbol="usGOLD" size={24} />
-                      <Typography variant="h4" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", serif' }}>
+                      <Typography variant="h4" fontWeight="900" color="#FFDF73" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif' }}>
                         {(approvedCount * 1 + approvedToClaimAmount).toFixed(2)} <Typography component="span" variant="subtitle2" color="#D4AF37">usGOLD</Typography>
                       </Typography>
                     </Box>

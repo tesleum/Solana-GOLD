@@ -139,7 +139,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
       <Stack spacing={3}>
         {/* Header */}
         <Box>
-          <Typography variant="h5" fontWeight="900" sx={{ fontFamily: '"Cinzel", serif', color: 'primary.main', mb: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+          <Typography variant="h5" fontWeight="900" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', color: 'primary.main', mb: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             {t('roiCalculator', language)}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
@@ -298,7 +298,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
           <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
             <Stack direction="row" alignItems="center" spacing={1} mb={2}>
               <BarChart3 size={18} color={theme.palette.primary.main} />
-              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+              <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 {t('yourStanding', language)}
               </Typography>
             </Stack>
@@ -335,7 +335,7 @@ export const ROIAnalyzer: React.FC<ROIAnalyzerProps> = ({
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} mb={2}>
             <Lightbulb size={20} color="#FFD700" />
-            <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", serif', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+            <Typography variant="h6" fontWeight="800" sx={{ fontFamily: '"Cinzel", "Vazirmatn", serif', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               {t('empireBuilderTips', language)}
             </Typography>
           </Stack>
