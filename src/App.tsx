@@ -1179,7 +1179,7 @@ function Dashboard() {
     },
     shape: { borderRadius: 20 },
     typography: {
-      fontFamily: '"Montserrat", "Inter", "Cinzel", "Vazirmatn", sans-serif',
+      fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif',
       h1: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700, letterSpacing: '-0.02em' },
       h2: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700, letterSpacing: '-0.01em' },
       h3: { fontFamily: '"Cinzel", "Montserrat", "Inter", "Vazirmatn", sans-serif', fontWeight: 700 },
