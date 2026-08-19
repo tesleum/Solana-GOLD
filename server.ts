@@ -102,7 +102,7 @@ const openai = new OpenAI({
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = process.env.NODE_ENV === "production" ? (Number(process.env.PORT) || 8080) : 3000;
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("dist exists:", fs.existsSync(path.join(process.cwd(), "dist")));
 

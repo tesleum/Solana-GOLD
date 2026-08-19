@@ -112,7 +112,7 @@ function Dashboard() {
   const [usGoldBalance, setUsGoldBalance] = useState(0);
   const [totalMembers, setTotalMembers] = useState(0);
   const [apyYield, setApyYield] = useState('8');
-  const [activeTab, setActiveTab] = useState('vault');
+  const [activeTab, setActiveTab] = useState('staking');
   const [networkSubTab, setNetworkSubTab] = useState<'structure' | 'activity' | 'performance'>('structure');
   const [txFilterType, setTxFilterType] = useState('all');
   const [txDateRange, setTxDateRange] = useState('all');
@@ -3049,6 +3049,16 @@ function Dashboard() {
           }}
         >
           <BottomNavigationAction 
+            label={t('staking', language) || "Staking"} 
+            value="staking" 
+            icon={
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
+                 <Coins size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
+              </Box>
+            } 
+          />
+          <BottomNavigationAction 
             label={t('vault', language)} 
             value="vault" 
             icon={
@@ -3065,16 +3075,6 @@ function Dashboard() {
               <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
                  <Users size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
-              </Box>
-            } 
-          />
-          <BottomNavigationAction 
-            label={t('staking', language) || "Staking"} 
-            value="staking" 
-            icon={
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 <Box className="pill-indicator" sx={{ position: 'absolute', width: '48px', height: '32px', bgcolor: alpha('#D4AF37', 0.15), borderRadius: '16px', opacity: 0, transform: 'scaleX(0.5)', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 0 }} />
-                 <Coins size={22} className="lucide" style={{ position: 'relative', zIndex: 1 }} />
               </Box>
             } 
           />
